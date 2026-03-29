@@ -1,0 +1,84 @@
+[package]
+name = "aiflow"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "aiflow_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri core
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-store = "2"
+
+# OS 키체인 — bare keyring crate 직접 사용 (tauri-plugin-keyring은 미사용)
+
+# DB — SQLite bundled (SQLCipher는 Windows 빌드 시 Strawberry Perl 필요 → 추후 적용)
+# NOTE: DB 마스터 키는 OS 키체인에 보관, API 키는 키체인 직접 저장으로 보안 수준 유지
+rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite_migration = "1.2"
+r2d2 = "0.8"
+r2d2_sqlite = "0.25"
+
+# 비동기 런타임
+tokio = { version = "1", features = ["full"] }
+
+# HTTP 클라이언트 (AI API 스트리밍)
+reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls"], default-features = false }
+
+# JSON 직렬화
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# 에러 처리
+thiserror = "1"
+anyhow = "1"
+
+# 암호화 / 보안
+ring = "0.17"       # PBKDF2, 난수 생성
+zeroize = { version = "1", features = ["derive"] }
+
+# 유틸리티
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+once_cell = "1"
+async-trait = "0.1"
+futures = "0.3"
+hex = "0.4"
+tokio-util = { version = "0.7", features = ["io"] }
+keyring = "3"
+
+[dev-dependencies]
+tempfile = "3"
+proptest = "1"
+tokio = { version = "1", features = ["test-util"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.dev]
+opt-level = 0
+debug = true
+incremental = true
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

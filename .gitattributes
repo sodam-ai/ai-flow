@@ -1,0 +1,14 @@
+# Normalize line endings for cross-platform consistency
+* text=auto eol=lf
+
+# Force binary treatment for compiled/binary files
+*.ico binary
+*.png binary
+*.icns binary
+*.msi binary
+*.exe binary
+*.dll binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
