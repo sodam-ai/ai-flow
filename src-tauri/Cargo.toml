@@ -1,0 +1,65 @@
+[package]
+name = "aiflow"
+version = "0.1.0"
+description = "AIFlow — Local desktop AI chat hub"
+authors = ["SoDam AI Studio"]
+license = "MIT"
+repository = "https://github.com/sodam-ai/ai-flow"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "aiflow_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri core
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-store = "2"
+tauri-plugin-log = "2"
+
+# DB — SQLCipher (PRD v4.1: bundled-sqlcipher 필수)
+rusqlite = { version = "0.32", features = ["bundled-sqlcipher"] }
+rusqlite_migration = "1.2"
+r2d2 = "0.8"
+r2d2_sqlite = "0.25"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["io"] }
+
+# HTTP client (AI API streaming)
+reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls"], default-features = false }
+
+# JSON
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# Crypto / Security
+ring = "0.17"
+zeroize = { version = "1", features = ["derive"] }
+
+# OS Keychain
+keyring = "3"
+
+# Utilities
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+once_cell = "1"
+async-trait = "0.1"
+futures = "0.3"
+hex = "0.4"
+log = "0.4"

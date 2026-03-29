@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "AIFlow",
+    "newChat": "New Chat",
+    "settings": "Settings",
+    "welcome": "Use multiple AIs in one app",
+    "hotkeyHint": "Press Alt+Space to summon from anywhere",
+    "startChat": "Start New Chat",
+    "noConversations": "Start a new conversation"
+  },
+  "chat": {
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "stop": "Stop",
+    "regenerate": "Regenerate",
+    "copy": "Copy",
+    "tokens": "tokens",
+    "cost": "cost"
+  },
+  "settings": {
+    "title": "Settings",
+    "apiKeys": "API Key Management",
+    "provider": "AI Provider",
+    "enterKey": "Enter your API key",
+    "save": "Save",
+    "delete": "Delete",
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "validating": "Validating...",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  "error": {
+    "apiKeyNotSet": "API key is not set",
+    "apiKeyInvalid": "API key is invalid. Please check in Settings.",
+    "serverError": "AI server is temporarily unavailable",
+    "timeout": "Response is taking too long",
+    "keychainAccess": "Cannot access secure storage",
+    "dbError": "Failed to save data"
+  }
+}

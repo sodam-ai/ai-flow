@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "AIFlow",
+    "newChat": "새 대화",
+    "settings": "설정",
+    "welcome": "여러 AI를 하나의 앱에서 사용하세요",
+    "hotkeyHint": "Alt+Space로 어디서든 소환",
+    "startChat": "새 대화 시작",
+    "noConversations": "새 대화를 시작하세요"
+  },
+  "chat": {
+    "placeholder": "메시지를 입력하세요...",
+    "send": "전송",
+    "stop": "중지",
+    "regenerate": "재생성",
+    "copy": "복사",
+    "tokens": "토큰",
+    "cost": "비용"
+  },
+  "settings": {
+    "title": "설정",
+    "apiKeys": "API 키 관리",
+    "provider": "AI 프로바이더",
+    "enterKey": "API 키를 입력하세요",
+    "save": "저장",
+    "delete": "삭제",
+    "connected": "연결됨",
+    "notConnected": "미연결",
+    "validating": "검증 중...",
+    "language": "언어",
+    "theme": "테마"
+  },
+  "error": {
+    "apiKeyNotSet": "API 키가 설정되지 않았습니다",
+    "apiKeyInvalid": "API 키가 올바르지 않습니다. 설정에서 키를 확인해주세요.",
+    "serverError": "AI 서버에 일시적인 문제가 있습니다",
+    "timeout": "응답이 너무 오래 걸립니다",
+    "keychainAccess": "보안 저장소에 접근할 수 없습니다",
+    "dbError": "데이터 저장 오류가 발생했습니다"
+  }
+}
