@@ -10,6 +10,7 @@ pub async fn stream_ai_message(
     provider_id: String,
     model_id: String,
     stream_id: String,
+    persona_id: Option<String>,
     channel: tauri::ipc::Channel<serde_json::Value>,
 ) -> Result<(), String> {
     // Register stream for cancellation
@@ -40,7 +41,11 @@ pub async fn stream_ai_message(
         &model_id,
         &api_key,
         &messages,
-        None, // TODO: persona system prompt (Phase 1b)
+        persona_id.as_ref().and_then(|pid| {
+            crate::services::persona::get_persona(&state.db, pid)
+                .ok()
+                .map(|p| p.system_prompt)
+        }).as_deref(),
         &channel,
         cancel_rx,
     )

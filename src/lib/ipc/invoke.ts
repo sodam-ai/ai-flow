@@ -5,6 +5,13 @@ import type {
   ApiKeyStatus,
   StreamChunk,
   ModelInfo,
+  Persona,
+  CreatePersonaInput,
+  UpdatePersonaInput,
+  PromptTemplate,
+  CreatePromptInput,
+  UpdatePromptInput,
+  FileContent,
 } from "@/types";
 import {
   saveApiKeySchema,
@@ -16,6 +23,14 @@ import {
   streamAiMessageSchema,
   cancelStreamSchema,
   getModelCatalogSchema,
+  createPersonaSchema,
+  updatePersonaSchema,
+  idParamSchema,
+  createPromptSchema,
+  updatePromptSchema,
+  usePromptSchema,
+  listPromptsSchema,
+  filePathSchema,
 } from "./schemas";
 
 /** Validate params with Zod before invoking Tauri IPC */
@@ -117,6 +132,7 @@ export function streamAiMessage(
   providerId: string,
   modelId: string,
   streamId: string,
+  personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
 ): { promise: Promise<void>; channel: Channel<StreamChunk> } {
   // Validate before creating channel
@@ -131,6 +147,7 @@ export function streamAiMessage(
     providerId,
     modelId,
     streamId,
+    personaId,
     channel,
   });
 
@@ -140,4 +157,83 @@ export function streamAiMessage(
 export async function cancelStream(streamId: string): Promise<void> {
   validate(cancelStreamSchema, { streamId });
   return invoke("cancel_stream", { streamId });
+}
+
+// ─── Personas (Phase 1b) ───
+
+export async function listPersonas(): Promise<Persona[]> {
+  return invoke("list_personas");
+}
+
+export async function getPersona(id: string): Promise<Persona> {
+  validate(idParamSchema, { id });
+  return invoke("get_persona", { id });
+}
+
+export async function createPersona(input: CreatePersonaInput): Promise<Persona> {
+  validate(createPersonaSchema, { input });
+  return invoke("create_persona", { input });
+}
+
+export async function updatePersona(id: string, input: UpdatePersonaInput): Promise<Persona> {
+  validate(updatePersonaSchema, { id, input });
+  return invoke("update_persona", { id, input });
+}
+
+export async function deletePersona(id: string): Promise<void> {
+  validate(idParamSchema, { id });
+  return invoke("delete_persona", { id });
+}
+
+// ─── Prompts (Phase 1b) ───
+
+export async function listPrompts(tag?: string): Promise<PromptTemplate[]> {
+  validate(listPromptsSchema, { tag: tag ?? null });
+  return invoke("list_prompts", { tag: tag ?? null });
+}
+
+export async function getPrompt(id: string): Promise<PromptTemplate> {
+  validate(idParamSchema, { id });
+  return invoke("get_prompt", { id });
+}
+
+export async function createPrompt(input: CreatePromptInput): Promise<PromptTemplate> {
+  validate(createPromptSchema, { input });
+  return invoke("create_prompt", { input });
+}
+
+export async function updatePrompt(id: string, input: UpdatePromptInput): Promise<PromptTemplate> {
+  validate(updatePromptSchema, { id, input });
+  return invoke("update_prompt", { id, input });
+}
+
+export async function deletePrompt(id: string): Promise<void> {
+  validate(idParamSchema, { id });
+  return invoke("delete_prompt", { id });
+}
+
+export async function usePrompt(id: string, variables: Record<string, string>): Promise<string> {
+  validate(usePromptSchema, { id, variables });
+  return invoke("use_prompt", { id, variables });
+}
+
+// ─── File & Clipboard (Phase 1b) ───
+
+export async function validateAndReadFile(path: string): Promise<FileContent> {
+  validate(filePathSchema, { path });
+  return invoke("validate_and_read_file", { path });
+}
+
+export async function readClipboardContent(): Promise<string> {
+  return invoke("read_clipboard_content");
+}
+
+// ─── Overlay (Phase 1b) ───
+
+export async function toggleOverlay(): Promise<void> {
+  return invoke("toggle_overlay");
+}
+
+export async function closeOverlay(): Promise<void> {
+  return invoke("close_overlay");
 }

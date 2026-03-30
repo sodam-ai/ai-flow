@@ -43,6 +43,11 @@ impl Database {
         // Immediately drop master key from memory
         drop(master_key);
 
+        // Auto-backup before migrations (PRD: keep 5 most recent)
+        if db_path.exists() {
+            backup_db_before_migration(&db_path, &conn);
+        }
+
         // Run migrations
         super::migrations::run(&mut conn)?;
 
@@ -100,4 +105,50 @@ fn generate_random_key() -> String {
     let mut key_bytes = [0u8; 32];
     rng.fill(&mut key_bytes).expect("Failed to generate random key");
     hex::encode(key_bytes)
+}
+
+/// Backup DB before migration — keep 5 most recent backups (PRD §Phase 1b)
+fn backup_db_before_migration(db_path: &std::path::Path, conn: &Connection) {
+    // Checkpoint WAL so all data is in the main DB file
+    let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
+
+    let backup_dir = db_path.parent().unwrap().join("backups");
+    if let Err(e) = std::fs::create_dir_all(&backup_dir) {
+        log::warn!("Cannot create backup dir: {}", e);
+        return;
+    }
+
+    // Generate timestamped backup filename
+    let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
+    let backup_name = format!("aiflow_backup_{}.db", timestamp);
+    let backup_path = backup_dir.join(&backup_name);
+
+    match std::fs::copy(db_path, &backup_path) {
+        Ok(_) => log::info!("DB backed up to {:?}", backup_path),
+        Err(e) => {
+            log::warn!("DB backup failed: {}", e);
+            return;
+        }
+    }
+
+    // Prune old backups — keep only 5 most recent
+    let mut backups: Vec<_> = std::fs::read_dir(&backup_dir)
+        .ok()
+        .into_iter()
+        .flatten()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.file_name()
+                .to_str()
+                .is_some_and(|n| n.starts_with("aiflow_backup_") && n.ends_with(".db"))
+        })
+        .collect();
+
+    backups.sort_by_key(|e| std::cmp::Reverse(e.file_name()));
+
+    for old in backups.into_iter().skip(5) {
+        if let Err(e) = std::fs::remove_file(old.path()) {
+            log::warn!("Cannot remove old backup {:?}: {}", old.path(), e);
+        }
+    }
 }

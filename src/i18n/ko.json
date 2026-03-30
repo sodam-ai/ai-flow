@@ -30,6 +30,40 @@
     "language": "언어",
     "theme": "테마"
   },
+  "persona": {
+    "select": "페르소나",
+    "none": "페르소나 없음",
+    "create": "페르소나 만들기",
+    "edit": "페르소나 수정",
+    "delete": "페르소나 삭제",
+    "builtinCannotDelete": "기본 페르소나는 삭제할 수 없습니다"
+  },
+  "prompt": {
+    "title": "프롬프트 저장소",
+    "create": "새 템플릿",
+    "edit": "템플릿 수정",
+    "delete": "템플릿 삭제",
+    "search": "프롬프트 검색...",
+    "noResults": "프롬프트가 없습니다. 첫 번째 템플릿을 만들어보세요!",
+    "variables": "변수",
+    "fillVariables": "변수 입력",
+    "apply": "적용",
+    "tags": "태그",
+    "favorite": "즐겨찾기"
+  },
+  "commandPalette": {
+    "placeholder": "명령어를 입력하세요...",
+    "noResults": "일치하는 명령이 없습니다"
+  },
+  "fileDrop": {
+    "dropHere": "파일을 여기에 놓으세요",
+    "invalidType": "지원하지 않는 파일 형식입니다",
+    "tooLarge": "파일이 10MB를 초과합니다"
+  },
+  "overlay": {
+    "placeholder": "무엇이든 물어보세요...",
+    "close": "ESC로 닫기"
+  },
   "error": {
     "apiKeyNotSet": "API 키가 설정되지 않았습니다",
     "apiKeyInvalid": "API 키가 올바르지 않습니다. 설정에서 키를 확인해주세요.",

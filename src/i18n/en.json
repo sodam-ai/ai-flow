@@ -30,6 +30,40 @@
     "language": "Language",
     "theme": "Theme"
   },
+  "persona": {
+    "select": "Persona",
+    "none": "No Persona",
+    "create": "Create Persona",
+    "edit": "Edit Persona",
+    "delete": "Delete Persona",
+    "builtinCannotDelete": "Built-in personas cannot be deleted"
+  },
+  "prompt": {
+    "title": "Prompt Library",
+    "create": "New Template",
+    "edit": "Edit Template",
+    "delete": "Delete Template",
+    "search": "Search prompts...",
+    "noResults": "No prompts yet. Create your first template!",
+    "variables": "variables",
+    "fillVariables": "Fill in Variables",
+    "apply": "Apply",
+    "tags": "Tags",
+    "favorite": "Favorite"
+  },
+  "commandPalette": {
+    "placeholder": "Type a command...",
+    "noResults": "No matching commands"
+  },
+  "fileDrop": {
+    "dropHere": "Drop files here",
+    "invalidType": "File type not supported",
+    "tooLarge": "File exceeds 10MB limit"
+  },
+  "overlay": {
+    "placeholder": "Ask anything...",
+    "close": "ESC to close"
+  },
   "error": {
     "apiKeyNotSet": "API key is not set",
     "apiKeyInvalid": "API key is invalid. Please check in Settings.",

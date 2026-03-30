@@ -89,6 +89,83 @@ export interface AppSettings {
   exchangeRateUsdToKrw: number;
 }
 
+// ─── Persona (Phase 1b) ───
+export interface Persona {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  system_prompt: string;
+  icon: string;
+  color: string;
+  is_builtin: boolean;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePersonaInput {
+  name: string;
+  description?: string;
+  system_prompt: string;
+  icon?: string;
+  color?: string;
+}
+
+export interface UpdatePersonaInput {
+  name?: string;
+  description?: string;
+  system_prompt?: string;
+  icon?: string;
+  color?: string;
+  is_active?: boolean;
+}
+
+// ─── Prompt Template (Phase 1b) ───
+export interface PromptTemplate {
+  id: string;
+  title: string;
+  content: string;
+  description: string;
+  tags: string[];
+  variables: string[];
+  is_favorite: boolean;
+  use_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePromptInput {
+  title: string;
+  content: string;
+  description?: string;
+  tags?: string[];
+}
+
+export interface UpdatePromptInput {
+  title?: string;
+  content?: string;
+  description?: string;
+  tags?: string[];
+  is_favorite?: boolean;
+}
+
+// ─── File (Phase 1b) ───
+export interface FileInfo {
+  path: string;
+  name: string;
+  extension: string;
+  size: number;
+  is_image: boolean;
+}
+
+export interface FileContent {
+  info: FileInfo;
+  content: string;
+  content_type: "text" | "image";
+}
+
 // IPC Error (matches 14_ERROR_CATALOG)
 export interface IpcError {
   code: string;

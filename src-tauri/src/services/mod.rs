@@ -1,9 +1,12 @@
 pub mod ai_client;
-pub mod keychain;
+pub mod audit;
 pub mod chat;
 pub mod cost;
-pub mod audit;
-pub mod stream_registry;
+pub mod file_handler;
+pub mod key_validator;
+pub mod keychain;
+pub mod persona;
+pub mod prompt;
 pub mod provider_trait;
 pub mod providers;
-pub mod key_validator;
+pub mod stream_registry;

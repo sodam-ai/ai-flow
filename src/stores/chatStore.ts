@@ -11,6 +11,7 @@ import {
   cancelStream,
 } from "@/lib/ipc/invoke";
 import { useSettingsStore } from "./settingsStore";
+import { usePersonaStore } from "./personaStore";
 import { useToastStore } from "./toastStore";
 
 interface ChatState {
@@ -135,6 +136,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const targetConvId = activeConversationId;
 
     const { activeProviderId, activeModelId } = useSettingsStore.getState();
+    const activePersonaId = usePersonaStore.getState().activePersonaId;
 
     const { promise } = streamAiMessage(
       targetConvId,
@@ -142,6 +144,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       activeProviderId,
       activeModelId,
       streamId,
+      activePersonaId,
       (chunk: StreamChunk) => {
         if (chunk.type === "token" && chunk.token) {
           accumulated += chunk.token;

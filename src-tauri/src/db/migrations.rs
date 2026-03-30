@@ -6,6 +6,8 @@ pub fn run(conn: &mut rusqlite::Connection) -> Result<(), Box<dyn std::error::Er
         M::up(include_str!("../../migrations/001_core.sql")),
         M::up(include_str!("../../migrations/002_chat.sql")),
         M::up(include_str!("../../migrations/003_audit.sql")),
+        M::up(include_str!("../../migrations/004_personas.sql")),
+        M::up(include_str!("../../migrations/005_prompt_templates.sql")),
     ]);
 
     migrations.to_latest(conn)?;
