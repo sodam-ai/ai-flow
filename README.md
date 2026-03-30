@@ -168,8 +168,8 @@ Adding a new AI provider requires **zero changes** to existing code:
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| **1a** | Core MVP (chat, cost, security, i18n) | In Progress |
-| **1b** | Hotkey, personas, prompts, updater | Planned |
+| **1a** | Core MVP (chat, cost, security, i18n) | **Complete** |
+| **1b** | Hotkey, personas, prompts, updater | **Next** |
 | **2** | Multi-AI, smart routing, privacy mode, Pro tier | Planned |
 | **3** | RAG, voice, agents, plugin API | Planned |
 
