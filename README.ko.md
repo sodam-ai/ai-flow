@@ -17,8 +17,9 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | 기능 | 설명 |
 |------|------|
 | **글로벌 단축키** (`Alt+Space`) | 어떤 앱에서든 AIFlow 소환 (Word, Chrome, 게임 등) |
-| **멀티 프로바이더** | GPT-4o, Claude Sonnet, Gemini Flash + 8개 이상 |
-| **실시간 비용 표시** | 메시지마다 토큰 수 + USD + KRW 비용 표시 |
+| **멀티 프로바이더** | GPT-4o, Claude Sonnet, Gemini Flash + 8개 이상 (총 11개) |
+| **API 키 검증** | 저장 전 프로바이더 API로 키 유효성 자동 검증 |
+| **실시간 비용 표시** | 메시지마다 토큰 수 + USD + KRW 이중 비용 표시 |
 | **OS 키체인 보안** | API 키를 Windows 자격 증명 관리자에 저장 (파일에 절대 없음) |
 | **암호화 DB** | SQLCipher AES-256으로 모든 대화 암호화 |
 | **AI 페르소나** | 6종 내장 (개발자, 카피라이터, 번역가, 분석가, 법무, 요약) |
@@ -77,11 +78,30 @@ npm run build
 
 ## 보안
 
-- API 키: OS 키체인에만 저장 (코드, 파일, DB에 평문 절대 없음)
-- 데이터베이스: SQLCipher AES-256 + PBKDF2-SHA512 (25만 반복)
-- IPC: 모든 파라미터 Zod 스키마 검증
-- 감사 로그: 변경 불가 INSERT 전용
-- 업데이트: Ed25519 서명 검증
+- **API 키 검증**: 저장 전 무료 API 호출로 유효성 검증 (포맷 + 실제 확인)
+- **API 키 저장**: OS 키체인에만 저장 (코드, 파일, DB에 평문 절대 없음)
+- **데이터베이스**: SQLCipher AES-256 + PBKDF2-SHA512 (25만 반복)
+- **IPC**: 모든 파라미터 Zod 스키마 검증
+- **스트리밍**: Tauri ipc::Channel + 취소 지원
+- **감사 로그**: 변경 불가 INSERT 전용 (ai_stream_started/completed/failed)
+- **업데이트**: Ed25519 서명 검증
+
+## 비개발자를 위한 가이드 (AI 바이브코딩)
+
+AI 코딩 도구로 자연어만 사용해서 AIFlow를 수정할 수 있습니다:
+
+1. [Cursor](https://cursor.sh) 또는 AI 지원 IDE에서 이 프로젝트를 열기
+2. 원하는 것을 자연어로 설명 (예: "다크 블루 테마 옵션 추가해줘")
+3. AI가 코드를 생성 — 확인하고 수락하면 끝
+4. `npm run dev`로 테스트 — 변경사항이 앱 창에 바로 반영됨
+5. **핵심 규칙**: API 키를 코드 파일에 절대 넣지 마세요. 항상 설정 UI를 사용하세요.
+
+## 운영 참고사항
+
+- **데이터베이스 위치**: `%APPDATA%/ai-flow/aiflow.db` (SQLCipher 암호화)
+- **API 키**: Windows 자격 증명 관리자의 "aiflow" 서비스에 저장
+- **로그**: Tauri 개발 콘솔 또는 `%APPDATA%/ai-flow/logs/`
+- **SQLCipher 빌드**: Windows에서 Strawberry Perl 필요 (C 컴파일러 의존성)
 
 ## 로드맵
 
