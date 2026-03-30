@@ -31,13 +31,14 @@ export default function App() {
     cancelCurrentStream,
   } = useChatStore();
 
-  const { activeProviderId, activeModelId, loadAllKeyStatuses } =
+  const { activeProviderId, activeModelId, loadAllKeyStatuses, loadPersistedSettings } =
     useSettingsStore();
 
   useEffect(() => {
+    loadPersistedSettings();
     loadConversations();
     loadAllKeyStatuses();
-  }, [loadConversations, loadAllKeyStatuses]);
+  }, [loadPersistedSettings, loadConversations, loadAllKeyStatuses]);
 
   const handleNewChat = async () => {
     await createChat(activeProviderId, activeModelId);

@@ -1,6 +1,7 @@
 import type { Message } from "@/types";
 import { useTranslation } from "react-i18next";
 import { Copy } from "lucide-react";
+import MarkdownContent from "@/components/shared/MarkdownContent";
 
 interface Props {
   message: Message;
@@ -24,9 +25,13 @@ export default function MessageBubble({ message, exchangeRate = 1380 }: Props) {
             : "bg-zinc-800/50 text-zinc-100"
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-          {message.content}
-        </p>
+        {isUser ? (
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+            {message.content}
+          </p>
+        ) : (
+          <MarkdownContent content={message.content} />
+        )}
 
         {/* Cost badge (assistant messages only) */}
         {!isUser && message.costUsd != null && message.costUsd > 0 && (
@@ -39,7 +44,7 @@ export default function MessageBubble({ message, exchangeRate = 1380 }: Props) {
               ${message.costUsd.toFixed(4)}
             </span>
             <span className="text-[10px] text-zinc-500">
-              ~{Math.round(message.costUsd * exchangeRate).toLocaleString()}
+              ₩{Math.round(message.costUsd * exchangeRate).toLocaleString()}
             </span>
             <button
               onClick={handleCopy}

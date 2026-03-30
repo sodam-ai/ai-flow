@@ -1,12 +1,23 @@
 import { create } from "zustand";
+import { Store } from "@tauri-apps/plugin-store";
 import type { ProviderId, ApiKeyStatus } from "@/types";
 import { getApiKeyStatus, saveApiKey, deleteApiKey } from "@/lib/ipc/invoke";
+
+const STORE_DEFAULTS = {
+  activeProviderId: "openai",
+  activeModelId: "gpt-4o",
+};
+
+const STORE_NAME = "settings.json";
 
 interface SettingsState {
   // Active provider/model
   activeProviderId: ProviderId;
   activeModelId: string;
   setActiveProvider: (id: ProviderId, modelId: string) => void;
+
+  // Persistent store initialization
+  loadPersistedSettings: () => Promise<void>;
 
   // API key statuses (per provider)
   keyStatuses: Partial<Record<ProviderId, ApiKeyStatus>>;
@@ -21,8 +32,31 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   activeModelId: "gpt-4o",
   keyStatuses: {},
 
-  setActiveProvider: (id, modelId) =>
-    set({ activeProviderId: id, activeModelId: modelId }),
+  setActiveProvider: async (id, modelId) => {
+    set({ activeProviderId: id, activeModelId: modelId });
+    // Persist to disk
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      await store.set("activeProviderId", id);
+      await store.set("activeModelId", modelId);
+    } catch (e) {
+      console.warn("Failed to persist settings:", e);
+    }
+  },
+
+  loadPersistedSettings: async () => {
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      const providerId = (await store.get<string>("activeProviderId")) ?? "openai";
+      const modelId = (await store.get<string>("activeModelId")) ?? "gpt-4o";
+      set({
+        activeProviderId: providerId as ProviderId,
+        activeModelId: modelId,
+      });
+    } catch (e) {
+      console.warn("Failed to load persisted settings:", e);
+    }
+  },
 
   loadKeyStatus: async (provider) => {
     const status = await getApiKeyStatus(provider);

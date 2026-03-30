@@ -6,6 +6,27 @@ import type {
   StreamChunk,
   ModelInfo,
 } from "@/types";
+import {
+  saveApiKeySchema,
+  providerIdSchema,
+  createConversationSchema,
+  getMessagesSchema,
+  conversationIdSchema,
+  renameConversationSchema,
+  streamAiMessageSchema,
+  cancelStreamSchema,
+  getModelCatalogSchema,
+} from "./schemas";
+
+/** Validate params with Zod before invoking Tauri IPC */
+function validate<T>(schema: { parse: (data: unknown) => T }, data: unknown): T {
+  try {
+    return schema.parse(data);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`VAL_001: Invalid parameters — ${message}`);
+  }
+}
 
 // ─── Keychain ───
 
@@ -13,16 +34,19 @@ export async function saveApiKey(
   provider: string,
   key: string,
 ): Promise<void> {
-  return invoke("save_api_key", { provider, key });
+  const params = validate(saveApiKeySchema, { provider, key });
+  return invoke("save_api_key", params);
 }
 
 export async function getApiKeyStatus(
   provider: string,
 ): Promise<ApiKeyStatus> {
+  validate(providerIdSchema, { provider });
   return invoke("get_api_key_status", { provider });
 }
 
 export async function deleteApiKey(provider: string): Promise<void> {
+  validate(providerIdSchema, { provider });
   return invoke("delete_api_key", { provider });
 }
 
@@ -30,7 +54,8 @@ export async function validateApiKeyOnly(
   provider: string,
   key: string,
 ): Promise<void> {
-  return invoke("validate_api_key_only", { provider, key });
+  const params = validate(saveApiKeySchema, { provider, key });
+  return invoke("validate_api_key_only", params);
 }
 
 // ─── Conversations ───
@@ -39,7 +64,8 @@ export async function createConversation(
   providerId: string,
   modelId: string,
 ): Promise<Conversation> {
-  return invoke("create_conversation", { providerId, modelId });
+  const params = validate(createConversationSchema, { providerId, modelId });
+  return invoke("create_conversation", params);
 }
 
 export async function getConversations(): Promise<Conversation[]> {
@@ -50,12 +76,14 @@ export async function getMessages(
   conversationId: string,
   limit?: number,
 ): Promise<Message[]> {
-  return invoke("get_messages", { conversationId, limit: limit ?? 50 });
+  const params = validate(getMessagesSchema, { conversationId, limit: limit ?? 50 });
+  return invoke("get_messages", params);
 }
 
 export async function deleteConversation(
   conversationId: string,
 ): Promise<void> {
+  validate(conversationIdSchema, { conversationId });
   return invoke("delete_conversation", { conversationId });
 }
 
@@ -63,10 +91,12 @@ export async function renameConversation(
   conversationId: string,
   title: string,
 ): Promise<void> {
-  return invoke("rename_conversation", { conversationId, title });
+  const params = validate(renameConversationSchema, { conversationId, title });
+  return invoke("rename_conversation", params);
 }
 
 export async function togglePin(conversationId: string): Promise<void> {
+  validate(conversationIdSchema, { conversationId });
   return invoke("toggle_pin", { conversationId });
 }
 
@@ -75,7 +105,8 @@ export async function togglePin(conversationId: string): Promise<void> {
 export async function getModelCatalog(
   providerId?: string,
 ): Promise<ModelInfo[]> {
-  return invoke("get_model_catalog", { providerId: providerId ?? null });
+  const params = validate(getModelCatalogSchema, { providerId: providerId ?? null });
+  return invoke("get_model_catalog", params);
 }
 
 // ─── AI Streaming ───
@@ -88,6 +119,9 @@ export function streamAiMessage(
   streamId: string,
   onChunk: (chunk: StreamChunk) => void,
 ): { promise: Promise<void>; channel: Channel<StreamChunk> } {
+  // Validate before creating channel
+  validate(streamAiMessageSchema, { conversationId, content, providerId, modelId, streamId });
+
   const channel = new Channel<StreamChunk>();
   channel.onmessage = onChunk;
 
@@ -104,5 +138,6 @@ export function streamAiMessage(
 }
 
 export async function cancelStream(streamId: string): Promise<void> {
+  validate(cancelStreamSchema, { streamId });
   return invoke("cancel_stream", { streamId });
 }
