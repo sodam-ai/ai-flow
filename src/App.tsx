@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChatStore } from "@/stores/chatStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -7,6 +7,8 @@ import ConversationItem from "@/components/sidebar/ConversationItem";
 import MessageBubble from "@/components/chat/MessageBubble";
 import StreamingBubble from "@/components/chat/StreamingBubble";
 import ChatInput from "@/components/chat/ChatInput";
+import ModelSelector from "@/components/chat/ModelSelector";
+import ToastContainer from "@/components/shared/ToastContainer";
 
 type AppView = "chat" | "settings";
 
@@ -46,8 +48,15 @@ export default function App() {
     ? (messages[activeConversationId] ?? [])
     : [];
 
+  // Auto-scroll to bottom on new messages or streaming
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversationMessages.length, streamingContent]);
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-50">
+      <ToastContainer />
       {/* Sidebar */}
       <aside className="w-60 border-r border-zinc-800 flex flex-col">
         <div
@@ -108,11 +117,13 @@ export default function App() {
           <SettingsView />
         ) : activeConversationId ? (
           <>
+            <ModelSelector />
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {conversationMessages.map((msg) => (
                 <MessageBubble key={msg.id} message={msg} />
               ))}
               {isStreaming && <StreamingBubble content={streamingContent} />}
+              <div ref={chatEndRef} />
             </div>
             <ChatInput
               isStreaming={isStreaming}

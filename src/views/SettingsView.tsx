@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useToastStore } from "@/stores/toastStore";
 import { PROVIDERS } from "@/lib/providers";
-// ProviderId used by parent component for keying
 import { Eye, EyeOff, Trash2, Check, Loader2 } from "lucide-react";
 
 export default function SettingsView() {
@@ -94,8 +94,10 @@ function ProviderKeyRow({
       setInputKey("");
       setShowInput(false);
       onSelect();
+      useToastStore.getState().addToast("success", `${providerName} API key saved`);
     } catch (err) {
-      console.error(err);
+      const message = typeof err === "string" ? err : String(err);
+      useToastStore.getState().addToast("error", message);
     } finally {
       setSaving(false);
     }

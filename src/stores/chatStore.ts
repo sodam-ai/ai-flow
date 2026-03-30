@@ -11,6 +11,7 @@ import {
   cancelStream,
 } from "@/lib/ipc/invoke";
 import { useSettingsStore } from "./settingsStore";
+import { useToastStore } from "./toastStore";
 
 interface ChatState {
   // Conversations
@@ -106,7 +107,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const streamId = crypto.randomUUID();
     let accumulated = "";
 
-    set({ isStreaming: true, streamingContent: "", currentStreamId: streamId });
+    // Optimistic UI: show user message immediately (before DB save)
+    const optimisticMsg: Message = {
+      id: `optimistic-${streamId}`,
+      conversationId: activeConversationId,
+      role: "user",
+      content,
+      inputTokens: null,
+      outputTokens: null,
+      costUsd: null,
+      createdAt: new Date().toISOString(),
+    };
+    set((s) => ({
+      isStreaming: true,
+      streamingContent: "",
+      currentStreamId: streamId,
+      messages: {
+        ...s.messages,
+        [activeConversationId]: [
+          ...(s.messages[activeConversationId] ?? []),
+          optimisticMsg,
+        ],
+      },
+    }));
 
     // Capture conversation ID to avoid stale closure
     const targetConvId = activeConversationId;
@@ -130,6 +153,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           get().loadConversations();
         } else if (chunk.type === "error") {
           set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+          useToastStore.getState().addToast("error", chunk.error ?? "AI streaming failed");
         }
       },
     );
@@ -138,7 +162,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       await promise;
     } catch (err) {
       set({ isStreaming: false, streamingContent: "", currentStreamId: null });
-      console.error("Stream error:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast("error", message);
     }
   },
 
