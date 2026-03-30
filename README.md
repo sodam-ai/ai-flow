@@ -26,7 +26,9 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Prompt Library** | Save, tag, search prompts with `{{variable}}` slots |
 | **Command Palette** (`Ctrl+K`) | Natural language access to all app features |
 | **File Drag & Drop** | Drop PDF, TXT, MD, code, or images directly into AI chat |
-| **Auto Updater** | Ed25519 signed updates with downgrade protection |
+| **Clipboard → AI** (`Alt+Shift+A`) | Send clipboard content to AI instantly from any app |
+| **System Tray** | Runs in background, tray menu for quick access |
+| **DB Auto-Backup** | Automatic backup before migrations (keeps 5 most recent) |
 | **Dark Mode** | Dark theme by default, clean minimal UI |
 | **i18n** | Korean + English (more languages planned) |
 
@@ -35,7 +37,7 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | Layer | Technology |
 |-------|-----------|
 | Desktop | Tauri 2 (Rust backend) |
-| Frontend | React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui |
+| Frontend | React 19 + TypeScript + Tailwind CSS v4 |
 | Database | SQLite + SQLCipher (AES-256, PBKDF2-SHA512 250k iterations) |
 | API Keys | Windows Credential Manager via OS keychain |
 | State | Zustand |
@@ -100,7 +102,7 @@ AIFlow does **not** require a `.env` file. All secrets are stored in the OS keyc
 ai-flow/
 ├── .PRD/                  # Product Requirements Documents (17 files)
 ├── src/                   # React frontend
-│   ├── components/        # UI components (shadcn/ui)
+│   ├── components/        # UI components (chat, overlay, prompts, palette)
 │   ├── stores/            # Zustand state management
 │   ├── lib/               # Utilities, IPC, schemas
 │   ├── views/             # Page-level components
@@ -122,15 +124,21 @@ ai-flow/
 ## Architecture
 
 ```
-┌─ React WebView ──────────┐    ┌─ Rust Backend ──────────────┐
-│  UI + Zod validation      │◄──►│  commands/ (IPC adapters)   │
-│  Zustand state            │    │  services/ (business logic) │
-│  react-i18next            │    │    ├─ provider_trait.rs      │
-└──────────────────────────┘    │    ├─ providers/ (3 impls)   │
-                                │    ├─ key_validator.rs        │
-                                │    └─ cost.rs (USD + KRW)    │
+┌─ Main Window (React) ────┐    ┌─ Rust Backend ──────────────┐
+│  Chat + Sidebar + Settings│◄──►│  commands/ (IPC adapters)   │
+│  PersonaSelector          │    │  services/ (business logic) │
+│  PromptLibrary + Editor   │    │    ├─ provider_trait.rs      │
+│  CommandPalette (Ctrl+K)  │    │    ├─ providers/ (3 impls)   │
+│  FileDropZone             │    │    ├─ persona.rs, prompt.rs  │
+│  Zustand + Zod + i18n     │    │    ├─ file_handler.rs        │
+└──────────────────────────┘    │    └─ cost.rs (USD + KRW)    │
                                 │  models/  (data structs)     │
-                                │  db/     (SQLCipher pool)    │
+┌─ Overlay Window (640px) ─┐    │  db/ (SQLCipher + backups)   │
+│  Compact AI chat          │◄──►│                              │
+│  Alt+Space global hotkey  │    │  Global shortcuts:           │
+│  ESC to close             │    │    Alt+Space → overlay       │
+└──────────────────────────┘    │    Alt+Shift+A → clipboard   │
+                                │  System tray (background)    │
                                 └──────────────┬───────────────┘
                                                │
                           ┌────────────────────┼────────────────────┐
@@ -169,7 +177,7 @@ Adding a new AI provider requires **zero changes** to existing code:
 | Phase | Focus | Status |
 |-------|-------|--------|
 | **1a** | Core MVP (chat, cost, security, i18n) | **Complete** |
-| **1b** | Hotkey, personas, prompts, updater | **Next** |
+| **1b** | Hotkey, overlay, personas, prompts, tray, file drop | **Complete** |
 | **2** | Multi-AI, smart routing, privacy mode, Pro tier | Planned |
 | **3** | RAG, voice, agents, plugin API | Planned |
 
