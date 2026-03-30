@@ -4,6 +4,7 @@ import type {
   Message,
   ApiKeyStatus,
   StreamChunk,
+  ModelInfo,
 } from "@/types";
 
 // ─── Keychain ───
@@ -23,6 +24,13 @@ export async function getApiKeyStatus(
 
 export async function deleteApiKey(provider: string): Promise<void> {
   return invoke("delete_api_key", { provider });
+}
+
+export async function validateApiKeyOnly(
+  provider: string,
+  key: string,
+): Promise<void> {
+  return invoke("validate_api_key_only", { provider, key });
 }
 
 // ─── Conversations ───
@@ -60,6 +68,14 @@ export async function renameConversation(
 
 export async function togglePin(conversationId: string): Promise<void> {
   return invoke("toggle_pin", { conversationId });
+}
+
+// ─── AI Models ───
+
+export async function getModelCatalog(
+  providerId?: string,
+): Promise<ModelInfo[]> {
+  return invoke("get_model_catalog", { providerId: providerId ?? null });
 }
 
 // ─── AI Streaming ───

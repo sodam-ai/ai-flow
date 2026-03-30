@@ -56,7 +56,19 @@ export interface StreamChunk {
   inputTokens?: number;
   outputTokens?: number;
   costUsd?: number;
+  costKrw?: number;
+  exchangeRate?: number;
   error?: string;
+}
+
+// Model catalog entry (from Rust provider trait)
+export interface ModelInfo {
+  id: string;
+  name: string;
+  providerId: string;
+  inputPricePerM: number;  // USD per 1M input tokens
+  outputPricePerM: number; // USD per 1M output tokens
+  maxContext: number;
 }
 
 // Cost display

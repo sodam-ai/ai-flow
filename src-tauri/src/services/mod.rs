@@ -6,3 +6,4 @@ pub mod audit;
 pub mod stream_registry;
 pub mod provider_trait;
 pub mod providers;
+pub mod key_validator;

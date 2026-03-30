@@ -45,6 +45,7 @@ pub fn run() {
             commands::keychain::save_api_key,
             commands::keychain::get_api_key_status,
             commands::keychain::delete_api_key,
+            commands::keychain::validate_api_key_only,
             commands::chat::create_conversation,
             commands::chat::get_conversations,
             commands::chat::get_messages,
@@ -53,6 +54,7 @@ pub fn run() {
             commands::chat::toggle_pin,
             commands::ai::stream_ai_message,
             commands::ai::cancel_stream,
+            commands::ai::get_model_catalog,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
