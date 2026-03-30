@@ -47,6 +47,19 @@ export interface Message {
   outputTokens: number | null;
   costUsd: number | null;
   createdAt: string;
+  versionCount: number;
+  activeVersion: number;
+}
+
+export interface MessageVersion {
+  id: string;
+  messageId: string;
+  versionNumber: number;
+  content: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  costUsd: number | null;
+  createdAt: string;
 }
 
 // Streaming

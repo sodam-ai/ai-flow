@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { useChatStore } from "@/stores/chatStore";
@@ -154,10 +154,19 @@ function MainApp() {
     };
   }, [activeConversationId, activeProviderId, activeModelId, createChat, sendMessage]);
 
+  const [sidebarSearch, setSidebarSearch] = useState("");
+
   const handleNewChat = async () => {
     await createChat(activeProviderId, activeModelId);
     setCurrentView("chat");
   };
+
+  // Filter conversations by search query
+  const filteredConversations = useMemo(() => {
+    if (!sidebarSearch.trim()) return conversations;
+    const q = sidebarSearch.toLowerCase();
+    return conversations.filter((c) => c.title.toLowerCase().includes(q));
+  }, [conversations, sidebarSearch]);
 
   const conversationMessages = activeConversationId
     ? (messages[activeConversationId] ?? [])
@@ -198,8 +207,20 @@ function MainApp() {
           </button>
         </div>
 
+        {/* Search */}
+        {conversations.length > 3 && (
+          <div className="px-2 py-1.5">
+            <input
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
+              placeholder={t("prompt.search")}
+              className="w-full px-2 py-1 text-xs bg-zinc-900 border border-zinc-800 rounded focus:border-zinc-600 focus:outline-none placeholder-zinc-600"
+            />
+          </div>
+        )}
+
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {conversations.map((conv) => (
+          {filteredConversations.map((conv) => (
             <ConversationItem
               key={conv.id}
               conversation={conv}

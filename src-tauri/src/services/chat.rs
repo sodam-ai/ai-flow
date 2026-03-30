@@ -1,5 +1,5 @@
 use crate::db::pool::Database;
-use crate::models::conversation::{Conversation, Message};
+use crate::models::conversation::{Conversation, Message, MessageVersion};
 
 /// Create a new conversation
 pub fn create_conversation(
@@ -72,7 +72,7 @@ pub fn get_messages(
 ) -> Result<Vec<Message>, String> {
     db.read(|conn| {
         let mut stmt = conn.prepare(
-            "SELECT id, conversation_id, role, content, input_tokens, output_tokens, cost_usd, created_at
+            "SELECT id, conversation_id, role, content, input_tokens, output_tokens, cost_usd, created_at, version_count, active_version
              FROM messages
              WHERE conversation_id = ?1
              ORDER BY created_at DESC
@@ -89,6 +89,8 @@ pub fn get_messages(
                 output_tokens: row.get(5)?,
                 cost_usd: row.get(6)?,
                 created_at: row.get(7)?,
+                version_count: row.get(8)?,
+                active_version: row.get(9)?,
             })
         })?;
 
@@ -139,5 +141,117 @@ pub fn save_message(
         output_tokens,
         cost_usd,
         created_at: now,
+        version_count: 1,
+        active_version: 1,
+    })
+}
+
+/// Save current message content as a version before regeneration
+pub fn save_message_version(db: &Database, message_id: &str) -> Result<(), String> {
+    db.write(|conn| {
+        // Get current message state
+        let (content, input_tokens, output_tokens, cost_usd, version_count): (String, Option<i64>, Option<i64>, Option<f64>, i32) =
+            conn.query_row(
+                "SELECT content, input_tokens, output_tokens, cost_usd, version_count FROM messages WHERE id = ?1",
+                rusqlite::params![message_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
+            )?;
+
+        let version_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // Save current content as a version
+        conn.execute(
+            "INSERT INTO message_versions (id, message_id, version_number, content, input_tokens, output_tokens, cost_usd, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            rusqlite::params![version_id, message_id, version_count, content, input_tokens, output_tokens, cost_usd, now],
+        )?;
+
+        Ok(())
+    })
+}
+
+/// Update message content after regeneration
+pub fn update_message_for_regeneration(
+    db: &Database,
+    message_id: &str,
+    new_content: &str,
+    input_tokens: Option<i64>,
+    output_tokens: Option<i64>,
+    cost_usd: Option<f64>,
+) -> Result<i32, String> {
+    db.write(|conn| {
+        conn.execute(
+            "UPDATE messages SET content = ?2, input_tokens = ?3, output_tokens = ?4, cost_usd = ?5,
+             version_count = version_count + 1, active_version = version_count + 1
+             WHERE id = ?1",
+            rusqlite::params![message_id, new_content, input_tokens, output_tokens, cost_usd],
+        )?;
+
+        let new_version: i32 = conn.query_row(
+            "SELECT active_version FROM messages WHERE id = ?1",
+            rusqlite::params![message_id],
+            |row| row.get(0),
+        )?;
+
+        Ok(new_version)
+    })
+}
+
+/// Get all versions of a message
+pub fn get_message_versions(db: &Database, message_id: &str) -> Result<Vec<MessageVersion>, String> {
+    db.read(|conn| {
+        let mut stmt = conn.prepare(
+            "SELECT id, message_id, version_number, content, input_tokens, output_tokens, cost_usd, created_at
+             FROM message_versions
+             WHERE message_id = ?1
+             ORDER BY version_number ASC",
+        )?;
+
+        let rows = stmt.query_map(rusqlite::params![message_id], |row| {
+            Ok(MessageVersion {
+                id: row.get(0)?,
+                message_id: row.get(1)?,
+                version_number: row.get(2)?,
+                content: row.get(3)?,
+                input_tokens: row.get(4)?,
+                output_tokens: row.get(5)?,
+                cost_usd: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?;
+
+        rows.collect::<Result<Vec<_>, _>>()
+    })
+}
+
+/// Search messages across all conversations
+pub fn search_messages(db: &Database, query: &str, limit: i64) -> Result<Vec<Message>, String> {
+    let search_pattern = format!("%{}%", query);
+    db.read(|conn| {
+        let mut stmt = conn.prepare(
+            "SELECT m.id, m.conversation_id, m.role, m.content, m.input_tokens, m.output_tokens, m.cost_usd, m.created_at, m.version_count, m.active_version
+             FROM messages m
+             WHERE m.content LIKE ?1
+             ORDER BY m.created_at DESC
+             LIMIT ?2",
+        )?;
+
+        let rows = stmt.query_map(rusqlite::params![search_pattern, limit], |row| {
+            Ok(Message {
+                id: row.get(0)?,
+                conversation_id: row.get(1)?,
+                role: row.get(2)?,
+                content: row.get(3)?,
+                input_tokens: row.get(4)?,
+                output_tokens: row.get(5)?,
+                cost_usd: row.get(6)?,
+                created_at: row.get(7)?,
+                version_count: row.get(8)?,
+                active_version: row.get(9)?,
+            })
+        })?;
+
+        rows.collect::<Result<Vec<_>, _>>()
     })
 }

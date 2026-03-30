@@ -147,8 +147,11 @@ pub fn run() {
             commands::chat::delete_conversation,
             commands::chat::rename_conversation,
             commands::chat::toggle_pin,
+            commands::chat::get_message_versions,
+            commands::chat::search_messages,
             // AI streaming
             commands::ai::stream_ai_message,
+            commands::ai::regenerate_ai_message,
             commands::ai::cancel_stream,
             commands::ai::get_model_catalog,
             // Personas (Phase 1b)

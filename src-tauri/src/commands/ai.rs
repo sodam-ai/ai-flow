@@ -186,6 +186,104 @@ fn generate_title(message: &str) -> String {
     }
 }
 
+/// Regenerate an AI response — saves current as version, streams new response
+#[tauri::command]
+pub async fn regenerate_ai_message(
+    state: State<'_, AppState>,
+    message_id: String,
+    conversation_id: String,
+    provider_id: String,
+    model_id: String,
+    stream_id: String,
+    persona_id: Option<String>,
+    channel: tauri::ipc::Channel<serde_json::Value>,
+) -> Result<(), String> {
+    // Save current message content as a version
+    crate::services::chat::save_message_version(&state.db, &message_id)?;
+
+    // Register stream for cancellation
+    let cancel_rx = state.streams.register(&stream_id)?;
+
+    // Get API key
+    let api_key = crate::services::keychain::get_key_internal(&provider_id)?;
+
+    // Load conversation messages (excluding the message being regenerated)
+    let messages = crate::services::chat::get_messages(&state.db, &conversation_id, 50)?;
+    let context_messages: Vec<_> = messages
+        .into_iter()
+        .filter(|m| m.id != message_id)
+        .collect();
+
+    // Get persona system prompt if set
+    let system_prompt = persona_id.as_ref().and_then(|pid| {
+        crate::services::persona::get_persona(&state.db, pid)
+            .ok()
+            .map(|p| p.system_prompt)
+    });
+
+    // Stream new AI response
+    let result = crate::services::ai_client::stream_chat(
+        &provider_id,
+        &model_id,
+        &api_key,
+        &context_messages,
+        system_prompt.as_deref(),
+        &channel,
+        cancel_rx,
+    )
+    .await;
+
+    drop(api_key);
+
+    match result {
+        Ok((full_content, usage)) => {
+            let cost = crate::services::cost::calc_cost_full(
+                &provider_id,
+                &model_id,
+                usage.input_tokens,
+                usage.output_tokens,
+                None,
+            );
+
+            // Update the message with new content (increments version_count)
+            let new_version = crate::services::chat::update_message_for_regeneration(
+                &state.db,
+                &message_id,
+                &full_content,
+                Some(usage.input_tokens),
+                Some(usage.output_tokens),
+                Some(cost.usd),
+            )?;
+
+            crate::services::audit::log_event(
+                &state.db,
+                "ai_regenerated",
+                "INFO",
+                Some(&format!("msg={} version={}", &message_id[..8], new_version)),
+            );
+
+            let _ = channel.send(serde_json::json!({
+                "type": "done",
+                "inputTokens": usage.input_tokens,
+                "outputTokens": usage.output_tokens,
+                "costUsd": cost.usd,
+                "costKrw": cost.krw,
+                "exchangeRate": cost.exchange_rate,
+                "newVersion": new_version,
+            }));
+        }
+        Err(e) => {
+            let _ = channel.send(serde_json::json!({
+                "type": "error",
+                "error": e,
+            }));
+        }
+    }
+
+    state.streams.remove(&stream_id);
+    Ok(())
+}
+
 /// Get model catalog for a specific provider (or all providers)
 #[tauri::command]
 pub async fn get_model_catalog(

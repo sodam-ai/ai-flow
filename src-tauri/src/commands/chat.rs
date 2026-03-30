@@ -1,4 +1,4 @@
-use crate::models::conversation::{Conversation, Message};
+use crate::models::conversation::{Conversation, Message, MessageVersion};
 use crate::services;
 use crate::AppState;
 use tauri::State;
@@ -72,4 +72,22 @@ pub async fn toggle_pin(
         )?;
         Ok(())
     })
+}
+
+#[tauri::command]
+pub async fn get_message_versions(
+    state: State<'_, AppState>,
+    message_id: String,
+) -> Result<Vec<MessageVersion>, String> {
+    services::chat::get_message_versions(&state.db, &message_id)
+}
+
+#[tauri::command]
+pub async fn search_messages(
+    state: State<'_, AppState>,
+    query: String,
+    limit: Option<i64>,
+) -> Result<Vec<Message>, String> {
+    let limit = limit.unwrap_or(20).min(50);
+    services::chat::search_messages(&state.db, &query, limit)
 }

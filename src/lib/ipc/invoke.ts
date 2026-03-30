@@ -2,6 +2,7 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import type {
   Conversation,
   Message,
+  MessageVersion,
   ApiKeyStatus,
   StreamChunk,
   ModelInfo,
@@ -157,6 +158,45 @@ export function streamAiMessage(
 export async function cancelStream(streamId: string): Promise<void> {
   validate(cancelStreamSchema, { streamId });
   return invoke("cancel_stream", { streamId });
+}
+
+// ─── AI Regeneration ───
+
+export function regenerateAiMessage(
+  messageId: string,
+  conversationId: string,
+  providerId: string,
+  modelId: string,
+  streamId: string,
+  personaId: string | null,
+  onChunk: (chunk: StreamChunk) => void,
+): { promise: Promise<void>; channel: Channel<StreamChunk> } {
+  const channel = new Channel<StreamChunk>();
+  channel.onmessage = onChunk;
+
+  const promise = invoke<void>("regenerate_ai_message", {
+    messageId,
+    conversationId,
+    providerId,
+    modelId,
+    streamId,
+    personaId,
+    channel,
+  });
+
+  return { promise, channel };
+}
+
+// ─── Message Versions ───
+
+export async function getMessageVersions(messageId: string): Promise<MessageVersion[]> {
+  return invoke("get_message_versions", { messageId });
+}
+
+// ─── Search ───
+
+export async function searchMessages(query: string, limit?: number): Promise<Message[]> {
+  return invoke("search_messages", { query, limit: limit ?? 20 });
 }
 
 // ─── Personas (Phase 1b) ───

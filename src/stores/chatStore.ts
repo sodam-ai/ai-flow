@@ -8,6 +8,7 @@ import {
   togglePin,
   deleteConversation,
   streamAiMessage,
+  regenerateAiMessage,
   cancelStream,
 } from "@/lib/ipc/invoke";
 import { useSettingsStore } from "./settingsStore";
@@ -34,6 +35,7 @@ interface ChatState {
   streamingContent: string;
   currentStreamId: string | null;
   sendMessage: (content: string) => Promise<void>;
+  regenerateMessage: (messageId: string) => Promise<void>;
   cancelCurrentStream: () => Promise<void>;
 }
 
@@ -118,6 +120,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       outputTokens: null,
       costUsd: null,
       createdAt: new Date().toISOString(),
+      versionCount: 1,
+      activeVersion: 1,
     };
     set((s) => ({
       isStreaming: true,
@@ -157,6 +161,49 @@ export const useChatStore = create<ChatState>((set, get) => ({
         } else if (chunk.type === "error") {
           set({ isStreaming: false, streamingContent: "", currentStreamId: null });
           useToastStore.getState().addToast("error", chunk.error ?? "AI streaming failed");
+        }
+      },
+    );
+
+    try {
+      await promise;
+    } catch (err) {
+      set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+      const message = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast("error", message);
+    }
+  },
+
+  regenerateMessage: async (messageId) => {
+    const { activeConversationId } = get();
+    if (!activeConversationId) return;
+
+    const streamId = crypto.randomUUID();
+    let accumulated = "";
+
+    set({ isStreaming: true, streamingContent: "", currentStreamId: streamId });
+
+    const targetConvId = activeConversationId;
+    const { activeProviderId, activeModelId } = useSettingsStore.getState();
+    const activePersonaId = usePersonaStore.getState().activePersonaId;
+
+    const { promise } = regenerateAiMessage(
+      messageId,
+      targetConvId,
+      activeProviderId,
+      activeModelId,
+      streamId,
+      activePersonaId,
+      (chunk: StreamChunk) => {
+        if (chunk.type === "token" && chunk.token) {
+          accumulated += chunk.token;
+          set({ streamingContent: accumulated });
+        } else if (chunk.type === "done") {
+          set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+          get().loadMessages(targetConvId);
+        } else if (chunk.type === "error") {
+          set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+          useToastStore.getState().addToast("error", chunk.error ?? "Regeneration failed");
         }
       },
     );
