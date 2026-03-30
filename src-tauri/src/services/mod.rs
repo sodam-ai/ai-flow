@@ -4,3 +4,5 @@ pub mod chat;
 pub mod cost;
 pub mod audit;
 pub mod stream_registry;
+pub mod provider_trait;
+pub mod providers;

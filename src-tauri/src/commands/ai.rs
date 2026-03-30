@@ -23,25 +23,62 @@ pub async fn stream_ai_message(
     // Get API key from keychain (internal only, never sent to frontend)
     let api_key = crate::services::keychain::get_key_internal(&provider_id)?;
 
-    // TODO: Implement actual AI API streaming with Provider Trait
-    // For now, send a placeholder response
-    let _ = channel.send(serde_json::json!({
-        "type": "token",
-        "token": "AI streaming will be implemented next. Provider: "
-    }));
-    let _ = channel.send(serde_json::json!({
-        "type": "token",
-        "token": &provider_id
-    }));
-    let _ = channel.send(serde_json::json!({
-        "type": "done",
-        "inputTokens": 10,
-        "outputTokens": 8,
-        "costUsd": 0.0001
-    }));
+    // Load conversation messages for context
+    let messages = crate::services::chat::get_messages(&state.db, &conversation_id, 50)?;
 
-    // Clean up
+    // Stream AI response
+    let result = crate::services::ai_client::stream_chat(
+        &provider_id,
+        &model_id,
+        &api_key,
+        &messages,
+        None, // TODO: persona system prompt (Phase 1b)
+        &channel,
+        cancel_rx,
+    )
+    .await;
+
+    // Zeroize API key reference
     drop(api_key);
+
+    match result {
+        Ok((full_content, usage)) => {
+            // Calculate cost
+            let cost_usd = crate::services::cost::calc_cost(
+                &provider_id,
+                &model_id,
+                usage.input_tokens,
+                usage.output_tokens,
+            );
+
+            // Save assistant message with usage stats
+            let _assistant_msg = crate::services::chat::save_message(
+                &state.db,
+                &conversation_id,
+                "assistant",
+                &full_content,
+                Some(usage.input_tokens),
+                Some(usage.output_tokens),
+                Some(cost_usd),
+            )?;
+
+            // Send completion event
+            let _ = channel.send(serde_json::json!({
+                "type": "done",
+                "inputTokens": usage.input_tokens,
+                "outputTokens": usage.output_tokens,
+                "costUsd": cost_usd,
+            }));
+        }
+        Err(e) => {
+            let _ = channel.send(serde_json::json!({
+                "type": "error",
+                "error": e,
+            }));
+        }
+    }
+
+    // Clean up stream registry
     state.streams.remove(&stream_id);
 
     Ok(())

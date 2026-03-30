@@ -10,6 +10,7 @@ import {
   streamAiMessage,
   cancelStream,
 } from "@/lib/ipc/invoke";
+import { useSettingsStore } from "./settingsStore";
 
 interface ChatState {
   // Conversations
@@ -110,11 +111,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // Capture conversation ID to avoid stale closure
     const targetConvId = activeConversationId;
 
+    const { activeProviderId, activeModelId } = useSettingsStore.getState();
+
     const { promise } = streamAiMessage(
       targetConvId,
       content,
-      "openai", // TODO: use settingsStore.activeProviderId
-      "gpt-4o", // TODO: use settingsStore.activeModelId
+      activeProviderId,
+      activeModelId,
       streamId,
       (chunk: StreamChunk) => {
         if (chunk.type === "token" && chunk.token) {
