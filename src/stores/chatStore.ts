@@ -12,9 +12,30 @@ import {
   cancelStream,
   streamRoutedMessage,
 } from "@/lib/ipc/invoke";
+import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { useSettingsStore } from "./settingsStore";
 import { usePersonaStore } from "./personaStore";
 import { useToastStore } from "./toastStore";
+
+/** Send OS notification when stream finishes (only if window not focused) */
+async function notifyCompletion(provider: string, tokens: number, costUsd: number) {
+  try {
+    if (document.hasFocus()) return; // Only notify when minimized/background
+    let granted = await isPermissionGranted();
+    if (!granted) {
+      const perm = await requestPermission();
+      granted = perm === "granted";
+    }
+    if (granted) {
+      sendNotification({
+        title: "AIFlow — Response Ready",
+        body: `${provider} finished (${tokens} tokens, $${costUsd.toFixed(4)})`,
+      });
+    }
+  } catch {
+    // Notification API may not be available — silently ignore
+  }
+}
 
 interface ChatState {
   // Conversations
@@ -191,6 +212,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set({ isStreaming: false, streamingContent: "", currentStreamId: null });
         get().loadMessages(targetConvId);
         get().loadConversations();
+        // OS notification when minimized (Phase 2: completion alert)
+        const provider = chunk.actualProvider ?? useSettingsStore.getState().activeProviderId;
+        notifyCompletion(provider, chunk.outputTokens ?? 0, chunk.costUsd ?? 0);
       } else if (chunk.type === "error") {
         set({ isStreaming: false, streamingContent: "", currentStreamId: null });
         useToastStore.getState().addToast("error", chunk.error ?? "AI streaming failed");
@@ -252,6 +276,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         } else if (chunk.type === "done") {
           set({ isStreaming: false, streamingContent: "", currentStreamId: null });
           get().loadMessages(targetConvId);
+          notifyCompletion("AI", chunk.outputTokens ?? 0, chunk.costUsd ?? 0);
         } else if (chunk.type === "error") {
           set({ isStreaming: false, streamingContent: "", currentStreamId: null });
           useToastStore.getState().addToast("error", chunk.error ?? "Regeneration failed");

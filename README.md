@@ -31,6 +31,15 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **DB Auto-Backup** | Automatic backup before migrations (keeps 5 most recent) |
 | **Dark Mode** | Dark theme by default, clean minimal UI |
 | **i18n** | Korean + English (more languages planned) |
+| **Multi-AI Compare** | Stream 2~3 AI models side-by-side, pick the best response |
+| **Smart Routing** | Auto-select the best AI based on prompt complexity (0~100 score) |
+| **Privacy Mode** | PII scanner (SSN, phone, email, etc.) with mask-before-send preview |
+| **Local LLM** | Auto-detect Ollama/LM Studio, use local models for free |
+| **Cost Dashboard** | Model-by-model cost breakdown, daily charts, USD + KRW |
+| **Monthly Budget** | Set spending limit, get alerts at 80% threshold |
+| **Prompt Versions** | Auto-saved edit history, compare and restore any version |
+| **Completion Alerts** | OS notification when AI response finishes (if minimized) |
+| **Screenshot → AI** (`Ctrl+Shift+S`) | Paste screenshot to send to Vision AI |
 
 ## Tech Stack
 
@@ -126,12 +135,14 @@ ai-flow/
 ```
 ┌─ Main Window (React) ────┐    ┌─ Rust Backend ──────────────┐
 │  Chat + Sidebar + Settings│◄──►│  commands/ (IPC adapters)   │
-│  PersonaSelector          │    │  services/ (business logic) │
-│  PromptLibrary + Editor   │    │    ├─ provider_trait.rs      │
-│  CommandPalette (Ctrl+K)  │    │    ├─ providers/ (3 impls)   │
-│  FileDropZone             │    │    ├─ persona.rs, prompt.rs  │
-│  Zustand + Zod + i18n     │    │    ├─ file_handler.rs        │
-└──────────────────────────┘    │    └─ cost.rs (USD + KRW)    │
+│  MultiStreamView (compare)│    │  services/ (business logic) │
+│  CostReportView (budget)  │    │    ├─ provider_trait.rs      │
+│  PersonaSelector          │    │    ├─ providers/ (4 impls)   │
+│  PromptLibrary + Editor   │    │    ├─ routing.rs (smart AI)  │
+│  CommandPalette (Ctrl+K)  │    │    ├─ multi_stream.rs        │
+│  PII Scanner (local)      │    │    ├─ privacy.rs, cost.rs    │
+│  Zustand + Zod + i18n     │    │    ├─ local_llm.rs           │
+└──────────────────────────┘    │    └─ cost_report.rs (budget)│
                                 │  models/  (data structs)     │
 ┌─ Overlay Window (640px) ─┐    │  db/ (SQLCipher + backups)   │
 │  Compact AI chat          │◄──►│                              │
@@ -170,6 +181,9 @@ Adding a new AI provider requires **zero changes** to existing code:
 - **Streaming**: Tauri ipc::Channel (not EventSystem), with cancellation support
 - **CSP**: `default-src 'self'` (no unsafe-eval)
 - **Audit Log**: Immutable INSERT-only log (api_key_saved, ai_stream_started/completed/failed)
+- **Privacy Mode**: 100% local PII scanner — personal data never leaves your machine
+- **Smart Routing**: Fallback chain prevents single-provider outage
+- **Budget Guard**: Monthly spending limits with threshold alerts
 - **Updates**: Ed25519 signature verification
 
 ## Roadmap
@@ -178,7 +192,7 @@ Adding a new AI provider requires **zero changes** to existing code:
 |-------|-------|--------|
 | **1a** | Core MVP (chat, cost, security, i18n) | **Complete** |
 | **1b** | Hotkey, overlay, personas, prompts, tray, file drop | **Complete** |
-| **2** | Multi-AI, smart routing, privacy mode, Pro tier | Planned |
+| **2** | Multi-AI, smart routing, privacy, cost dashboard, budget, prompt versions | **9/15 Complete** |
 | **3** | RAG, voice, agents, plugin API | Planned |
 
 ## License
