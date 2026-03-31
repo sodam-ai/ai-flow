@@ -313,7 +313,7 @@ function MainApp() {
             </div>
             <ChatInput
               isStreaming={isStreaming}
-              onSubmit={(content) => sendMessage(content)}
+              onSubmit={(content, opts) => sendMessage(content, opts)}
               onCancel={cancelCurrentStream}
             />
           </>

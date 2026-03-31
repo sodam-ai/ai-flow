@@ -5,8 +5,10 @@ import { usePersonaStore } from "@/stores/personaStore";
 import { useToastStore } from "@/stores/toastStore";
 import { PROVIDERS } from "@/lib/providers";
 import PersonaEditor from "@/components/chat/PersonaEditor";
-import type { Persona } from "@/types";
-import { Eye, EyeOff, Trash2, Check, Loader2, Plus, Pencil, Keyboard } from "lucide-react";
+import type { Persona, LocalLlmDetectionResult } from "@/types";
+import { detectLocalLlms, getRoutingRules } from "@/lib/ipc/invoke";
+import type { RoutingRule } from "@/types";
+import { Eye, EyeOff, Trash2, Check, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield } from "lucide-react";
 
 export default function SettingsView() {
   const { t, i18n } = useTranslation();
@@ -125,6 +127,12 @@ export default function SettingsView() {
           ))}
         </div>
       </section>
+
+      {/* Local LLM Detection (Phase 2) */}
+      <LocalLlmSection />
+
+      {/* Smart Routing Rules (Phase 2) */}
+      <RoutingRulesSection />
 
       {/* Keyboard Shortcuts */}
       <section className="mb-8">
@@ -288,5 +296,189 @@ function ProviderKeyRow({
         </div>
       )}
     </div>
+  );
+}
+
+/** Local LLM Detection Section */
+function LocalLlmSection() {
+  const [results, setResults] = useState<LocalLlmDetectionResult[]>([]);
+  const [scanning, setScanning] = useState(false);
+
+  const handleScan = async () => {
+    setScanning(true);
+    try {
+      const detected = await detectLocalLlms();
+      setResults(detected);
+      const running = detected.filter((r) => r.isRunning);
+      if (running.length > 0) {
+        const totalModels = running.reduce((sum, r) => sum + r.models.length, 0);
+        useToastStore.getState().addToast("success", `Found ${totalModels} local model(s)`);
+      } else {
+        useToastStore.getState().addToast("info", "No local AI servers detected");
+      }
+    } catch (err) {
+      useToastStore.getState().addToast("error", String(err));
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  return (
+    <section className="mb-8">
+      <h3 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+        <Cpu className="w-4 h-4" />
+        Local AI (Ollama / LM Studio)
+      </h3>
+      <div className="space-y-2">
+        <button
+          onClick={handleScan}
+          disabled={scanning}
+          className="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          {scanning ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Cpu className="w-3 h-3" />
+          )}
+          {scanning ? "Scanning..." : "Scan for Local AI"}
+        </button>
+
+        {results.map((r) => (
+          <div
+            key={r.baseUrl}
+            className="p-3 rounded-lg bg-zinc-900 border border-zinc-800"
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-xs font-medium">{r.endpointName}</span>
+              <span className="text-[10px] text-zinc-500">{r.baseUrl}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  r.isRunning
+                    ? "bg-emerald-900/50 text-emerald-400"
+                    : "bg-red-900/50 text-red-400"
+                }`}
+              >
+                {r.isRunning ? "Running" : "Offline"}
+              </span>
+            </div>
+            {r.isRunning && r.models.length > 0 && (
+              <div className="space-y-1 mt-2">
+                {r.models.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-zinc-950">
+                    <span className="text-zinc-300 font-mono">{m.modelName}</span>
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                      {m.modelSize && <span>{m.modelSize}</span>}
+                      {m.parameterCount && <span>{m.parameterCount}</span>}
+                      <span className="text-green-400">Free</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Routing Rules + Privacy Toggle Section */
+function RoutingRulesSection() {
+  const [rules, setRules] = useState<RoutingRule[]>([]);
+  const routingMode = useSettingsStore((s) => s.routingMode);
+  const setRoutingMode = useSettingsStore((s) => s.setRoutingMode);
+  const privacyMode = useSettingsStore((s) => s.privacyMode);
+  const setPrivacyMode = useSettingsStore((s) => s.setPrivacyMode);
+
+  useEffect(() => {
+    getRoutingRules().then(setRules).catch(() => {});
+  }, []);
+
+  const complexityColor = (min: number) => {
+    if (min <= 30) return "text-green-400";
+    if (min <= 60) return "text-yellow-400";
+    return "text-red-400";
+  };
+
+  return (
+    <section className="mb-8">
+      <h3 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+        <Zap className="w-4 h-4" />
+        Smart Features
+      </h3>
+      <div className="space-y-3">
+        {/* Toggle: Smart Routing */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+          <div>
+            <div className="text-xs font-medium flex items-center gap-1.5">
+              <Zap className="w-3 h-3 text-amber-400" />
+              Smart Routing
+            </div>
+            <p className="text-[10px] text-zinc-500 mt-0.5">
+              Auto-select the best AI based on prompt complexity
+            </p>
+          </div>
+          <button
+            onClick={() => setRoutingMode(!routingMode)}
+            className={`w-10 h-5 rounded-full transition-colors ${
+              routingMode ? "bg-amber-500" : "bg-zinc-700"
+            }`}
+          >
+            <div
+              className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                routingMode ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Toggle: Privacy Mode */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+          <div>
+            <div className="text-xs font-medium flex items-center gap-1.5">
+              <Shield className="w-3 h-3 text-blue-400" />
+              Privacy Mode
+            </div>
+            <p className="text-[10px] text-zinc-500 mt-0.5">
+              Scan for personal info (PII) before sending to AI
+            </p>
+          </div>
+          <button
+            onClick={() => setPrivacyMode(!privacyMode)}
+            className={`w-10 h-5 rounded-full transition-colors ${
+              privacyMode ? "bg-blue-500" : "bg-zinc-700"
+            }`}
+          >
+            <div
+              className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                privacyMode ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Routing rules detail */}
+        {routingMode && rules.length > 0 && (
+          <div className="mt-2">
+            <div className="text-[10px] text-zinc-500 mb-1.5">Active Routing Rules</div>
+            <div className="space-y-1">
+              {rules.filter((r) => r.isActive).map((rule) => (
+                <div key={rule.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800/50 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-mono ${complexityColor(rule.minComplexity)}`}>
+                      {rule.minComplexity}~{rule.maxComplexity}
+                    </span>
+                    <span className="text-zinc-400">{rule.name}</span>
+                  </div>
+                  <span className="text-zinc-500 text-[10px]">
+                    {rule.providerId}:{rule.modelId.slice(-12)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

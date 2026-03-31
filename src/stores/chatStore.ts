@@ -10,6 +10,7 @@ import {
   streamAiMessage,
   regenerateAiMessage,
   cancelStream,
+  streamRoutedMessage,
 } from "@/lib/ipc/invoke";
 import { useSettingsStore } from "./settingsStore";
 import { usePersonaStore } from "./personaStore";
@@ -34,9 +35,26 @@ interface ChatState {
   isStreaming: boolean;
   streamingContent: string;
   currentStreamId: string | null;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, options?: SendOptions) => Promise<void>;
   regenerateMessage: (messageId: string) => Promise<void>;
   cancelCurrentStream: () => Promise<void>;
+
+  // Routing info (Phase 2)
+  lastRoutingInfo: RoutingInfo | null;
+}
+
+interface SendOptions {
+  hasFile?: boolean;
+  hasCode?: boolean;
+}
+
+interface RoutingInfo {
+  complexityScore: number;
+  complexityLabel: string;
+  selectedProvider: string;
+  selectedModel: string;
+  potentialSavings: number;
+  fallbackUsed?: boolean;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -46,6 +64,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isStreaming: false,
   streamingContent: "",
   currentStreamId: null,
+  lastRoutingInfo: null,
 
   loadConversations: async () => {
     const convs = await getConversations();
@@ -103,7 +122,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }));
   },
 
-  sendMessage: async (content) => {
+  sendMessage: async (content, options) => {
     const { activeConversationId } = get();
     if (!activeConversationId) return;
 
@@ -127,6 +146,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isStreaming: true,
       streamingContent: "",
       currentStreamId: streamId,
+      lastRoutingInfo: null,
       messages: {
         ...s.messages,
         [activeConversationId]: [
@@ -136,37 +156,68 @@ export const useChatStore = create<ChatState>((set, get) => ({
       },
     }));
 
-    // Capture conversation ID to avoid stale closure
     const targetConvId = activeConversationId;
-
-    const { activeProviderId, activeModelId } = useSettingsStore.getState();
+    const { activeProviderId, activeModelId, routingMode } = useSettingsStore.getState();
     const activePersonaId = usePersonaStore.getState().activePersonaId;
 
-    const { promise } = streamAiMessage(
-      targetConvId,
-      content,
-      activeProviderId,
-      activeModelId,
-      streamId,
-      activePersonaId,
-      (chunk: StreamChunk) => {
-        if (chunk.type === "token" && chunk.token) {
-          accumulated += chunk.token;
-          set({ streamingContent: accumulated });
-        } else if (chunk.type === "done") {
-          set({ isStreaming: false, streamingContent: "", currentStreamId: null });
-          // Reload messages to get the saved assistant message
-          get().loadMessages(targetConvId);
-          get().loadConversations();
-        } else if (chunk.type === "error") {
-          set({ isStreaming: false, streamingContent: "", currentStreamId: null });
-          useToastStore.getState().addToast("error", chunk.error ?? "AI streaming failed");
+    const handleChunk = (chunk: StreamChunk) => {
+      if (chunk.type === "token" && chunk.token) {
+        accumulated += chunk.token;
+        set({ streamingContent: accumulated });
+      } else if (chunk.type === "routing_info") {
+        // Store routing decision for UI display
+        set({
+          lastRoutingInfo: {
+            complexityScore: chunk.complexityScore ?? 0,
+            complexityLabel: chunk.complexityLabel ?? "unknown",
+            selectedProvider: chunk.selectedProvider ?? "",
+            selectedModel: chunk.selectedModel ?? "",
+            potentialSavings: chunk.potentialSavings ?? 0,
+          },
+        });
+      } else if (chunk.type === "fallback_triggered") {
+        useToastStore.getState().addToast(
+          "info",
+          `${chunk.failedProvider} failed, trying fallback...`,
+        );
+      } else if (chunk.type === "done") {
+        // Capture routing savings if present
+        const routingInfo = get().lastRoutingInfo;
+        if (chunk.costSavedUsd && routingInfo) {
+          set({
+            lastRoutingInfo: { ...routingInfo, potentialSavings: chunk.costSavedUsd },
+          });
         }
-      },
-    );
+        set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+        get().loadMessages(targetConvId);
+        get().loadConversations();
+      } else if (chunk.type === "error") {
+        set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+        useToastStore.getState().addToast("error", chunk.error ?? "AI streaming failed");
+      }
+    };
 
     try {
-      await promise;
+      if (routingMode) {
+        // Smart routing: auto-select best AI based on complexity
+        const hasFile = options?.hasFile ?? false;
+        const hasCode = options?.hasCode ?? /```|function\s|def\s|class\s|import\s/.test(content);
+        const { promise } = streamRoutedMessage(
+          targetConvId, content, streamId,
+          hasFile, hasCode, activePersonaId,
+          handleChunk,
+        );
+        await promise;
+      } else {
+        // Manual mode: use selected provider/model
+        const { promise } = streamAiMessage(
+          targetConvId, content,
+          activeProviderId, activeModelId, streamId,
+          activePersonaId,
+          handleChunk,
+        );
+        await promise;
+      }
     } catch (err) {
       set({ isStreaming: false, streamingContent: "", currentStreamId: null });
       const message = err instanceof Error ? err.message : String(err);

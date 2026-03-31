@@ -1,13 +1,19 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Send, Square, BookOpen } from "lucide-react";
+import { Send, Square, BookOpen, Zap } from "lucide-react";
 import FileDropZone from "./FileDropZone";
+import RoutingBadge from "./RoutingBadge";
+import PiiPreview from "@/components/privacy/PiiPreview";
 import { usePromptStore } from "@/stores/promptStore";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { useChatStore } from "@/stores/chatStore";
+import { detectPii, type PiiMatch } from "@/lib/privacy/pii-detector";
+import { logPiiDetection } from "@/lib/ipc/invoke";
 import type { FileContent } from "@/types";
 
 interface Props {
   isStreaming: boolean;
-  onSubmit: (content: string) => void;
+  onSubmit: (content: string, options?: { hasFile?: boolean; hasCode?: boolean }) => void;
   onCancel: () => void;
 }
 
@@ -17,16 +23,23 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { t } = useTranslation();
   const { setModalOpen } = usePromptStore();
+  const routingMode = useSettingsStore((s) => s.routingMode);
+  const setRoutingMode = useSettingsStore((s) => s.setRoutingMode);
+  const privacyMode = useSettingsStore((s) => s.privacyMode);
+  const lastRoutingInfo = useChatStore((s) => s.lastRoutingInfo);
+  const activeConversationId = useChatStore((s) => s.activeConversationId);
+
+  // PII preview state
+  const [piiMatches, setPiiMatches] = useState<PiiMatch[]>([]);
+  const [pendingContent, setPendingContent] = useState<string>("");
+  const [showPiiPreview, setShowPiiPreview] = useState(false);
 
   const handleAttachmentsChange = useCallback((files: FileContent[]) => {
     setAttachments(files);
   }, []);
 
-  const handleSubmit = () => {
+  const buildFullContent = () => {
     const trimmed = input.trim();
-    if ((!trimmed && attachments.length === 0) || isStreaming) return;
-
-    // Build message with file attachments prepended
     let fullContent = "";
     for (const file of attachments) {
       if (file.content_type === "text") {
@@ -36,13 +49,50 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
       }
     }
     fullContent += trimmed;
+    return fullContent;
+  };
 
-    onSubmit(fullContent);
+  const doSend = (content: string, wasMasked: boolean) => {
+    onSubmit(content, { hasFile: attachments.length > 0 });
     setInput("");
     setAttachments([]);
+    setShowPiiPreview(false);
+    setPiiMatches([]);
+    setPendingContent("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
+
+    // Log PII detection to backend (fire-and-forget)
+    if (piiMatches.length > 0 && activeConversationId) {
+      const typeGroups: Record<string, number> = {};
+      for (const m of piiMatches) {
+        typeGroups[m.type] = (typeGroups[m.type] ?? 0) + 1;
+      }
+      for (const [piiType, count] of Object.entries(typeGroups)) {
+        logPiiDetection(activeConversationId, null, piiType, count, wasMasked).catch(() => {});
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    const trimmed = input.trim();
+    if ((!trimmed && attachments.length === 0) || isStreaming) return;
+
+    const fullContent = buildFullContent();
+
+    // Privacy mode: scan for PII before sending
+    if (privacyMode) {
+      const matches = detectPii(fullContent);
+      if (matches.length > 0) {
+        setPiiMatches(matches);
+        setPendingContent(fullContent);
+        setShowPiiPreview(true);
+        return; // Wait for user decision
+      }
+    }
+
+    doSend(fullContent, false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -61,8 +111,41 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
   };
 
   return (
+    <>
+    {showPiiPreview && (
+      <PiiPreview
+        originalText={pendingContent}
+        matches={piiMatches}
+        onSendMasked={(masked) => doSend(masked, true)}
+        onSendOriginal={() => doSend(pendingContent, false)}
+        onCancel={() => { setShowPiiPreview(false); setPiiMatches([]); }}
+      />
+    )}
     <FileDropZone attachments={attachments} onAttachmentsChange={handleAttachmentsChange}>
       <div className="border-t border-zinc-800 p-3">
+        {/* Routing info bar */}
+        <div className="flex items-center gap-2 max-w-3xl mx-auto mb-1.5 min-h-[20px]">
+          <button
+            onClick={() => setRoutingMode(!routingMode)}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded border transition-colors ${
+              routingMode
+                ? "text-amber-400 bg-amber-950/40 border-amber-800/50"
+                : "text-zinc-500 bg-zinc-900 border-zinc-800 hover:border-zinc-700"
+            }`}
+            title={routingMode ? "Smart Routing: ON — AI auto-selected by complexity" : "Smart Routing: OFF"}
+          >
+            <Zap className="w-2.5 h-2.5" />
+            {routingMode ? "Auto" : "Manual"}
+          </button>
+          {routingMode && input.length >= 5 && (
+            <RoutingBadge prompt={input} hasFile={attachments.length > 0} />
+          )}
+          {lastRoutingInfo && lastRoutingInfo.potentialSavings > 0.0001 && (
+            <span className="text-[10px] text-green-400">
+              Saved ${lastRoutingInfo.potentialSavings.toFixed(4)} via routing
+            </span>
+          )}
+        </div>
         <div className="flex items-end gap-2 max-w-3xl mx-auto">
           {/* Prompt library button */}
           <button
@@ -105,5 +188,6 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
         </div>
       </div>
     </FileDropZone>
+    </>
   );
 }
