@@ -14,12 +14,16 @@ import StreamingBubble from "@/components/chat/StreamingBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import ModelSelector from "@/components/chat/ModelSelector";
 import PersonaSelector from "@/components/chat/PersonaSelector";
+import ModelPicker from "@/components/chat/ModelPicker";
+import MultiStreamView from "@/components/chat/MultiStreamView";
+import PrivacyToggle from "@/components/privacy/PrivacyToggle";
 import CommandPalette from "@/components/palette/CommandPalette";
 import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
 import OverlayChat from "@/components/overlay/OverlayChat";
+import type { StreamTarget } from "@/types";
 
-type AppView = "chat" | "settings";
+type AppView = "chat" | "settings" | "compare";
 
 export default function App() {
   // Overlay route: if opened as /overlay, render minimal chat only
@@ -155,6 +159,8 @@ function MainApp() {
   }, [activeConversationId, activeProviderId, activeModelId, createChat, sendMessage]);
 
   const [sidebarSearch, setSidebarSearch] = useState("");
+  const [showModelPicker, setShowModelPicker] = useState(false);
+  const [compareTargets, setCompareTargets] = useState<StreamTarget[] | null>(null);
 
   const handleNewChat = async () => {
     await createChat(activeProviderId, activeModelId);
@@ -256,15 +262,45 @@ function MainApp() {
         </div>
       </aside>
 
+      {/* Model Picker Modal */}
+      {showModelPicker && (
+        <ModelPicker
+          onConfirm={(targets) => {
+            setCompareTargets(targets);
+            setShowModelPicker(false);
+            setCurrentView("compare");
+          }}
+          onCancel={() => setShowModelPicker(false)}
+        />
+      )}
+
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {currentView === "settings" ? (
           <SettingsView />
+        ) : currentView === "compare" && compareTargets ? (
+          <MultiStreamView
+            targets={compareTargets}
+            onClose={() => {
+              setCurrentView("chat");
+              setCompareTargets(null);
+            }}
+          />
         ) : activeConversationId ? (
           <>
             <div className="flex items-center justify-between border-b border-zinc-800">
-              <ModelSelector />
-              <div className="pr-3">
+              <div className="flex items-center gap-2">
+                <ModelSelector />
+                <button
+                  onClick={() => setShowModelPicker(true)}
+                  className="text-[10px] px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
+                  title="Compare 2~3 AI models side-by-side"
+                >
+                  Compare
+                </button>
+              </div>
+              <div className="flex items-center gap-2 pr-3">
+                <PrivacyToggle />
                 <PersonaSelector />
               </div>
             </div>

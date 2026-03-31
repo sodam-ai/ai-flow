@@ -52,8 +52,15 @@ pub fn run() {
             let database = db::pool::Database::init(&app_handle)?;
 
             // Initialize app state
+            let db_arc = Arc::new(database);
+
+            // Seed default routing rules (Phase 2)
+            if let Err(e) = services::routing::seed_default_rules(&db_arc) {
+                log::warn!("Failed to seed routing rules: {}", e);
+            }
+
             let state = AppState {
-                db: Arc::new(database),
+                db: db_arc,
                 http_client: Arc::new(get_http_client()),
                 streams: Arc::new(services::stream_registry::StreamRegistry::new()),
             };
@@ -131,7 +138,7 @@ pub fn run() {
                 });
             }
 
-            log::info!("AIFlow initialized successfully (Phase 1b: shortcuts + tray active)");
+            log::info!("AIFlow initialized successfully (Phase 2: multi-AI + routing + privacy)");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -173,6 +180,19 @@ pub fn run() {
             // Overlay (Phase 1b)
             commands::overlay::toggle_overlay,
             commands::overlay::close_overlay,
+            // Multi-AI comparison (Phase 2)
+            commands::multi_ai::stream_multi_ai,
+            commands::multi_ai::adopt_comparison,
+            // Smart routing (Phase 2)
+            commands::routing::get_routing_suggestion,
+            commands::routing::get_routing_rules,
+            commands::routing::stream_routed_message,
+            // Local LLM detection (Phase 2)
+            commands::local_llm::detect_local_llms,
+            commands::local_llm::get_local_endpoints,
+            // Privacy (Phase 2)
+            commands::privacy::log_pii_detection,
+            commands::privacy::get_privacy_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

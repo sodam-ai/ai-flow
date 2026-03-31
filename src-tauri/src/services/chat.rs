@@ -91,6 +91,10 @@ pub fn get_messages(
                 created_at: row.get(7)?,
                 version_count: row.get(8)?,
                 active_version: row.get(9)?,
+                comparison_group_id: None,
+                routed_by: None,
+                complexity_score: None,
+                cost_saved_usd: None,
             })
         })?;
 
@@ -143,6 +147,10 @@ pub fn save_message(
         created_at: now,
         version_count: 1,
         active_version: 1,
+        comparison_group_id: None,
+        routed_by: None,
+        complexity_score: None,
+        cost_saved_usd: None,
     })
 }
 
@@ -249,6 +257,10 @@ pub fn search_messages(db: &Database, query: &str, limit: i64) -> Result<Vec<Mes
                 created_at: row.get(7)?,
                 version_count: row.get(8)?,
                 active_version: row.get(9)?,
+                comparison_group_id: None,
+                routed_by: None,
+                complexity_score: None,
+                cost_saved_usd: None,
             })
         })?;
 

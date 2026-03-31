@@ -16,6 +16,12 @@ interface SettingsState {
   activeModelId: string;
   setActiveProvider: (id: ProviderId, modelId: string) => void;
 
+  // Phase 2: Privacy & Routing modes
+  privacyMode: boolean;
+  setPrivacyMode: (on: boolean) => void;
+  routingMode: boolean;
+  setRoutingMode: (on: boolean) => void;
+
   // Persistent store initialization
   loadPersistedSettings: () => Promise<void>;
 
@@ -30,6 +36,8 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   activeProviderId: "openai",
   activeModelId: "gpt-4o",
+  privacyMode: false,
+  routingMode: false,
   keyStatuses: {},
 
   setActiveProvider: async (id, modelId) => {
@@ -44,14 +52,38 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
+  setPrivacyMode: async (on) => {
+    set({ privacyMode: on });
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      await store.set("privacyMode", on);
+    } catch (e) {
+      console.warn("Failed to persist privacy mode:", e);
+    }
+  },
+
+  setRoutingMode: async (on) => {
+    set({ routingMode: on });
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      await store.set("routingMode", on);
+    } catch (e) {
+      console.warn("Failed to persist routing mode:", e);
+    }
+  },
+
   loadPersistedSettings: async () => {
     try {
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
       const providerId = (await store.get<string>("activeProviderId")) ?? "openai";
       const modelId = (await store.get<string>("activeModelId")) ?? "gpt-4o";
+      const privacyMode = (await store.get<boolean>("privacyMode")) ?? false;
+      const routingMode = (await store.get<boolean>("routingMode")) ?? false;
       set({
         activeProviderId: providerId as ProviderId,
         activeModelId: modelId,
+        privacyMode,
+        routingMode,
       });
     } catch (e) {
       console.warn("Failed to load persisted settings:", e);

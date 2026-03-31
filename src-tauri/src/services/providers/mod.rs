@@ -1,6 +1,7 @@
 pub mod openai;
 pub mod anthropic;
 pub mod google;
+pub mod ollama;
 
 use crate::services::provider_trait::AiProvider;
 
@@ -10,6 +11,7 @@ pub fn get_provider(provider_id: &str) -> Result<Box<dyn AiProvider>, String> {
         "openai" => Ok(Box::new(openai::OpenAiProvider)),
         "anthropic" => Ok(Box::new(anthropic::AnthropicProvider)),
         "google" => Ok(Box::new(google::GoogleProvider)),
+        "ollama" => Ok(Box::new(ollama::OllamaProvider::default())),
         other => Err(format!("PROVIDER_001: Unknown provider: {}", other)),
     }
 }

@@ -64,14 +64,91 @@ export interface MessageVersion {
 
 // Streaming
 export interface StreamChunk {
-  type: "token" | "done" | "error";
+  type: "token" | "done" | "error"
+    | "multi_start" | "stream_done" | "stream_error" | "stream_cancelled" | "multi_done"
+    | "routing_info" | "fallback_triggered" | "fallback_attempt";
   token?: string;
+  streamIndex?: number;
   inputTokens?: number;
   outputTokens?: number;
   costUsd?: number;
   costKrw?: number;
   exchangeRate?: number;
   error?: string;
+  // Multi-AI specific
+  count?: number;
+  targets?: StreamTarget[];
+  totalCostUsd?: number;
+  totalCostKrw?: number;
+  // Routing specific
+  complexityScore?: number;
+  complexityLabel?: string;
+  selectedProvider?: string;
+  selectedModel?: string;
+  selectedModelName?: string;
+  potentialSavings?: number;
+  costSavedUsd?: number;
+  // Fallback
+  failedProvider?: string;
+  fallbackUsed?: boolean;
+  actualProvider?: string;
+  providerId?: string;
+  modelId?: string;
+}
+
+// Phase 2: Multi-AI stream target
+export interface StreamTarget {
+  providerId: string;
+  modelId: string;
+}
+
+// Phase 2: Routing
+export interface RoutingSuggestion {
+  complexityScore: number;
+  complexityLabel: string;
+  suggestedProviderId: string;
+  suggestedModelId: string;
+  suggestedModelName: string;
+  estimatedCostUsd: number;
+  cheapestCostUsd: number;
+  potentialSavingsUsd: number;
+  ruleId: string | null;
+  fallbackChain: { providerId: string; modelId: string }[];
+}
+
+export interface RoutingRule {
+  id: string;
+  name: string;
+  minComplexity: number;
+  maxComplexity: number;
+  providerId: string;
+  modelId: string;
+  fallbackChain: { providerId: string; modelId: string }[];
+  priority: number;
+  isActive: boolean;
+}
+
+// Phase 2: Local LLM
+export interface LocalLlmDetectionResult {
+  endpointName: string;
+  baseUrl: string;
+  isRunning: boolean;
+  models: LocalLlmModel[];
+}
+
+export interface LocalLlmModel {
+  id: string;
+  endpointId: string;
+  modelName: string;
+  modelSize: string | null;
+  parameterCount: string | null;
+}
+
+// Phase 2: Privacy
+export interface PiiStat {
+  piiType: string;
+  totalCount: number;
+  maskedCount: number;
 }
 
 // Model catalog entry (from Rust provider trait)

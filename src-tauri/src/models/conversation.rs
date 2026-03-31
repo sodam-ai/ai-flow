@@ -26,6 +26,11 @@ pub struct Message {
     pub created_at: String,
     pub version_count: i32,
     pub active_version: i32,
+    // Phase 2 fields
+    pub comparison_group_id: Option<String>,
+    pub routed_by: Option<String>,
+    pub complexity_score: Option<i32>,
+    pub cost_saved_usd: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

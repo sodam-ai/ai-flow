@@ -5,6 +5,7 @@ import type {
   MessageVersion,
   ApiKeyStatus,
   StreamChunk,
+  StreamTarget,
   ModelInfo,
   Persona,
   CreatePersonaInput,
@@ -13,6 +14,10 @@ import type {
   CreatePromptInput,
   UpdatePromptInput,
   FileContent,
+  RoutingSuggestion,
+  RoutingRule,
+  LocalLlmDetectionResult,
+  PiiStat,
 } from "@/types";
 import {
   saveApiKeySchema,
@@ -276,4 +281,107 @@ export async function toggleOverlay(): Promise<void> {
 
 export async function closeOverlay(): Promise<void> {
   return invoke("close_overlay");
+}
+
+// ─── Multi-AI Comparison (Phase 2) ───
+
+export function streamMultiAi(
+  conversationId: string,
+  content: string,
+  targets: StreamTarget[],
+  personaId: string | null,
+  onChunk: (chunk: StreamChunk) => void,
+): { promise: Promise<unknown>; channel: Channel<StreamChunk> } {
+  const channel = new Channel<StreamChunk>();
+  channel.onmessage = onChunk;
+
+  const promise = invoke("stream_multi_ai", {
+    conversationId,
+    content,
+    targets,
+    personaId,
+    channel,
+  });
+
+  return { promise, channel };
+}
+
+export async function adoptComparison(
+  groupId: string,
+  messageId: string,
+): Promise<void> {
+  return invoke("adopt_comparison", { groupId, messageId });
+}
+
+// ─── Smart Routing (Phase 2) ───
+
+export async function getRoutingSuggestion(
+  prompt: string,
+  hasFile: boolean,
+  hasCode: boolean,
+): Promise<RoutingSuggestion> {
+  return invoke("get_routing_suggestion", { prompt, hasFile, hasCode });
+}
+
+export async function getRoutingRules(): Promise<RoutingRule[]> {
+  return invoke("get_routing_rules");
+}
+
+export function streamRoutedMessage(
+  conversationId: string,
+  content: string,
+  streamId: string,
+  hasFile: boolean,
+  hasCode: boolean,
+  personaId: string | null,
+  onChunk: (chunk: StreamChunk) => void,
+): { promise: Promise<unknown>; channel: Channel<StreamChunk> } {
+  const channel = new Channel<StreamChunk>();
+  channel.onmessage = onChunk;
+
+  const promise = invoke("stream_routed_message", {
+    conversationId,
+    content,
+    streamId,
+    hasFile,
+    hasCode,
+    personaId,
+    channel,
+  });
+
+  return { promise, channel };
+}
+
+// ─── Local LLM Detection (Phase 2) ───
+
+export async function detectLocalLlms(): Promise<LocalLlmDetectionResult[]> {
+  return invoke("detect_local_llms");
+}
+
+export async function getLocalEndpoints(): Promise<unknown[]> {
+  return invoke("get_local_endpoints");
+}
+
+// ─── Privacy (Phase 2) ───
+
+export async function logPiiDetection(
+  conversationId: string,
+  messageId: string | null,
+  piiType: string,
+  piiCount: number,
+  wasMasked: boolean,
+): Promise<void> {
+  return invoke("log_pii_detection", {
+    conversationId,
+    messageId,
+    piiType,
+    piiCount,
+    wasMasked,
+  });
+}
+
+export async function getPrivacyStats(
+  conversationId: string,
+): Promise<PiiStat[]> {
+  return invoke("get_privacy_stats", { conversationId });
 }
