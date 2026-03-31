@@ -21,9 +21,10 @@ import CommandPalette from "@/components/palette/CommandPalette";
 import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
 import OverlayChat from "@/components/overlay/OverlayChat";
+import CostReportView from "@/views/CostReportView";
 import type { StreamTarget } from "@/types";
 
-type AppView = "chat" | "settings" | "compare";
+type AppView = "chat" | "settings" | "compare" | "costs";
 
 export default function App() {
   // Overlay route: if opened as /overlay, render minimal chat only
@@ -99,6 +100,24 @@ function MainApp() {
         icon: "book-open",
         category: "prompt",
         action: () => setPromptModalOpen(true),
+      },
+      {
+        id: "cost-report",
+        label: "Cost Report",
+        labelKo: "비용 리포트",
+        keywords: ["cost", "budget", "money", "비용", "예산", "리포트"],
+        icon: "dollar-sign",
+        category: "settings",
+        action: () => setCurrentView("costs"),
+      },
+      {
+        id: "compare-ai",
+        label: "Compare AI Models",
+        labelKo: "AI 모델 비교",
+        keywords: ["compare", "multi", "side-by-side", "비교", "멀티"],
+        icon: "columns",
+        category: "chat",
+        action: () => setShowModelPicker(true),
       },
       // Add persona switch commands dynamically
       ...personas.map((p) => ({
@@ -248,7 +267,17 @@ function MainApp() {
           )}
         </nav>
 
-        <div className="p-2 border-t border-zinc-800">
+        <div className="p-2 border-t border-zinc-800 space-y-0.5">
+          <button
+            onClick={() => setCurrentView("costs")}
+            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+              currentView === "costs"
+                ? "bg-zinc-800 text-zinc-100"
+                : "text-zinc-400 hover:bg-zinc-800/50"
+            }`}
+          >
+            $ Costs
+          </button>
           <button
             onClick={() => setCurrentView("settings")}
             className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
@@ -278,6 +307,8 @@ function MainApp() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {currentView === "settings" ? (
           <SettingsView />
+        ) : currentView === "costs" ? (
+          <CostReportView />
         ) : currentView === "compare" && compareTargets ? (
           <MultiStreamView
             targets={compareTargets}

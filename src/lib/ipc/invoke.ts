@@ -385,3 +385,59 @@ export async function getPrivacyStats(
 ): Promise<PiiStat[]> {
   return invoke("get_privacy_stats", { conversationId });
 }
+
+// ─── Cost Report + Budget (Phase 2) ───
+
+export interface CostReport {
+  period: string;
+  totalCostUsd: number;
+  totalMessages: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  byModel: { providerId: string; modelId: string; messageCount: number; totalCostUsd: number; totalInputTokens: number; totalOutputTokens: number }[];
+  byDay: { date: string; messageCount: number; totalCostUsd: number }[];
+  avgCostPerMessage: number;
+}
+
+export interface BudgetStatus {
+  monthlyBudgetUsd: number;
+  spentThisMonthUsd: number;
+  remainingUsd: number;
+  usagePct: number;
+  alertThresholdPct: number;
+  isOverThreshold: boolean;
+  isOverBudget: boolean;
+}
+
+export async function getCostReport(period: string): Promise<CostReport> {
+  return invoke("get_cost_report", { period });
+}
+
+export async function getBudgetStatus(): Promise<BudgetStatus> {
+  return invoke("get_budget_status");
+}
+
+export async function setBudget(monthlyUsd: number, thresholdPct: number): Promise<void> {
+  return invoke("set_budget", { monthlyUsd, thresholdPct });
+}
+
+// ─── Prompt Versions (Phase 2) ───
+
+export interface PromptVersionEntry {
+  id: string;
+  promptId: string;
+  versionNumber: number;
+  title: string;
+  content: string;
+  description: string;
+  tags: string[];
+  createdAt: string;
+}
+
+export async function getPromptVersions(promptId: string): Promise<PromptVersionEntry[]> {
+  return invoke("get_prompt_versions", { promptId });
+}
+
+export async function restorePromptVersion(promptId: string, versionId: string): Promise<void> {
+  return invoke("restore_prompt_version", { promptId, versionId });
+}

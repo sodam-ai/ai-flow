@@ -193,6 +193,13 @@ pub fn run() {
             // Privacy (Phase 2)
             commands::privacy::log_pii_detection,
             commands::privacy::get_privacy_stats,
+            // Cost Report + Budget (Phase 2)
+            commands::cost_report::get_cost_report,
+            commands::cost_report::get_budget_status,
+            commands::cost_report::set_budget,
+            // Prompt Versions (Phase 2)
+            commands::prompt_version::get_prompt_versions,
+            commands::prompt_version::restore_prompt_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

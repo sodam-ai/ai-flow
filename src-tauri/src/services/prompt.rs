@@ -117,6 +117,10 @@ pub fn update_prompt(
     input: UpdatePromptInput,
 ) -> Result<PromptTemplate, String> {
     let existing = get_prompt(db, id)?;
+
+    // Auto-save current version before update (Phase 2: prompt version management)
+    let _ = crate::services::prompt_version::save_version(db, id);
+
     let now = chrono::Utc::now().to_rfc3339();
 
     let title = input.title.unwrap_or(existing.title);
