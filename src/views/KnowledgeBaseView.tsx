@@ -9,6 +9,7 @@ import {
   indexDocument,
   deleteKbDocument,
   searchKnowledgeBase,
+  indexFolder,
 } from "@/lib/ipc/invoke";
 
 export default function KnowledgeBaseView() {
@@ -19,6 +20,7 @@ export default function KnowledgeBaseView() {
   const [searchResults, setSearchResults] = useState<KbSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
+  const [folderIndexResult, setFolderIndexResult] = useState<{ indexed: number; failed: number } | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKbName, setNewKbName] = useState("");
   const [newKbDesc, setNewKbDesc] = useState("");
@@ -72,6 +74,24 @@ export default function KnowledgeBaseView() {
 
       setIsIndexing(true);
       await indexDocument({ kb_id: selectedKb.id, file_path: selected });
+      await loadDocuments(selectedKb.id);
+      await loadKbs();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setIsIndexing(false);
+    }
+  }
+
+  async function handleAddFolder(recursive: boolean) {
+    if (!selectedKb) return;
+    try {
+      const selected = await open({ directory: true, multiple: false });
+      if (!selected || typeof selected !== "string") return;
+      setIsIndexing(true);
+      setFolderIndexResult(null);
+      const result = await indexFolder(selectedKb.id, selected, recursive);
+      setFolderIndexResult({ indexed: result.indexed, failed: result.failed });
       await loadDocuments(selectedKb.id);
       await loadKbs();
     } catch (e) {
@@ -208,22 +228,66 @@ export default function KnowledgeBaseView() {
             )}
           </div>
           {selectedKb && (
-            <button
-              onClick={handleAddFile}
-              disabled={isIndexing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-200 text-sm transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {isIndexing ? (
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+            <div className="flex items-center gap-2">
+              {/* Folder index result toast */}
+              {folderIndexResult && (
+                <span className="text-xs text-zinc-500">
+                  {folderIndexResult.indexed}개 인덱싱
+                  {folderIndexResult.failed > 0 && ` · ${folderIndexResult.failed}개 실패`}
+                </span>
               )}
-              파일 추가
-            </button>
+              {/* Add file */}
+              <button
+                onClick={handleAddFile}
+                disabled={isIndexing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors disabled:opacity-50 cursor-pointer border border-zinc-700"
+              >
+                {isIndexing ? (
+                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
+                파일 추가
+              </button>
+              {/* Folder index dropdown */}
+              <div className="relative group">
+                <button
+                  disabled={isIndexing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-violet-900/40 hover:bg-violet-900/70 text-violet-300 text-xs transition-colors disabled:opacity-50 cursor-pointer border border-violet-700/50"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                  </svg>
+                  폴더 인덱싱
+                </button>
+                <div className="absolute right-0 top-full mt-1 w-40 rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl z-50 overflow-hidden hidden group-hover:block">
+                  <button
+                    onClick={() => handleAddFolder(false)}
+                    disabled={isIndexing}
+                    className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 text-zinc-500">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                    </svg>
+                    현재 폴더만
+                  </button>
+                  <button
+                    onClick={() => handleAddFolder(true)}
+                    disabled={isIndexing}
+                    className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 text-zinc-500">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                  </svg>
+                    하위 폴더 포함 (재귀)
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

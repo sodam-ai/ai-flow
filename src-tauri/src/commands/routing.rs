@@ -31,6 +31,7 @@ pub async fn stream_routed_message(
     has_file: bool,
     has_code: bool,
     persona_id: Option<String>,
+    kb_ids: Option<Vec<i64>>, // Smart Context Injection: KB IDs to auto-search
     channel: tauri::ipc::Channel<serde_json::Value>,
 ) -> Result<serde_json::Value, String> {
     // Get routing suggestion
@@ -63,11 +64,34 @@ pub async fn stream_routed_message(
     )?;
 
     let messages = crate::services::chat::get_messages(&state.db, &conversation_id, 50)?;
-    let system_prompt = persona_id.as_ref().and_then(|pid| {
+    let persona_system = persona_id.as_ref().and_then(|pid| {
         crate::services::persona::get_persona(&state.db, pid)
             .ok()
             .map(|p| p.system_prompt)
     });
+
+    // Smart Context Injection — same pattern as stream_ai_message
+    let injected_system: Option<String> = {
+        let kb_context = if let Some(ids) = &kb_ids {
+            if !ids.is_empty() {
+                crate::services::knowledge_base::auto_kb_context(&state.db, &content, ids, 5)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
+        if !kb_context.is_empty() {
+            let combined = match &persona_system {
+                Some(p) => format!("{}\n\n{}", kb_context, p),
+                None => kb_context,
+            };
+            Some(combined)
+        } else {
+            persona_system
+        }
+    };
+    let system_prompt = injected_system;
 
     let cancel_rx = state.streams.register(&stream_id)?;
 

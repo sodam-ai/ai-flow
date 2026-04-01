@@ -22,6 +22,7 @@ import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
 import OverlayChat from "@/components/overlay/OverlayChat";
 import KbContextBar from "@/components/chat/KbContextBar";
+import { exportConversation } from "@/lib/ipc/invoke";
 import CostReportView from "@/views/CostReportView";
 import MCPMarketView from "@/views/MCPMarketView";
 import WorkflowBuilderView from "@/views/WorkflowBuilderView";
@@ -191,6 +192,25 @@ function MainApp() {
   const handleNewChat = async () => {
     await createChat(activeProviderId, activeModelId);
     setCurrentView("chat");
+  };
+
+  const handleExportConversation = async (format: "markdown" | "json") => {
+    if (!activeConversationId) return;
+    try {
+      const content = await exportConversation(activeConversationId, format);
+      const ext = format === "json" ? "json" : "md";
+      const title = activeConv?.title.replace(/[^\w가-힣]/g, "_") ?? "conversation";
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      const { useToastStore } = await import("@/stores/toastStore");
+      useToastStore.getState().addToast("error", String(e));
+    }
   };
 
   // Filter conversations by search query
@@ -432,10 +452,43 @@ function MainApp() {
               </div>
               <div className="flex items-center gap-2">
                 {activeConv && (
-                  <span className="text-xs text-zinc-500 truncate max-w-[200px] hidden sm:block">
+                  <span className="text-xs text-zinc-500 truncate max-w-[160px] hidden sm:block">
                     {activeConv.title}
                   </span>
                 )}
+                {/* Export dropdown */}
+                <div className="relative group">
+                  <button
+                    className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all"
+                    title="대화 내보내기"
+                    aria-label="대화 내보내기"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    저장
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-36 rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl z-50 overflow-hidden hidden group-hover:block">
+                    <button
+                      onClick={() => handleExportConversation("markdown")}
+                      className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-center gap-2 transition-colors"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 text-zinc-500">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                      Markdown (.md)
+                    </button>
+                    <button
+                      onClick={() => handleExportConversation("json")}
+                      className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-center gap-2 transition-colors"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 text-zinc-500">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                      </svg>
+                      JSON (.json)
+                    </button>
+                  </div>
+                </div>
                 <PrivacyToggle />
                 <PersonaSelector />
               </div>

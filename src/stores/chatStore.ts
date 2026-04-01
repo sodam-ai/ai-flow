@@ -231,6 +231,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           targetConvId, content, streamId,
           hasFile, hasCode, activePersonaId,
           handleChunk,
+          options?.kbIds,
         );
         await promise;
       } else {

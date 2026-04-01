@@ -158,6 +158,7 @@ pub fn run() {
             commands::chat::toggle_pin,
             commands::chat::get_message_versions,
             commands::chat::search_messages,
+            commands::chat::export_conversation,
             // AI streaming
             commands::ai::stream_ai_message,
             commands::ai::regenerate_ai_message,
@@ -248,6 +249,7 @@ pub fn run() {
             commands::knowledge_base::index_document,
             commands::knowledge_base::delete_kb_document,
             commands::knowledge_base::search_knowledge_base,
+            commands::knowledge_base::index_folder,
             // AI Agent (Phase 3)
             commands::agent::start_agent_run,
             commands::agent::resume_agent_run,

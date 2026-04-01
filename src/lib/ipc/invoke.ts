@@ -206,6 +206,14 @@ export async function searchMessages(query: string, limit?: number): Promise<Mes
   return invoke("search_messages", { query, limit: limit ?? 20 });
 }
 
+/** Export conversation as Markdown or JSON string */
+export async function exportConversation(
+  conversationId: string,
+  format: "markdown" | "json",
+): Promise<string> {
+  return invoke("export_conversation", { conversationId, format });
+}
+
 // ─── Personas (Phase 1b) ───
 
 export async function listPersonas(): Promise<Persona[]> {
@@ -337,6 +345,7 @@ export function streamRoutedMessage(
   hasCode: boolean,
   personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
+  kbIds?: number[], // Smart Context Injection
 ): { promise: Promise<unknown>; channel: Channel<StreamChunk> } {
   const channel = new Channel<StreamChunk>();
   channel.onmessage = onChunk;
@@ -348,6 +357,7 @@ export function streamRoutedMessage(
     hasFile,
     hasCode,
     personaId,
+    kbIds: kbIds && kbIds.length > 0 ? kbIds : null,
     channel,
   });
 
@@ -589,6 +599,15 @@ export async function deleteKbDocument(docId: number): Promise<void> {
 
 export async function searchKnowledgeBase(req: { kb_id?: number; query: string; limit?: number }): Promise<KbSearchResult[]> {
   return invoke("search_knowledge_base", { req });
+}
+
+/** Index all supported files in a folder (up to 200 files, optional recursive) */
+export async function indexFolder(
+  kbId: number,
+  folderPath: string,
+  recursive?: boolean,
+): Promise<{ indexed: number; skipped: number; failed: number; errors: string[] }> {
+  return invoke("index_folder", { kbId, folderPath, recursive: recursive ?? false });
 }
 
 // ─── AI Agent (Phase 3) ──────────────────────────────────────────────────
