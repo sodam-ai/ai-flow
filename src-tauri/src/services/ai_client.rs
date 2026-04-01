@@ -183,19 +183,20 @@ pub async fn call_ai_non_stream(
             let role = m.get("role")?.as_str()?.to_string();
             let content = m.get("content")?.as_str()?.to_string();
             Some(crate::models::conversation::Message {
-                id: 0,
-                conversation_id: 0,
+                id: String::new(),
+                conversation_id: String::new(),
                 role,
                 content,
-                provider_id: None,
-                model_id: None,
-                tokens_in: 0,
-                tokens_out: 0,
-                cost_usd: 0.0,
-                cost_krw: 0,
-                comparison_group_id: None,
-                is_selected_variant: false,
+                input_tokens: None,
+                output_tokens: None,
+                cost_usd: None,
                 created_at: String::new(),
+                version_count: 1,
+                active_version: 1,
+                comparison_group_id: None,
+                routed_by: None,
+                complexity_score: None,
+                cost_saved_usd: None,
             })
         })
         .collect();
@@ -241,7 +242,7 @@ pub async fn call_ai_non_stream(
 
 /// Cost estimate helper for workflow/batch services
 pub fn estimate_cost(provider_id: &str, model_id: &str, tokens_in: i32, tokens_out: i32) -> f64 {
-    cost::calc_cost(provider_id, model_id, tokens_in as u32, tokens_out as u32)
+    cost::calc_cost(provider_id, model_id, tokens_in as i64, tokens_out as i64)
 }
 
 fn truncate_error(s: &str, max_len: usize) -> String {

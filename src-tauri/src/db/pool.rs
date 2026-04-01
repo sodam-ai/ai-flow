@@ -76,6 +76,12 @@ impl Database {
         let conn = self.writer.lock().map_err(|e| format!("DB lock: {}", e))?;
         f(&conn).map_err(|e| format!("DB read: {}", e))
     }
+
+    /// Raw connection guard for multi-statement operations.
+    /// IMPORTANT: Always drop the guard before any `.await` point to avoid deadlocks.
+    pub fn get_conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, String> {
+        self.writer.lock().map_err(|e| format!("DB lock: {}", e))
+    }
 }
 
 /// Get or create DB encryption master key from OS keychain

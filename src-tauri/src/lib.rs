@@ -42,6 +42,7 @@ pub fn run() {
                 })
                 .build(),
         )
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
@@ -139,7 +140,7 @@ pub fn run() {
                 });
             }
 
-            log::info!("AIFlow initialized successfully (Phase 2 complete: MCP + workflow + batch + payment + browser ext)");
+            log::info!("AIFlow initialized successfully (Phase 3: RAG + Agent + Branching + Workflow Export)");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -239,6 +240,27 @@ pub fn run() {
             commands::browser_ext::unregister_native_host,
             commands::browser_ext::receive_browser_context,
             commands::browser_ext::list_browser_contexts,
+            // Knowledge Base / RAG (Phase 3)
+            commands::knowledge_base::list_knowledge_bases,
+            commands::knowledge_base::create_knowledge_base,
+            commands::knowledge_base::delete_knowledge_base,
+            commands::knowledge_base::list_kb_documents,
+            commands::knowledge_base::index_document,
+            commands::knowledge_base::delete_kb_document,
+            commands::knowledge_base::search_knowledge_base,
+            // AI Agent (Phase 3)
+            commands::agent::start_agent_run,
+            commands::agent::resume_agent_run,
+            commands::agent::approve_agent_step,
+            commands::agent::cancel_agent_run,
+            commands::agent::list_agent_runs,
+            commands::agent::get_agent_run,
+            // Conversation Branching (Phase 3)
+            commands::agent::create_conversation_branch,
+            commands::agent::list_conversation_branches,
+            // Workflow Export/Import (Phase 3)
+            commands::agent::export_workflow,
+            commands::agent::import_workflow,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

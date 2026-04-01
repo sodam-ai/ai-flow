@@ -3,11 +3,10 @@
 /// PRD: "Chrome Native Messaging 방식 (WebSocket 방식 금지)"
 /// 구현: native-host.exe ↔ 메인 앱 named pipe 통신
 /// 레지스트리 등록으로 Chrome이 native host를 자동으로 실행
-use crate::{db::pool::Database, AppState};
+use crate::AppState;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BrowserContext {

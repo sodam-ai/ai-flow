@@ -1,4 +1,6 @@
+pub mod agent;
 pub mod conversation;
+pub mod knowledge_base;
 pub mod local_llm;
 pub mod mcp;
 pub mod payment;

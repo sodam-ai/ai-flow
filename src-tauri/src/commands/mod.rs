@@ -1,5 +1,7 @@
+pub mod agent;
 pub mod ai;
 pub mod browser_ext;
+pub mod knowledge_base;
 pub mod chat;
 pub mod cost_report;
 pub mod file;

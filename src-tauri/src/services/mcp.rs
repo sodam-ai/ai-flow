@@ -126,13 +126,32 @@ pub fn delete_server(db: &Arc<Database>, id: i64) -> Result<(), String> {
 }
 
 /// 경로 보안 검증: requested_path가 allowed_paths 중 하나의 하위 경로인지 확인
+/// Security: both paths are canonicalized to prevent symlink traversal attacks.
 pub fn validate_path_access(server: &MCPServer, requested_path: &str) -> bool {
     if server.allowed_paths.is_empty() {
         return false; // 허용 경로 없으면 전면 차단
     }
-    let req_path = Path::new(requested_path);
-    server
-        .allowed_paths
-        .iter()
-        .any(|allowed| req_path.starts_with(Path::new(allowed)))
+
+    // Canonicalize the requested path to resolve symlinks and `..` components.
+    // If the path doesn't exist yet (e.g. a file to be created), canonicalize its parent.
+    let req_canon = std::fs::canonicalize(requested_path)
+        .or_else(|_| {
+            Path::new(requested_path)
+                .parent()
+                .and_then(|p| std::fs::canonicalize(p).ok())
+                .ok_or_else(|| std::io::Error::other("no parent"))
+        });
+
+    let req_canon = match req_canon {
+        Ok(p) => p,
+        Err(_) => return false, // Cannot resolve → deny
+    };
+
+    server.allowed_paths.iter().any(|allowed| {
+        // Canonicalize the allowed path too — must exist to be valid
+        match std::fs::canonicalize(allowed) {
+            Ok(canon_allowed) => req_canon.starts_with(&canon_allowed),
+            Err(_) => false, // Misconfigured allowed path → deny
+        }
+    })
 }

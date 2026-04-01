@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plug, Plus, Trash2, ToggleLeft, ToggleRight, FolderOpen, AlertCircle } from "lucide-react";
+import { Plug, Trash2, ToggleLeft, ToggleRight, FolderOpen, AlertCircle } from "lucide-react";
 import type { MCPServer } from "@/types";
 import { listMcpServers, toggleMcpServer, deleteMcpServer, setMcpAllowedPaths } from "@/lib/ipc/invoke";
 

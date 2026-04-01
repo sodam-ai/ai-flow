@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Crown, Check, ExternalLink, Key, Globe, RefreshCw, Monitor, Loader2 } from "lucide-react";
-import { open as openUrl } from "@tauri-apps/plugin-shell";
+const openUrl = (url: string) => window.open(url, "_blank");
 import type { LicenseInfo, ProFeatures } from "@/types";
 import {
   getLicenseStatus, getProFeatures,
@@ -20,7 +20,7 @@ const PRO_FEATURE_LIST = [
 
 export default function ProUpgradeView() {
   const [license, setLicense] = useState<LicenseInfo | null>(null);
-  const [features, setFeatures] = useState<ProFeatures | null>(null);
+  const [_features, setFeatures] = useState<ProFeatures | null>(null);
   const [extStatus, setExtStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);

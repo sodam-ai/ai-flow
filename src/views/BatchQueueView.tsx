@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { ListTodo, Play, X, Upload, Plus, FileText, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ListTodo, Play, X, Plus, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import type { BatchJob, BatchItem, BatchProgressEvent } from "@/types";
 import { listBatchJobs, createBatchJob, getBatchItems, runBatchJob, cancelBatchJob } from "@/lib/ipc/invoke";

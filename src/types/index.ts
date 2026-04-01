@@ -426,6 +426,95 @@ export interface BrowserExtStatus {
   native_host_path?: string;
 }
 
+// ─── Phase 3: Knowledge Base (RAG) ──────────────────────────────────────
+export interface KnowledgeBase {
+  id: number;
+  name: string;
+  description?: string;
+  folder_path?: string;
+  icon: string;
+  doc_count: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KbDocument {
+  id: number;
+  kb_id: number;
+  filename: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  chunk_count: number;
+  status: "pending" | "indexing" | "ready" | "error";
+  error_msg?: string;
+  indexed_at?: string;
+  created_at: string;
+}
+
+export interface KbSearchResult {
+  chunk_id: number;
+  doc_id: number;
+  kb_id: number;
+  filename: string;
+  content: string;
+  snippet: string;
+  rank: number;
+}
+
+// ─── Phase 3: AI Agent ───────────────────────────────────────────────────
+export interface AgentRun {
+  id: number;
+  conversation_id?: string;
+  goal: string;
+  status: "running" | "awaiting_approval" | "completed" | "failed" | "cancelled";
+  provider: string;
+  model: string;
+  total_steps: number;
+  completed_steps: number;
+  total_cost_usd: number;
+  final_output?: string;
+  error_msg?: string;
+  started_at: string;
+  completed_at?: string;
+  steps: AgentStep[];
+}
+
+export interface AgentStep {
+  id: number;
+  run_id: number;
+  step_order: number;
+  step_type: "think" | "action" | "search_kb" | string;
+  title: string;
+  description?: string;
+  input_text?: string;
+  output_text?: string;
+  tool_name?: string;
+  tool_args?: string;
+  tool_result?: string;
+  requires_approval: boolean;
+  approval_message?: string;
+  approved?: boolean;
+  status: "pending" | "running" | "awaiting_approval" | "completed" | "failed" | "skipped";
+  cost_usd: number;
+  tokens_in: number;
+  tokens_out: number;
+  started_at?: string;
+  completed_at?: string;
+}
+
+// ─── Phase 3: Conversation Branch ────────────────────────────────────────
+export interface ConversationBranch {
+  id: number;
+  parent_conversation_id: string;
+  branch_conversation_id: string;
+  fork_message_id: string;
+  fork_message_index: number;
+  label?: string;
+  created_at: string;
+}
+
 export interface IpcError {
   code: string;
   message: string;

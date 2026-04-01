@@ -65,3 +65,4 @@ hex = "0.4"
 log = "0.4"
 hostname = "0.4"             # payment.rs: 라이선스 인스턴스 이름 생성
 tauri-plugin-deep-link = "2" # aiflow:// URL scheme 콜백 (Pro 결제)
+tauri-plugin-dialog = "2"   # Phase 3: 파일 선택 다이얼로그 (지식베이스 문서 추가)

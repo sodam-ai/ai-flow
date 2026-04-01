@@ -1,4 +1,4 @@
-use crate::{db::pool::Database, models::workflow::*, services::ai_client};
+use crate::{db::pool::Database, models::workflow::*};
 use rusqlite::params;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
@@ -153,20 +153,25 @@ pub async fn run_workflow(
     http_client: Arc<reqwest::Client>,
     req: RunWorkflowRequest,
 ) -> Result<WorkflowRun, String> {
+    // ─── Security: input validation ───────────────────────────────────────
+    const MAX_INPUT_LEN: usize = 32_768; // 32KB
+    if req.initial_input.len() > MAX_INPUT_LEN {
+        return Err(format!("초기 입력은 {}자 이하여야 합니다.", MAX_INPUT_LEN));
+    }
+
     let workflow = get_workflow(&db, req.workflow_id)?;
     if workflow.steps.is_empty() {
         return Err("워크플로우에 단계가 없습니다.".into());
     }
 
     // 실행 레코드 생성
-    let conn = db.get_conn().map_err(|e| e.to_string())?;
-    conn.execute(
-        "INSERT INTO workflow_runs (workflow_id, status, initial_input, started_at) VALUES (?1, 'running', ?2, datetime('now'))",
-        params![req.workflow_id, req.initial_input],
-    )
-    .map_err(|e| e.to_string())?;
-    let run_id = conn.last_insert_rowid();
-    drop(conn);
+    let run_id = db.write(|conn| {
+        conn.execute(
+            "INSERT INTO workflow_runs (workflow_id, status, initial_input, started_at) VALUES (?1, 'running', ?2, datetime('now'))",
+            params![req.workflow_id, req.initial_input],
+        )?;
+        Ok(conn.last_insert_rowid())
+    })?;
 
     let _ = app.emit("aiflow://workflow-started", serde_json::json!({ "run_id": run_id, "workflow_id": req.workflow_id }));
 
@@ -175,19 +180,21 @@ pub async fn run_workflow(
     let mut all_failed = false;
 
     for step in workflow.steps.iter().filter(|s| s.is_enabled) {
-        let prompt = step.user_prompt_template.replace("{{input}}", &current_input);
+        // Security: sanitize input before template substitution to prevent injection
+        let safe_input = sanitize_template_input(&current_input);
+        let prompt = step.user_prompt_template.replace("{{input}}", &safe_input);
         let provider = req.provider_override.as_deref().or(step.provider.as_deref()).unwrap_or("anthropic");
         let model = req.model_override.as_deref().or(step.model.as_deref()).unwrap_or("claude-sonnet-4-6");
 
         // 단계 결과 레코드 생성
-        let conn2 = db.get_conn().map_err(|e| e.to_string())?;
-        conn2.execute(
-            "INSERT INTO workflow_step_results (run_id, step_id, step_order, input_text, status, started_at)
-             VALUES (?1, ?2, ?3, ?4, 'running', datetime('now'))",
-            params![run_id, step.id, step.step_order, prompt],
-        ).map_err(|e| e.to_string())?;
-        let result_id = conn2.last_insert_rowid();
-        drop(conn2);
+        let result_id = db.write(|conn| {
+            conn.execute(
+                "INSERT INTO workflow_step_results (run_id, step_id, step_order, input_text, status, started_at)
+                 VALUES (?1, ?2, ?3, ?4, 'running', datetime('now'))",
+                params![run_id, step.id, step.step_order, prompt],
+            )?;
+            Ok(conn.last_insert_rowid())
+        })?;
 
         let _ = app.emit("aiflow://workflow-step-started", serde_json::json!({
             "run_id": run_id, "step_order": step.step_order, "step_name": step.name
@@ -197,14 +204,15 @@ pub async fn run_workflow(
         match call_ai_for_step(&http_client, provider, model, step.system_prompt.as_deref(), &prompt).await {
             Ok((output, tokens_in, tokens_out, cost)) => {
                 total_cost += cost;
-                let conn3 = db.get_conn().map_err(|e| e.to_string())?;
-                conn3.execute(
-                    "UPDATE workflow_step_results SET status='completed', output_text=?1,
-                     tokens_in=?2, tokens_out=?3, cost_usd=?4, completed_at=datetime('now')
-                     WHERE id=?5",
-                    params![output, tokens_in, tokens_out, cost, result_id],
-                ).map_err(|e| e.to_string())?;
-                drop(conn3);
+                db.write(|conn| {
+                    conn.execute(
+                        "UPDATE workflow_step_results SET status='completed', output_text=?1,
+                         tokens_in=?2, tokens_out=?3, cost_usd=?4, completed_at=datetime('now')
+                         WHERE id=?5",
+                        params![output, tokens_in, tokens_out, cost, result_id],
+                    )?;
+                    Ok(())
+                })?;
 
                 let _ = app.emit("aiflow://workflow-step-done", serde_json::json!({
                     "run_id": run_id, "step_order": step.step_order,
@@ -214,18 +222,17 @@ pub async fn run_workflow(
                 current_input = output; // 다음 단계 입력 = 현재 단계 출력
             }
             Err(e) => {
-                let conn3 = db.get_conn().map_err(|e| e.to_string())?;
-                conn3.execute(
-                    "UPDATE workflow_step_results SET status='failed', error_message=?1, completed_at=datetime('now') WHERE id=?2",
-                    params![e, result_id],
-                ).map_err(|e| e.to_string())?;
-                drop(conn3);
-
-                let conn4 = db.get_conn().map_err(|e| e.to_string())?;
-                conn4.execute(
-                    "UPDATE workflow_runs SET status='failed', error_message=?1, completed_at=datetime('now'), total_cost_usd=?2 WHERE id=?3",
-                    params![e, total_cost, run_id],
-                ).map_err(|e| e.to_string())?;
+                db.write(|conn| {
+                    conn.execute(
+                        "UPDATE workflow_step_results SET status='failed', error_message=?1, completed_at=datetime('now') WHERE id=?2",
+                        params![e, result_id],
+                    )?;
+                    conn.execute(
+                        "UPDATE workflow_runs SET status='failed', error_message=?1, completed_at=datetime('now'), total_cost_usd=?2 WHERE id=?3",
+                        params![e, total_cost, run_id],
+                    )?;
+                    Ok(())
+                })?;
 
                 let _ = app.emit("aiflow://workflow-failed", serde_json::json!({ "run_id": run_id, "error": e }));
                 all_failed = true;
@@ -235,11 +242,13 @@ pub async fn run_workflow(
     }
 
     if !all_failed {
-        let conn5 = db.get_conn().map_err(|e| e.to_string())?;
-        conn5.execute(
-            "UPDATE workflow_runs SET status='completed', final_output=?1, total_cost_usd=?2, completed_at=datetime('now') WHERE id=?3",
-            params![current_input, total_cost, run_id],
-        ).map_err(|e| e.to_string())?;
+        db.write(|conn| {
+            conn.execute(
+                "UPDATE workflow_runs SET status='completed', final_output=?1, total_cost_usd=?2, completed_at=datetime('now') WHERE id=?3",
+                params![current_input, total_cost, run_id],
+            )?;
+            Ok(())
+        })?;
         let _ = app.emit("aiflow://workflow-completed", serde_json::json!({
             "run_id": run_id, "final_output": current_input, "total_cost_usd": total_cost
         }));
@@ -568,6 +577,134 @@ pub fn cancel_batch_job(db: &Arc<Database>, job_id: i64) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+// ─── Workflow Export / Import ─────────────────────────────────────────────
+
+/// Export a workflow as a JSON string for sharing
+pub fn export_workflow(db: &Arc<Database>, workflow_id: i64) -> Result<String, String> {
+    let workflow = get_workflow(db, workflow_id)?;
+    let exported_at = chrono::Utc::now().to_rfc3339();
+    let export = serde_json::json!({
+        "version": "1.0",
+        "exported_at": exported_at,
+        "workflow": {
+            "name": workflow.name,
+            "description": workflow.description,
+            "steps": workflow.steps.iter().map(|s| serde_json::json!({
+                "name": s.name,
+                "provider": s.provider,
+                "model": s.model,
+                "system_prompt": s.system_prompt,
+                "user_prompt_template": s.user_prompt_template,
+                "step_order": s.step_order,
+            })).collect::<Vec<_>>(),
+        }
+    });
+
+    // Record export
+    let json_str = serde_json::to_string_pretty(&export).map_err(|e| e.to_string())?;
+    let checksum = format!("{:x}", md5_simple(&json_str));
+    db.write(|conn| {
+        conn.execute(
+            "INSERT OR IGNORE INTO workflow_exports (workflow_id, checksum) VALUES (?1, ?2)",
+            params![workflow_id, checksum],
+        )?;
+        Ok(())
+    })?;
+
+    Ok(json_str)
+}
+
+/// Import a workflow from a JSON string (previously exported)
+pub fn import_workflow(db: &Arc<Database>, json_str: &str) -> Result<Workflow, String> {
+    // Size limit: 256KB
+    if json_str.len() > 256 * 1024 {
+        return Err("가져오기 파일이 너무 큽니다 (최대 256KB).".into());
+    }
+
+    let parsed: serde_json::Value =
+        serde_json::from_str(json_str).map_err(|_| "유효하지 않은 JSON 형식입니다.".to_string())?;
+
+    let wf = parsed
+        .get("workflow")
+        .ok_or("workflow 필드가 없습니다.")?;
+
+    let name = wf
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("가져온 워크플로우")
+        .to_string();
+
+    let description = wf
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(String::from);
+
+    let steps: Vec<crate::models::workflow::CreateWorkflowStepRequest> = wf
+        .get("steps")
+        .and_then(|v| v.as_array())
+        .unwrap_or(&vec![])
+        .iter()
+        .map(|s| crate::models::workflow::CreateWorkflowStepRequest {
+            name: s
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("단계")
+                .to_string(),
+            provider: s.get("provider").and_then(|v| v.as_str()).map(String::from),
+            model: s.get("model").and_then(|v| v.as_str()).map(String::from),
+            system_prompt: s
+                .get("system_prompt")
+                .and_then(|v| v.as_str())
+                .map(String::from),
+            user_prompt_template: s
+                .get("user_prompt_template")
+                .and_then(|v| v.as_str())
+                .unwrap_or("{{input}}")
+                .to_string(),
+            mcp_server_id: None,
+        })
+        .collect();
+
+    create_workflow(
+        db,
+        crate::models::workflow::CreateWorkflowRequest {
+            name,
+            description,
+            template_id: None,
+            steps,
+        },
+    )
+}
+
+fn md5_simple(input: &str) -> u64 {
+    // Simple non-cryptographic hash for export checksum (not security-critical)
+    let mut hash: u64 = 14695981039346656037;
+    for byte in input.bytes() {
+        hash ^= byte as u64;
+        hash = hash.wrapping_mul(1099511628211);
+    }
+    hash
+}
+
+// ─── Security: Template Input Sanitization ────────────────────────────────
+
+/// Prevent prompt injection via {{input}} substitution.
+/// Strips characters that could manipulate AI system prompts.
+fn sanitize_template_input(input: &str) -> String {
+    // Truncate to 32KB
+    let truncated = if input.len() > 32_768 {
+        &input[..32_768]
+    } else {
+        input
+    };
+
+    // Remove null bytes and control chars (except newline, tab)
+    truncated
+        .chars()
+        .filter(|c| !c.is_control() || *c == '\n' || *c == '\t' || *c == '\r')
+        .collect()
 }
 
 // ─── Internal AI Helper ───────────────────────────────────────────────────

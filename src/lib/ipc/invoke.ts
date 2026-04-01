@@ -557,3 +557,97 @@ export async function getBrowserExtStatus(): Promise<BrowserExtStatus> {
 export async function registerNativeHost(): Promise<string> {
   return invoke("register_native_host");
 }
+
+// ─── Knowledge Base / RAG (Phase 3) ──────────────────────────────────────
+import type { KnowledgeBase, KbDocument, KbSearchResult, AgentRun, AgentStep, ConversationBranch } from "@/types";
+
+export async function listKnowledgeBases(): Promise<KnowledgeBase[]> {
+  return invoke("list_knowledge_bases");
+}
+
+export async function createKnowledgeBase(req: { name: string; description?: string; icon?: string }): Promise<KnowledgeBase> {
+  return invoke("create_knowledge_base", { req });
+}
+
+export async function deleteKnowledgeBase(id: number): Promise<void> {
+  return invoke("delete_knowledge_base", { id });
+}
+
+export async function listKbDocuments(kbId: number): Promise<KbDocument[]> {
+  return invoke("list_kb_documents", { kbId });
+}
+
+export async function indexDocument(req: { kb_id: number; file_path: string }): Promise<KbDocument> {
+  return invoke("index_document", { req });
+}
+
+export async function deleteKbDocument(docId: number): Promise<void> {
+  return invoke("delete_kb_document", { docId });
+}
+
+export async function searchKnowledgeBase(req: { kb_id?: number; query: string; limit?: number }): Promise<KbSearchResult[]> {
+  return invoke("search_knowledge_base", { req });
+}
+
+// ─── AI Agent (Phase 3) ──────────────────────────────────────────────────
+
+export async function startAgentRun(req: {
+  goal: string;
+  provider?: string;
+  model?: string;
+  conversation_id?: string;
+  kb_ids?: number[];
+  max_steps?: number;
+}): Promise<AgentRun> {
+  return invoke("start_agent_run", { req });
+}
+
+export async function resumeAgentRun(runId: number): Promise<AgentRun> {
+  return invoke("resume_agent_run", { runId });
+}
+
+export async function approveAgentStep(req: {
+  run_id: number;
+  step_id: number;
+  approved: boolean;
+  feedback?: string;
+}): Promise<AgentStep> {
+  return invoke("approve_agent_step", { req });
+}
+
+export async function cancelAgentRun(runId: number): Promise<void> {
+  return invoke("cancel_agent_run", { runId });
+}
+
+export async function listAgentRuns(): Promise<AgentRun[]> {
+  return invoke("list_agent_runs");
+}
+
+export async function getAgentRunDetail(runId: number): Promise<AgentRun> {
+  return invoke("get_agent_run", { runId });
+}
+
+// ─── Conversation Branching (Phase 3) ────────────────────────────────────
+
+export async function createConversationBranch(req: {
+  parent_conversation_id: string;
+  fork_message_id: string;
+  fork_message_index: number;
+  label?: string;
+}): Promise<ConversationBranch> {
+  return invoke("create_conversation_branch", { req });
+}
+
+export async function listConversationBranches(conversationId: string): Promise<ConversationBranch[]> {
+  return invoke("list_conversation_branches", { conversationId });
+}
+
+// ─── Workflow Export/Import (Phase 3) ────────────────────────────────────
+
+export async function exportWorkflow(workflowId: number): Promise<string> {
+  return invoke("export_workflow", { workflowId });
+}
+
+export async function importWorkflow(jsonStr: string): Promise<import("@/types").Workflow> {
+  return invoke("import_workflow", { jsonStr });
+}

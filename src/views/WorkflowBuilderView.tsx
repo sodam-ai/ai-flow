@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { GitBranch, Play, Plus, Trash2, ChevronDown, ChevronRight, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import type { Workflow, WorkflowTemplate, WorkflowRun } from "@/types";
@@ -51,7 +51,7 @@ export default function WorkflowBuilderView() {
   // 워크플로우 실행 진행 이벤트 수신
   useEffect(() => {
     const unlistens = [
-      listen("aiflow://workflow-completed", (ev: any) => {
+      listen("aiflow://workflow-completed", (_ev: any) => {
         setRunning(false);
         load();
         if (selectedWorkflow) loadRuns(selectedWorkflow.id);
@@ -87,7 +87,7 @@ export default function WorkflowBuilderView() {
 
   async function handleCreateFromTemplate(tmpl: WorkflowTemplate) {
     try {
-      const steps = tmpl.steps.map((s, i) => ({
+      const steps = tmpl.steps.map((s) => ({
         name: s.name,
         provider: s.model?.split("-")[0] === "gemini" ? "google" : "anthropic",
         model: s.model ?? "claude-sonnet-4-6",

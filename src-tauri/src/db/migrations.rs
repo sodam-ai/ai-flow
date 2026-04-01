@@ -20,6 +20,10 @@ pub fn run(conn: &mut rusqlite::Connection) -> Result<(), Box<dyn std::error::Er
         M::up(include_str!("../../migrations/013_batch_jobs.sql")),
         M::up(include_str!("../../migrations/014_workflow_templates.sql")),
         M::up(include_str!("../../migrations/015_payment.sql")),
+        // Phase 3
+        M::up(include_str!("../../migrations/016_knowledge_base.sql")),
+        M::up(include_str!("../../migrations/017_agent_runs.sql")),
+        M::up(include_str!("../../migrations/018_conversation_branches.sql")),
     ]);
 
     migrations.to_latest(conn)?;

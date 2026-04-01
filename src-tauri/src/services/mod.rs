@@ -1,4 +1,6 @@
+pub mod agent;
 pub mod ai_client;
+pub mod knowledge_base;
 pub mod mcp;
 pub mod workflow;
 pub mod audit;
