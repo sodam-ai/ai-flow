@@ -67,6 +67,7 @@ interface ChatState {
 interface SendOptions {
   hasFile?: boolean;
   hasCode?: boolean;
+  kbIds?: number[]; // Smart Context Injection: active knowledge base IDs
 }
 
 interface RoutingInfo {
@@ -239,6 +240,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           activeProviderId, activeModelId, streamId,
           activePersonaId,
           handleChunk,
+          options?.kbIds,
         );
         await promise;
       }

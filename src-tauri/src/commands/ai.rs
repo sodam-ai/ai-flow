@@ -11,6 +11,7 @@ pub async fn stream_ai_message(
     model_id: String,
     stream_id: String,
     persona_id: Option<String>,
+    kb_ids: Option<Vec<i64>>, // Smart Context Injection: KB IDs to auto-search
     channel: tauri::ipc::Channel<serde_json::Value>,
 ) -> Result<(), String> {
     // Register stream for cancellation
@@ -35,17 +36,43 @@ pub async fn stream_ai_message(
     // Load conversation messages for context
     let messages = crate::services::chat::get_messages(&state.db, &conversation_id, 50)?;
 
+    // Smart Context Injection — auto-search KB and prepend to system prompt
+    let persona_system = persona_id.as_ref().and_then(|pid| {
+        crate::services::persona::get_persona(&state.db, pid)
+            .ok()
+            .map(|p| p.system_prompt)
+    });
+
+    let injected_system: Option<String> = {
+        let kb_context = if let Some(ids) = &kb_ids {
+            if !ids.is_empty() {
+                crate::services::knowledge_base::auto_kb_context(&state.db, &content, ids, 5)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
+
+        if !kb_context.is_empty() {
+            // KB context prepended before persona prompt (if any)
+            let combined = match &persona_system {
+                Some(p) => format!("{}\n\n{}", kb_context, p),
+                None => kb_context,
+            };
+            Some(combined)
+        } else {
+            persona_system
+        }
+    };
+
     // Stream AI response
     let result = crate::services::ai_client::stream_chat(
         &provider_id,
         &model_id,
         &api_key,
         &messages,
-        persona_id.as_ref().and_then(|pid| {
-            crate::services::persona::get_persona(&state.db, pid)
-                .ok()
-                .map(|p| p.system_prompt)
-        }).as_deref(),
+        injected_system.as_deref(),
         &channel,
         cancel_rx,
     )

@@ -327,3 +327,52 @@ fn sanitize_fts_query(query: &str) -> String {
         words.join(" OR ")
     }
 }
+
+// ─── Smart Context Injection ──────────────────────────────────────────────
+
+/// Searches active knowledge bases and returns a formatted context string
+/// ready to be prepended to an AI system prompt.
+///
+/// Security: query is sanitized via sanitize_fts_query() before use.
+/// Input limit: query truncated to MAX_QUERY_LEN before processing.
+pub fn auto_kb_context(
+    db: &Arc<Database>,
+    query: &str,
+    kb_ids: &[i64],
+    max_results: usize,
+) -> String {
+    if kb_ids.is_empty() || query.trim().is_empty() {
+        return String::new();
+    }
+
+    // Collect results across all specified KBs (up to 5 KBs, 3 results each)
+    let mut all_results = Vec::new();
+    for &kb_id in kb_ids.iter().take(5) {
+        let req = SearchKbRequest {
+            kb_id: Some(kb_id),
+            query: query.chars().take(MAX_QUERY_LEN).collect(),
+            limit: Some(3),
+        };
+        if let Ok(results) = search_kb(db, req) {
+            all_results.extend(results);
+        }
+    }
+
+    all_results.truncate(max_results.min(10));
+
+    if all_results.is_empty() {
+        return String::new();
+    }
+
+    let docs = all_results
+        .iter()
+        .enumerate()
+        .map(|(i, r)| format!("[{}] {}\n{}", i + 1, r.filename, r.snippet))
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    format!(
+        "## 관련 문서 컨텍스트 (지식베이스 자동 검색)\n\n{}\n\n---\n위 문서 내용을 참고하여 답변하세요.",
+        docs
+    )
+}

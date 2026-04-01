@@ -140,6 +140,7 @@ export function streamAiMessage(
   streamId: string,
   personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
+  kbIds?: number[], // Smart Context Injection
 ): { promise: Promise<void>; channel: Channel<StreamChunk> } {
   // Validate before creating channel
   validate(streamAiMessageSchema, { conversationId, content, providerId, modelId, streamId });
@@ -154,6 +155,7 @@ export function streamAiMessage(
     modelId,
     streamId,
     personaId,
+    kbIds: kbIds && kbIds.length > 0 ? kbIds : null,
     channel,
   });
 

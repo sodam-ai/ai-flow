@@ -8,8 +8,13 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 
 const MAX_AGENT_STEPS: i64 = 20; // safety cap
+const MAX_AGENT_COST_USD: f64 = 2.0; // per-run cost ceiling (OWASP: resource exhaustion prevention)
 const MAX_GOAL_LEN: usize = 2000;
 const MAX_FEEDBACK_LEN: usize = 500;
+/// Characters that can be used for prompt injection — stripped from goal before AI planning
+const PROMPT_INJECTION_CHARS: &[char] = &['\x00', '\x01', '\x02', '\x03', '\x04', '\x05',
+    '\x06', '\x07', '\x08', '\x0b', '\x0c', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13',
+    '\x14', '\x15', '\x16', '\x17', '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e', '\x1f'];
 
 // ─── Start agent run ──────────────────────────────────────────────────────
 
@@ -20,10 +25,15 @@ pub async fn start_agent_run(
     http_client: Arc<reqwest::Client>,
     req: StartAgentRequest,
 ) -> Result<AgentRun, String> {
-    // Input validation
-    if req.goal.trim().is_empty() || req.goal.len() > MAX_GOAL_LEN {
+    // Input validation — strip control characters (prompt injection prevention, OWASP ASVS 5.2.3)
+    let sanitized_goal: String = req.goal.chars()
+        .filter(|c| !PROMPT_INJECTION_CHARS.contains(c))
+        .collect();
+    let sanitized_goal = sanitized_goal.trim().to_string();
+    if sanitized_goal.is_empty() || sanitized_goal.len() > MAX_GOAL_LEN {
         return Err(format!("목표는 1~{}자여야 합니다.", MAX_GOAL_LEN));
     }
+    let req = StartAgentRequest { goal: sanitized_goal, ..req };
 
     let provider = req.provider.unwrap_or_else(|| "anthropic".to_string());
     let model = req.model.unwrap_or_else(|| "claude-sonnet-4-6".to_string());
@@ -391,6 +401,30 @@ async fn execute_steps(
             }
         };
 
+        // Cost ceiling check (OWASP: resource exhaustion prevention)
+        let current_cost: f64 = db.read(|conn| {
+            conn.query_row(
+                "SELECT total_cost_usd FROM agent_runs WHERE id=?1",
+                params![run_id],
+                |r| r.get(0),
+            )
+        })?;
+        if current_cost >= MAX_AGENT_COST_USD {
+            db.write(|conn| {
+                conn.execute(
+                    "UPDATE agent_runs SET status='failed', error_msg='비용 상한($2.00)에 도달하여 실행을 중단했습니다.', completed_at=datetime('now') WHERE id=?1",
+                    params![run_id],
+                )?;
+                conn.execute(
+                    "UPDATE agent_steps SET status='skipped' WHERE run_id=?1 AND status IN ('pending','awaiting_approval')",
+                    params![run_id],
+                )?;
+                Ok(())
+            })?;
+            let _ = app.emit("aiflow://agent-cost-limit", serde_json::json!({ "run_id": run_id }));
+            return Ok(());
+        }
+
         // Check if approval needed
         if requires_approval == 1 {
             db.write(|conn| {
@@ -432,6 +466,43 @@ async fn execute_steps(
         );
 
         let (output, cost, tok_in, tok_out) = match step_type.as_str() {
+            "write_file" => {
+                // Secure file write — absolute path required, system dirs blocked
+                let args: serde_json::Value = serde_json::from_str(
+                    tool_args.as_deref().unwrap_or("{}"),
+                ).unwrap_or_default();
+                let file_path = args.get("path").and_then(|v| v.as_str()).unwrap_or("").trim();
+                let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
+
+                let result = if file_path.is_empty() {
+                    "오류: 파일 경로가 없습니다.".to_string()
+                } else {
+                    let path = std::path::Path::new(file_path);
+                    if !path.is_absolute() {
+                        "오류: 절대 경로가 필요합니다.".to_string()
+                    } else {
+                        // Block system directories (path security, Secure by Design)
+                        let lower = file_path.to_lowercase();
+                        let blocked = [
+                            "\\windows\\system", "/windows/system", "\\system32", "/system32",
+                            "\\syswow64", "/syswow64", "/etc/", "/usr/", "/bin/", "/sbin/",
+                        ];
+                        if blocked.iter().any(|b| lower.contains(b)) {
+                            "오류: 시스템 디렉터리에는 쓸 수 없습니다.".to_string()
+                        } else {
+                            // Ensure parent directory exists
+                            if let Some(parent) = path.parent() {
+                                let _ = std::fs::create_dir_all(parent);
+                            }
+                            match std::fs::write(file_path, content) {
+                                Ok(_) => format!("파일 작성 완료: {} ({} bytes)", file_path, content.len()),
+                                Err(e) => format!("파일 작성 실패: {}", e),
+                            }
+                        }
+                    }
+                };
+                (result, 0.0, 0i64, 0i64)
+            }
             "search_kb" => {
                 let query = tool_args
                     .as_deref()

@@ -21,6 +21,7 @@ import CommandPalette from "@/components/palette/CommandPalette";
 import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
 import OverlayChat from "@/components/overlay/OverlayChat";
+import KbContextBar from "@/components/chat/KbContextBar";
 import CostReportView from "@/views/CostReportView";
 import MCPMarketView from "@/views/MCPMarketView";
 import WorkflowBuilderView from "@/views/WorkflowBuilderView";
@@ -216,153 +217,158 @@ function MainApp() {
     }
   };
 
+  const [activeKbIds, setActiveKbIds] = useState<number[]>([]);
+
+  // Toggle a KB in the active context set
+  const toggleKb = useCallback((id: number) => {
+    setActiveKbIds((prev) =>
+      prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
+    );
+  }, []);
+
+  const activeConv = conversations.find((c) => c.id === activeConversationId);
+
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-50">
+    <div className="flex h-screen bg-zinc-950 text-zinc-50 font-sans antialiased">
       <ToastContainer />
       <CommandPalette />
       <PromptLibraryModal onUsePrompt={handleUsePrompt} />
-      {/* Sidebar */}
-      <aside className="w-60 border-r border-zinc-800 flex flex-col">
+
+      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
+      <aside className="w-56 border-r border-zinc-800/80 flex flex-col bg-zinc-950 shrink-0">
+        {/* Logo / Brand */}
         <div
-          className="p-4 border-b border-zinc-800 flex items-center justify-between"
+          className="h-12 px-4 border-b border-zinc-800/80 flex items-center justify-between select-none"
           data-tauri-drag-region
         >
-          <span className="font-semibold text-sm select-none">
-            {t("app.name")}
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-violet-600 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="white" className="w-3.5 h-3.5">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+              </svg>
+            </div>
+            <span className="font-semibold text-sm tracking-tight text-zinc-100">
+              {t("app.name")}
+            </span>
+          </div>
           <button
             onClick={handleNewChat}
-            className="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 transition-colors"
+            className="w-6 h-6 rounded-md flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+            title={t("app.newChat")}
+            aria-label={t("app.newChat")}
           >
-            + {t("app.newChat")}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
           </button>
         </div>
 
-        {/* Search */}
+        {/* Conversation search */}
         {conversations.length > 3 && (
-          <div className="px-2 py-1.5">
-            <input
-              value={sidebarSearch}
-              onChange={(e) => setSidebarSearch(e.target.value)}
-              placeholder={t("prompt.search")}
-              className="w-full px-2 py-1 text-xs bg-zinc-900 border border-zinc-800 rounded focus:border-zinc-600 focus:outline-none placeholder-zinc-600"
-            />
+          <div className="px-3 pt-3 pb-1">
+            <div className="relative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input
+                value={sidebarSearch}
+                onChange={(e) => setSidebarSearch(e.target.value)}
+                placeholder="대화 검색..."
+                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-zinc-900 border border-zinc-800 rounded-lg focus:border-zinc-600 focus:outline-none placeholder-zinc-600 text-zinc-300"
+              />
+            </div>
           </div>
         )}
 
-        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
+        {/* Conversation list */}
+        <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-px min-h-0">
+          {filteredConversations.length === 0 && conversations.length === 0 && (
+            <div className="px-2 py-6 text-center">
+              <p className="text-xs text-zinc-600">아직 대화가 없습니다</p>
+              <button
+                onClick={handleNewChat}
+                className="mt-2 text-xs text-violet-500 hover:text-violet-400 transition-colors"
+              >
+                첫 대화 시작하기 →
+              </button>
+            </div>
+          )}
           {filteredConversations.map((conv) => (
             <ConversationItem
               key={conv.id}
               conversation={conv}
-              isActive={
-                currentView === "chat" && activeConversationId === conv.id
-              }
-              onClick={() => {
-                setActive(conv.id);
-                setCurrentView("chat");
-              }}
+              isActive={currentView === "chat" && activeConversationId === conv.id}
+              onClick={() => { setActive(conv.id); setCurrentView("chat"); }}
               onPin={() => pin(conv.id)}
               onDelete={() => remove(conv.id)}
             />
           ))}
-          {conversations.length === 0 && (
-            <p className="text-xs text-zinc-500 text-center py-8">
-              {t("app.noConversations")}
-            </p>
-          )}
         </nav>
 
-        <div className="p-2 border-t border-zinc-800 space-y-0.5">
+        {/* Tools section */}
+        <div className="border-t border-zinc-800/80 px-2 pt-2 pb-1">
+          <p className="px-2 mb-1 text-[10px] font-medium text-zinc-600 uppercase tracking-wider">
+            도구
+          </p>
           {(
             [
-              {
-                view: "kb",
-                label: "지식베이스",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375" />
-                  </svg>
-                ),
-              },
-              {
-                view: "agent",
-                label: "AI 에이전트",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.414 2.798H4.212c-1.444 0-2.414-1.798-1.414-2.798L4.2 15.3" />
-                  </svg>
-                ),
-              },
-              {
-                view: "mcp",
-                label: "MCP 마켓",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.39 48.39 0 01-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 01-.658.663v0c-.355 0-.676-.186-.959-.401a1.647 1.647 0 00-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401v0c.31 0 .555.26.532.57a48.039 48.039 0 01-.642 5.056c1.518.19 3.058.309 4.616.354a.64.64 0 00.657-.643v0c0-.355-.186-.676-.401-.959a1.647 1.647 0 01-.349-1.003c0-1.035 1.008-1.875 2.25-1.875 1.243 0 2.25.84 2.25 1.875 0 .369-.128.713-.349 1.003-.215.283-.4.604-.4.959v0c0 .333.277.599.61.58a48.1 48.1 0 005.427-.63 48.05 48.05 0 00.582-4.717.532.532 0 00-.533-.57v0c-.355 0-.676.186-.959.401-.29.221-.634.349-1.003.349-1.035 0-1.875-1.007-1.875-2.25s.84-2.25 1.875-2.25c.37 0 .713.128 1.003.349.283.215.604.401.96.401v0a.656.656 0 00.658-.663 48.422 48.422 0 00-.37-5.36c-1.886.342-3.81.574-5.766.689a.578.578 0 01-.61-.58v0z" />
-                  </svg>
-                ),
-              },
-              {
-                view: "workflow",
-                label: "워크플로우",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                  </svg>
-                ),
-              },
-              {
-                view: "batch",
-                label: "배치 처리",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" />
-                  </svg>
-                ),
-              },
-              {
-                view: "costs",
-                label: "비용 리포트",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                  </svg>
-                ),
-              },
-              {
-                view: "pro",
-                label: "Pro 플랜",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                  </svg>
-                ),
-              },
+              { view: "kb",       label: "지식베이스",  badge: null, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375" /></svg> },
+              { view: "agent",    label: "AI 에이전트", badge: "NEW", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.414 2.798H4.212c-1.444 0-2.414-1.798-1.414-2.798L4.2 15.3" /></svg> },
+              { view: "workflow", label: "워크플로우",  badge: null, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg> },
+              { view: "batch",    label: "배치 처리",  badge: null, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" /></svg> },
+              { view: "mcp",      label: "MCP 마켓",   badge: null, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.39 48.39 0 01-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 01-.658.663v0c-.355 0-.676-.186-.959-.401a1.647 1.647 0 00-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401v0c.31 0 .555.26.532.57a48.039 48.039 0 01-.642 5.056c1.518.19 3.058.309 4.616.354a.64.64 0 00.657-.643v0c0-.355-.186-.676-.401-.959a1.647 1.647 0 01-.349-1.003c0-1.035 1.008-1.875 2.25-1.875 1.243 0 2.25.84 2.25 1.875 0 .369-.128.713-.349 1.003-.215.283-.4.604-.4.959v0c0 .333.277.599.61.58a48.1 48.1 0 005.427-.63 48.05 48.05 0 00.582-4.717.532.532 0 00-.533-.57v0c-.355 0-.676.186-.959.401-.29.221-.634.349-1.003.349-1.035 0-1.875-1.007-1.875-2.25s.84-2.25 1.875-2.25c.37 0 .713.128 1.003.349.283.215.604.401.96.401v0a.656.656 0 00.658-.663 48.422 48.422 0 00-.37-5.36c-1.886.342-3.81.574-5.766.689a.578.578 0 01-.61-.58v0z" /></svg> },
+            ] as const
+          ).map(({ view, label, badge, icon }) => (
+            <button
+              key={view}
+              onClick={() => setCurrentView(view)}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                currentView === view
+                  ? "bg-zinc-800 text-zinc-100"
+                  : "text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-300"
+              }`}
+            >
+              <span className={currentView === view ? "text-violet-400" : ""}>{icon}</span>
+              <span>{label}</span>
+              {badge && (
+                <span className="ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded bg-violet-900/60 text-violet-300">
+                  {badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Bottom: Costs + Pro + Settings */}
+        <div className="border-t border-zinc-800/80 px-2 py-2 space-y-px">
+          {(
+            [
+              { view: "costs", label: "비용 리포트", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" /></svg> },
+              { view: "pro",   label: "Pro 플랜",   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg> },
             ] as const
           ).map(({ view, label, icon }) => (
             <button
               key={view}
               onClick={() => setCurrentView(view)}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-sm transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 currentView === view
                   ? "bg-zinc-800 text-zinc-100"
-                  : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300"
+                  : "text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-300"
               }`}
             >
-              {icon}
+              <span>{icon}</span>
               <span>{label}</span>
             </button>
           ))}
           <button
             onClick={() => setCurrentView("settings")}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-sm transition-colors cursor-pointer ${
+            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
               currentView === "settings"
                 ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300"
+                : "text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-300"
             }`}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 flex-shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -383,8 +389,8 @@ function MainApp() {
         />
       )}
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      {/* ── Main content ────────────────────────────────────────────────── */}
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {currentView === "settings" ? (
           <SettingsView />
         ) : currentView === "costs" ? (
@@ -404,39 +410,68 @@ function MainApp() {
         ) : currentView === "compare" && compareTargets ? (
           <MultiStreamView
             targets={compareTargets}
-            onClose={() => {
-              setCurrentView("chat");
-              setCompareTargets(null);
-            }}
+            onClose={() => { setCurrentView("chat"); setCompareTargets(null); }}
           />
         ) : activeConversationId ? (
           <>
-            <div className="flex items-center justify-between border-b border-zinc-800">
-              <div className="flex items-center gap-2">
+            {/* Chat header */}
+            <div className="h-12 px-4 border-b border-zinc-800/80 flex items-center justify-between shrink-0 bg-zinc-950/80 backdrop-blur-sm">
+              <div className="flex items-center gap-3 min-w-0">
                 <ModelSelector />
+                <div className="w-px h-4 bg-zinc-800" />
                 <button
                   onClick={() => setShowModelPicker(true)}
-                  className="text-[10px] px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
-                  title="Compare 2~3 AI models side-by-side"
+                  className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all"
+                  title="2~3개 AI 모델 동시 비교"
                 >
-                  Compare
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
+                  </svg>
+                  비교
                 </button>
               </div>
-              <div className="flex items-center gap-2 pr-3">
+              <div className="flex items-center gap-2">
+                {activeConv && (
+                  <span className="text-xs text-zinc-500 truncate max-w-[200px] hidden sm:block">
+                    {activeConv.title}
+                  </span>
+                )}
                 <PrivacyToggle />
                 <PersonaSelector />
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              {conversationMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-center pb-16">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800/80 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5 text-zinc-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-zinc-500">무엇이든 물어보세요</p>
+                  <p className="text-xs text-zinc-600">
+                    <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 font-mono text-zinc-400">Ctrl+K</kbd>
+                    {" "}명령 팔레트 ·{" "}
+                    <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 font-mono text-zinc-400">⊞</kbd>
+                    {" "}파일 드롭
+                  </p>
+                </div>
+              )}
               {conversationMessages.map((msg) => (
                 <MessageBubble key={msg.id} message={msg} />
               ))}
               {isStreaming && <StreamingBubble content={streamingContent} />}
               <div ref={chatEndRef} />
             </div>
+
+            {/* KB context chips (Smart Context Injection UI) */}
+            <KbContextBar activeKbIds={activeKbIds} onToggle={toggleKb} />
+
             <ChatInput
               isStreaming={isStreaming}
-              onSubmit={(content, opts) => sendMessage(content, opts)}
+              onSubmit={(content, opts) => sendMessage(content, { ...opts, kbIds: activeKbIds.length > 0 ? activeKbIds : undefined })}
               onCancel={cancelCurrentStream}
             />
           </>
@@ -451,22 +486,56 @@ function MainApp() {
 function WelcomeView({ onNewChat }: { onNewChat: () => void }) {
   const { t } = useTranslation();
 
+  const HINTS = [
+    { keys: ["Ctrl", "K"], label: "명령 팔레트" },
+    { keys: ["Alt", "Space"], label: "오버레이 열기" },
+    { keys: ["⊞ 파일"], label: "파일 드롭으로 분석" },
+  ];
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4">
-      <h1 className="text-2xl font-bold">{t("app.name")}</h1>
-      <p className="text-zinc-400 text-sm">{t("app.welcome")}</p>
-      <p className="text-xs text-zinc-500">
-        <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 font-mono text-zinc-300">
-          Alt+Space
-        </kbd>{" "}
-        {t("app.hotkeyHint")}
-      </p>
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6 pb-16">
+      {/* Logo mark */}
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-14 h-14 rounded-2xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-7 h-7 text-violet-400">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+          </svg>
+        </div>
+        <div className="text-center">
+          <h1 className="text-xl font-semibold text-zinc-100 tracking-tight">
+            {t("app.name")}
+          </h1>
+          <p className="text-sm text-zinc-500 mt-1">{t("app.welcome")}</p>
+        </div>
+      </div>
+
+      {/* New chat CTA */}
       <button
         onClick={onNewChat}
-        className="px-4 py-2 rounded bg-zinc-100 text-zinc-900 hover:bg-zinc-200 text-sm font-medium transition-colors"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
       >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
         {t("app.startChat")}
       </button>
+
+      {/* Keyboard hints */}
+      <div className="flex flex-col items-center gap-2">
+        {HINTS.map(({ keys, label }) => (
+          <p key={label} className="text-xs text-zinc-600 flex items-center gap-1.5">
+            {keys.map((k) => (
+              <kbd
+                key={k}
+                className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-400 text-[10px]"
+              >
+                {k}
+              </kbd>
+            ))}
+            <span>— {label}</span>
+          </p>
+        ))}
+      </div>
     </div>
   );
 }
