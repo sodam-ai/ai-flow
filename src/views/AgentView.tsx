@@ -9,112 +9,267 @@ import {
   cancelAgentRun,
   getAgentRunDetail,
 } from "@/lib/ipc/invoke";
+import {
+  Brain,
+  Globe,
+  Link,
+  FileText,
+  Database,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  SkipForward,
+  Loader2,
+  Circle,
+  ChevronDown,
+  ChevronRight,
+  Play,
+  Square,
+  Bot,
+  Zap,
+} from "lucide-react";
 
-// ─── Step Status Icon ──────────────────────────────────────────────────────
+// ─── Tool metadata ─────────────────────────────────────────────────────────
 
-function StepIcon({ step }: { step: AgentStep }) {
-  if (step.status === "completed") {
-    return (
-      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-800/40 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3 h-3 text-green-400">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </span>
-    );
+const TOOL_META: Record<
+  string,
+  { label: string; color: string; bg: string; border: string; Icon: typeof Brain }
+> = {
+  think:      { label: "분석",   color: "text-violet-300", bg: "bg-violet-900/20", border: "border-violet-700/30", Icon: Brain },
+  search_web: { label: "웹검색", color: "text-sky-300",    bg: "bg-sky-900/20",    border: "border-sky-700/30",    Icon: Globe },
+  read_url:   { label: "URL읽기",color: "text-cyan-300",   bg: "bg-cyan-900/20",   border: "border-cyan-700/30",   Icon: Link },
+  write_file: { label: "파일쓰기",color:"text-amber-300",  bg: "bg-amber-900/20",  border: "border-amber-700/30",  Icon: FileText },
+  search_kb:  { label: "KB검색", color: "text-emerald-300",bg: "bg-emerald-900/20",border: "border-emerald-700/30",Icon: Database },
+  action:     { label: "실행",   color: "text-zinc-300",   bg: "bg-zinc-800/40",   border: "border-zinc-700/30",   Icon: Zap },
+};
+const defaultTool = { label: "단계", color: "text-zinc-400", bg: "bg-zinc-800/30", border: "border-zinc-700/20", Icon: Circle };
+
+function getToolMeta(step: AgentStep) {
+  return TOOL_META[step.step_type] ?? TOOL_META[step.tool_name ?? ""] ?? defaultTool;
+}
+
+// ─── Step status icon ──────────────────────────────────────────────────────
+
+function StepStatusIcon({ status }: { status: AgentStep["status"] }) {
+  switch (status) {
+    case "completed":
+      return <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />;
+    case "running":
+      return <Loader2 className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />;
+    case "awaiting_approval":
+      return <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />;
+    case "failed":
+      return <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />;
+    case "skipped":
+      return <SkipForward className="w-4 h-4 text-zinc-500 flex-shrink-0" />;
+    default:
+      return <Circle className="w-4 h-4 text-zinc-600 flex-shrink-0" />;
   }
-  if (step.status === "running") {
-    return (
-      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-800/40 flex items-center justify-center">
-        <svg className="w-3 h-3 text-blue-400 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-      </span>
-    );
-  }
-  if (step.status === "awaiting_approval") {
-    return (
-      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-yellow-800/40 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 text-yellow-400">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </span>
-    );
-  }
-  if (step.status === "failed") {
-    return (
-      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-800/40 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 text-red-400">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </span>
-    );
-  }
-  if (step.status === "skipped") {
-    return (
-      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 text-zinc-500">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-        </svg>
-      </span>
-    );
-  }
+}
+
+// ─── Step tool metadata badge ──────────────────────────────────────────────
+
+function ToolBadge({ step }: { step: AgentStep }) {
+  const meta = getToolMeta(step);
   return (
-    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 text-zinc-600">
-        <circle cx={12} cy={12} r={3} />
-      </svg>
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border ${meta.bg} ${meta.border} ${meta.color}`}
+    >
+      <meta.Icon className="w-2.5 h-2.5" />
+      {meta.label}
     </span>
   );
 }
 
-// ─── Approval Gate Card ────────────────────────────────────────────────────
+// ─── Step tool args preview ────────────────────────────────────────────────
 
-function ApprovalGateCard({
+function ToolArgsPreview({ step }: { step: AgentStep }) {
+  if (!step.tool_args) return null;
+  try {
+    const args = JSON.parse(step.tool_args);
+    if (step.step_type === "search_web" && args.query) {
+      return (
+        <div className="flex items-center gap-1 mt-1">
+          <Globe className="w-3 h-3 text-sky-500 flex-shrink-0" />
+          <span className="text-xs text-sky-400 truncate">"{args.query}"</span>
+        </div>
+      );
+    }
+    if (step.step_type === "read_url" && args.url) {
+      return (
+        <div className="flex items-center gap-1 mt-1 min-w-0">
+          <Link className="w-3 h-3 text-cyan-500 flex-shrink-0" />
+          <span className="text-xs text-cyan-400 truncate">{args.url}</span>
+        </div>
+      );
+    }
+    if (step.step_type === "write_file" && args.path) {
+      return (
+        <div className="flex items-center gap-1 mt-1">
+          <FileText className="w-3 h-3 text-amber-500 flex-shrink-0" />
+          <span className="text-xs text-amber-400 truncate font-mono">{args.path}</span>
+        </div>
+      );
+    }
+    if (step.step_type === "search_kb" && args.query) {
+      return (
+        <div className="flex items-center gap-1 mt-1">
+          <Database className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+          <span className="text-xs text-emerald-400 truncate">"{args.query}"</span>
+        </div>
+      );
+    }
+  } catch {
+    // silently ignore parse errors
+  }
+  return null;
+}
+
+// ─── Step card ─────────────────────────────────────────────────────────────
+
+function StepCard({
   step,
   onApprove,
   onDeny,
 }: {
   step: AgentStep;
-  onApprove: (stepId: number) => void;
-  onDeny: (stepId: number) => void;
+  onApprove?: (stepId: number) => void;
+  onDeny?: (stepId: number) => void;
 }) {
+  const [expanded, setExpanded] = useState(step.status === "awaiting_approval");
+  const hasOutput = Boolean(step.output_text) && step.status === "completed";
+  const isActive = step.status === "running" || step.status === "awaiting_approval";
+
   return (
-    <div className="border border-yellow-700/40 bg-yellow-900/10 rounded-lg p-4 mt-3">
-      <div className="flex items-start gap-3">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-yellow-300">승인이 필요합니다</p>
-          <p className="text-xs text-zinc-400 mt-1">
-            {step.approval_message || `"${step.title}" 단계를 실행하려면 승인이 필요합니다.`}
-          </p>
-          {step.tool_name && (
-            <p className="text-xs text-zinc-500 mt-1">
-              도구: <code className="bg-zinc-800 px-1 rounded">{step.tool_name}</code>
-            </p>
+    <div
+      className={`rounded-lg border transition-colors ${
+        isActive
+          ? "border-zinc-600 bg-zinc-800/60"
+          : step.status === "failed"
+          ? "border-red-800/50 bg-red-900/5"
+          : step.status === "skipped"
+          ? "border-zinc-800 bg-zinc-900/40 opacity-60"
+          : "border-zinc-800 bg-zinc-900/60"
+      }`}
+    >
+      {/* Header row */}
+      <div className="flex items-start gap-2.5 px-3 py-2.5">
+        <div className="mt-0.5">
+          <StepStatusIcon status={step.status} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-zinc-200 leading-snug">{step.title}</span>
+            <ToolBadge step={step} />
+            {step.cost_usd > 0 && (
+              <span className="text-[10px] text-zinc-600 ml-auto">${step.cost_usd.toFixed(5)}</span>
+            )}
+          </div>
+          {step.description && (
+            <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed line-clamp-2">{step.description}</p>
           )}
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={() => onApprove(step.id)}
-              className="px-3 py-1.5 rounded bg-green-700 hover:bg-green-600 text-white text-xs font-medium transition-colors cursor-pointer"
-            >
-              승인
-            </button>
-            <button
-              onClick={() => onDeny(step.id)}
-              className="px-3 py-1.5 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
-            >
-              거부 (건너뜀)
-            </button>
+          <ToolArgsPreview step={step} />
+        </div>
+
+        {/* Expand toggle for output */}
+        {hasOutput && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="ml-1 p-0.5 text-zinc-600 hover:text-zinc-400 transition-colors flex-shrink-0 cursor-pointer"
+            aria-label={expanded ? "결과 접기" : "결과 펼치기"}
+          >
+            {expanded ? (
+              <ChevronDown className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5" />
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Output area */}
+      {hasOutput && expanded && (
+        <div className="px-3 pb-3">
+          <div className="rounded-md bg-zinc-800/60 border border-zinc-700/40 p-2.5 text-xs text-zinc-300 leading-relaxed max-h-40 overflow-y-auto font-mono whitespace-pre-wrap">
+            {step.output_text}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Approval gate */}
+      {step.status === "awaiting_approval" && onApprove && onDeny && (
+        <div className="px-3 pb-3">
+          <div className="rounded-md border border-amber-700/40 bg-amber-900/10 p-3">
+            <p className="text-xs text-amber-300 font-medium mb-1">승인이 필요합니다</p>
+            <p className="text-xs text-zinc-400 mb-3 leading-relaxed">
+              {step.approval_message || `"${step.title}" 단계를 실행하려면 승인이 필요합니다.`}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onApprove(step.id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-700 hover:bg-green-600 text-white text-xs font-medium transition-colors cursor-pointer"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                승인
+              </button>
+              <button
+                onClick={() => onDeny(step.id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+                건너뜀
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Main Agent View ───────────────────────────────────────────────────────
+// ─── Run status helpers ─────────────────────────────────────────────────────
+
+function statusColor(status: AgentRun["status"]) {
+  switch (status) {
+    case "completed":        return "text-green-400";
+    case "running":          return "text-blue-400";
+    case "awaiting_approval":return "text-amber-400";
+    case "failed":           return "text-red-400";
+    case "cancelled":        return "text-zinc-500";
+    default:                 return "text-zinc-400";
+  }
+}
+function statusLabel(status: AgentRun["status"]) {
+  switch (status) {
+    case "completed":        return "완료";
+    case "running":          return "실행 중";
+    case "awaiting_approval":return "승인 대기";
+    case "failed":           return "실패";
+    case "cancelled":        return "취소됨";
+    default:                 return status;
+  }
+}
+function statusDot(status: AgentRun["status"]) {
+  switch (status) {
+    case "completed":        return "bg-green-500";
+    case "running":          return "bg-blue-500 animate-pulse";
+    case "awaiting_approval":return "bg-amber-500 animate-pulse";
+    case "failed":           return "bg-red-500";
+    default:                 return "bg-zinc-600";
+  }
+}
+
+// ─── Tool capability chips ─────────────────────────────────────────────────
+
+const AVAILABLE_TOOLS = [
+  { type: "search_web",  Icon: Globe,     label: "웹 검색",  desc: "DuckDuckGo 즉시 답변 검색" },
+  { type: "read_url",    Icon: Link,      label: "URL 읽기", desc: "웹 페이지 텍스트 추출 (https)" },
+  { type: "write_file",  Icon: FileText,  label: "파일 쓰기",desc: "로컬 파일 생성 (승인 필요)" },
+  { type: "search_kb",   Icon: Database,  label: "KB 검색",  desc: "지식베이스 FTS 검색" },
+  { type: "think",       Icon: Brain,     label: "분석",     desc: "AI 추론 및 계획" },
+];
+
+// ─── Main AgentView ─────────────────────────────────────────────────────────
 
 export default function AgentView() {
   const [runs, setRuns] = useState<AgentRun[]>([]);
@@ -123,12 +278,11 @@ export default function AgentView() {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showToolsHelp, setShowToolsHelp] = useState(false);
 
-  useEffect(() => {
-    loadRuns();
-  }, []);
+  useEffect(() => { loadRuns(); }, []);
 
-  // Listen for agent events
+  // Listen for agent lifecycle events
   useEffect(() => {
     const unsubs = [
       listen<{ run_id: number }>("aiflow://agent-started", async ({ payload }) => {
@@ -151,6 +305,11 @@ export default function AgentView() {
         setRuns((prev) => prev.map((r) => (r.id === run.id ? run : r)));
         setSelectedRun((prev) => (prev?.id === run.id ? run : prev));
       }),
+      listen<{ run_id: number }>("aiflow://agent-cost-limit", async ({ payload }) => {
+        const run = await getAgentRunDetail(payload.run_id);
+        setRuns((prev) => prev.map((r) => (r.id === run.id ? run : r)));
+        setSelectedRun((prev) => (prev?.id === run.id ? run : prev));
+      }),
     ];
     return () => { unsubs.forEach((u) => u.then((fn) => fn())); };
   }, []);
@@ -161,15 +320,12 @@ export default function AgentView() {
       const data = await listAgentRuns();
       setRuns(data);
       if (data.length > 0) setSelectedRun(data[0]);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { setError(String(e)); }
+    finally { setLoading(false); }
   }
 
   async function handleStart() {
-    if (!goal.trim()) return;
+    if (!goal.trim() || isStarting) return;
     setIsStarting(true);
     setError(null);
     try {
@@ -177,11 +333,8 @@ export default function AgentView() {
       setRuns((prev) => [run, ...prev]);
       setSelectedRun(run);
       setGoal("");
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setIsStarting(false);
-    }
+    } catch (e) { setError(String(e)); }
+    finally { setIsStarting(false); }
   }
 
   async function handleApprove(runId: number, stepId: number) {
@@ -190,9 +343,7 @@ export default function AgentView() {
       const run = await resumeAgentRun(runId);
       setRuns((prev) => prev.map((r) => (r.id === run.id ? run : r)));
       setSelectedRun((prev) => (prev?.id === run.id ? run : prev));
-    } catch (e) {
-      setError(String(e));
-    }
+    } catch (e) { setError(String(e)); }
   }
 
   async function handleDeny(runId: number, stepId: number) {
@@ -201,9 +352,7 @@ export default function AgentView() {
       const run = await resumeAgentRun(runId);
       setRuns((prev) => prev.map((r) => (r.id === run.id ? run : r)));
       setSelectedRun((prev) => (prev?.id === run.id ? run : prev));
-    } catch (e) {
-      setError(String(e));
-    }
+    } catch (e) { setError(String(e)); }
   }
 
   async function handleCancel(runId: number) {
@@ -212,132 +361,221 @@ export default function AgentView() {
       const run = await getAgentRunDetail(runId);
       setRuns((prev) => prev.map((r) => (r.id === run.id ? run : r)));
       setSelectedRun((prev) => (prev?.id === run.id ? run : prev));
-    } catch (e) {
-      setError(String(e));
-    }
+    } catch (e) { setError(String(e)); }
   }
 
-  const statusColor = (status: AgentRun["status"]) => {
-    switch (status) {
-      case "completed": return "text-green-400";
-      case "running": return "text-blue-400";
-      case "awaiting_approval": return "text-yellow-400";
-      case "failed": return "text-red-400";
-      case "cancelled": return "text-zinc-500";
-      default: return "text-zinc-400";
-    }
-  };
-
-  const statusLabel = (status: AgentRun["status"]) => {
-    switch (status) {
-      case "completed": return "완료";
-      case "running": return "실행 중";
-      case "awaiting_approval": return "승인 대기";
-      case "failed": return "실패";
-      case "cancelled": return "취소됨";
-      default: return status;
-    }
-  };
+  const isRunActive =
+    selectedRun?.status === "running" || selectedRun?.status === "awaiting_approval";
 
   return (
     <div className="flex h-full bg-zinc-950 text-zinc-50">
-      {/* Left panel: Run list */}
-      <aside className="w-56 border-r border-zinc-800 flex flex-col">
-        <div className="p-3 border-b border-zinc-800">
-          <span className="text-sm font-semibold text-zinc-200">AI 에이전트</span>
+
+      {/* ── Left sidebar: run history ────────────────────────────────── */}
+      <aside className="w-56 border-r border-zinc-800 flex flex-col flex-shrink-0">
+        {/* Header */}
+        <div className="h-10 px-3 border-b border-zinc-800 flex items-center gap-2">
+          <Bot className="w-3.5 h-3.5 text-violet-400" />
+          <span className="text-xs font-semibold text-zinc-200">AI 에이전트</span>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
+
+        {/* Run list */}
+        <nav className="flex-1 overflow-y-auto p-1.5 space-y-0.5 min-h-0">
           {loading ? (
-            <div className="space-y-2 p-2">
-              {[1, 2, 3].map(i => <div key={i} className="h-12 bg-zinc-800 rounded animate-pulse" />)}
+            <div className="space-y-1.5 p-1.5">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-14 rounded-md bg-zinc-800/60 animate-pulse" />
+              ))}
             </div>
           ) : runs.length === 0 ? (
-            <p className="text-xs text-zinc-600 text-center py-8 px-2">아직 실행 기록이 없습니다</p>
-          ) : runs.map((run) => (
-            <button
-              key={run.id}
-              onClick={() => setSelectedRun(run)}
-              className={`w-full text-left px-2 py-2 rounded text-sm transition-colors ${
-                selectedRun?.id === run.id
-                  ? "bg-zinc-700 text-zinc-100"
-                  : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200"
-              }`}
-            >
-              <div className="truncate text-xs font-medium">{run.goal}</div>
-              <div className={`text-xs mt-0.5 ${statusColor(run.status)}`}>
-                {statusLabel(run.status)} · {run.completed_steps}/{run.total_steps}
-              </div>
-            </button>
-          ))}
+            <div className="flex flex-col items-center justify-center py-10 px-3 text-center">
+              <Bot className="w-8 h-8 text-zinc-700 mb-2" />
+              <p className="text-xs text-zinc-600">실행 기록 없음</p>
+            </div>
+          ) : (
+            runs.map((run) => (
+              <button
+                key={run.id}
+                onClick={() => setSelectedRun(run)}
+                className={`w-full text-left px-2.5 py-2 rounded-md transition-colors cursor-pointer ${
+                  selectedRun?.id === run.id
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDot(run.status)}`} />
+                  <span className="text-[11px] font-medium text-zinc-300 truncate flex-1">
+                    {run.goal.length > 28 ? run.goal.slice(0, 28) + "…" : run.goal}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pl-3">
+                  <span className={`text-[10px] ${statusColor(run.status)}`}>
+                    {statusLabel(run.status)}
+                  </span>
+                  <span className="text-[10px] text-zinc-600">
+                    {run.completed_steps}/{run.total_steps}
+                  </span>
+                </div>
+              </button>
+            ))
+          )}
         </nav>
       </aside>
 
-      {/* Right panel: Detail + New run */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      {/* ── Main panel ──────────────────────────────────────────────── */}
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+
         {/* New run input */}
-        <div className="p-4 border-b border-zinc-800">
+        <div className="px-4 py-3 border-b border-zinc-800 space-y-2">
           <div className="flex gap-2">
-            <input
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleStart()}
-              placeholder="에이전트에게 목표를 설명하세요... (예: 코드 리뷰하고 개선사항 정리)"
-              disabled={isStarting}
-              className="flex-1 px-3 py-2 text-sm bg-zinc-900 border border-zinc-700 rounded focus:border-zinc-500 focus:outline-none placeholder-zinc-600 disabled:opacity-50"
-            />
+            <div className="flex-1 relative">
+              <input
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleStart()}
+                placeholder="에이전트에게 목표를 설명하세요… (예: 최신 AI 뉴스 검색해서 요약해줘)"
+                disabled={isStarting}
+                maxLength={2000}
+                className="w-full px-3 py-2 text-sm bg-zinc-900 border border-zinc-700 rounded-lg focus:border-violet-600 focus:ring-1 focus:ring-violet-600/30 focus:outline-none placeholder-zinc-600 disabled:opacity-50 pr-12 transition-colors"
+              />
+              {goal.length > 1800 && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-amber-500">
+                  {goal.length}/2000
+                </span>
+              )}
+            </div>
             <button
               onClick={handleStart}
               disabled={isStarting || !goal.trim()}
-              className="px-4 py-2 rounded bg-zinc-100 text-zinc-900 hover:bg-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
+              aria-label="에이전트 실행"
             >
               {isStarting ? (
-                <span className="flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  실행 중
-                </span>
-              ) : "실행"}
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+              {isStarting ? "계획 중…" : "실행"}
             </button>
           </div>
+
+          {/* Tool chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] text-zinc-600">사용 가능한 도구:</span>
+            {AVAILABLE_TOOLS.map((tool) => {
+              const meta = TOOL_META[tool.type] ?? defaultTool;
+              return (
+                <span
+                  key={tool.type}
+                  title={tool.desc}
+                  className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border cursor-default ${meta.bg} ${meta.border} ${meta.color}`}
+                >
+                  <tool.Icon className="w-2.5 h-2.5" />
+                  {tool.label}
+                </span>
+              );
+            })}
+            <button
+              onClick={() => setShowToolsHelp((v) => !v)}
+              className="text-[10px] text-zinc-600 hover:text-zinc-400 underline cursor-pointer"
+            >
+              {showToolsHelp ? "숨기기" : "자세히"}
+            </button>
+          </div>
+
+          {showToolsHelp && (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 space-y-1.5">
+              {AVAILABLE_TOOLS.map((tool) => {
+                const meta = TOOL_META[tool.type] ?? defaultTool;
+                return (
+                  <div key={tool.type} className="flex items-start gap-2">
+                    <tool.Icon className={`w-3 h-3 mt-0.5 flex-shrink-0 ${meta.color}`} />
+                    <div>
+                      <span className={`text-[11px] font-medium ${meta.color}`}>{tool.label}</span>
+                      <span className="text-[11px] text-zinc-600"> — {tool.desc}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-[10px] text-zinc-600 pt-1 border-t border-zinc-800">
+                에이전트가 목표에 따라 자동으로 적합한 도구를 선택합니다.
+                파일 쓰기는 실행 전 사용자 승인이 필요합니다.
+              </p>
+            </div>
+          )}
+
           {error && (
-            <p className="text-xs text-red-400 mt-2">{error} <button onClick={() => setError(null)} className="underline cursor-pointer">닫기</button></p>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-900/20 border border-red-800/50">
+              <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+              <p className="text-xs text-red-400 flex-1">{error}</p>
+              <button onClick={() => setError(null)} className="text-xs text-red-500 hover:text-red-300 cursor-pointer">
+                ✕
+              </button>
+            </div>
           )}
         </div>
 
         {/* Run detail */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
           {!selectedRun ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-12 h-12 text-zinc-700 mb-3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.414 2.798H4.212c-1.444 0-2.414-1.798-1.414-2.798L4.2 15.3" />
-              </svg>
-              <p className="text-zinc-400 text-sm font-medium">위에서 목표를 입력하고 에이전트를 시작하세요</p>
-              <p className="text-zinc-600 text-xs mt-1">에이전트가 자동으로 단계를 계획하고 실행합니다</p>
+            <div className="flex flex-col items-center justify-center h-full text-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center">
+                <Bot className="w-7 h-7 text-zinc-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-400">에이전트를 시작해 보세요</p>
+                <p className="text-xs text-zinc-600 mt-1 max-w-xs">
+                  목표를 입력하면 AI가 자동으로 단계를 계획하고<br />
+                  웹 검색, URL 읽기, 파일 작성 등의 도구를 활용해 실행합니다
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 justify-center mt-1">
+                {[
+                  "최신 AI 뉴스 검색해서 요약",
+                  "Python 비동기 패턴 조사",
+                  "README 파일 작성",
+                ].map((ex) => (
+                  <button
+                    key={ex}
+                    onClick={() => setGoal(ex)}
+                    className="text-xs px-2.5 py-1 rounded-full border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors cursor-pointer"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
-            <div>
+            <div className="space-y-4 max-w-2xl">
+
               {/* Run header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1 min-w-0 mr-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
                   <h2 className="text-sm font-semibold text-zinc-100 leading-snug">{selectedRun.goal}</h2>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className={`text-xs font-medium ${statusColor(selectedRun.status)}`}>
-                      {statusLabel(selectedRun.status)}
+                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusDot(selectedRun.status)}`} />
+                      <span className={`text-xs font-medium ${statusColor(selectedRun.status)}`}>
+                        {statusLabel(selectedRun.status)}
+                      </span>
+                    </div>
+                    <span className="text-xs text-zinc-600">
+                      {selectedRun.completed_steps} / {selectedRun.total_steps} 단계
                     </span>
-                    <span className="text-xs text-zinc-500">
-                      {selectedRun.completed_steps}/{selectedRun.total_steps} 단계
-                    </span>
-                    <span className="text-xs text-zinc-500">
-                      ${selectedRun.total_cost_usd.toFixed(4)}
-                    </span>
+                    {selectedRun.total_cost_usd > 0 && (
+                      <span className="text-xs text-zinc-600">
+                        ${selectedRun.total_cost_usd.toFixed(4)}
+                      </span>
+                    )}
                   </div>
                 </div>
-                {(selectedRun.status === "running" || selectedRun.status === "awaiting_approval") && (
+                {isRunActive && (
                   <button
                     onClick={() => handleCancel(selectedRun.id)}
-                    className="px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-800 text-xs transition-colors cursor-pointer flex-shrink-0"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-800/60 text-xs transition-colors cursor-pointer flex-shrink-0"
+                    title="에이전트 실행 취소"
                   >
+                    <Square className="w-3 h-3" />
                     취소
                   </button>
                 )}
@@ -345,59 +583,49 @@ export default function AgentView() {
 
               {/* Progress bar */}
               {selectedRun.total_steps > 0 && (
-                <div className="mb-4">
+                <div className="space-y-1">
                   <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-zinc-400 rounded-full transition-all"
-                      style={{ width: `${(selectedRun.completed_steps / selectedRun.total_steps) * 100}%` }}
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        selectedRun.status === "failed" ? "bg-red-500" :
+                        selectedRun.status === "completed" ? "bg-green-500" : "bg-violet-500"
+                      }`}
+                      style={{
+                        width: `${selectedRun.total_steps > 0
+                          ? (selectedRun.completed_steps / selectedRun.total_steps) * 100
+                          : 0}%`,
+                      }}
                     />
                   </div>
                 </div>
               )}
 
               {/* Steps */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {selectedRun.steps.map((step) => (
-                  <div key={step.id}>
-                    <div className="flex items-start gap-2.5 p-3 rounded bg-zinc-900 border border-zinc-800">
-                      <StepIcon step={step} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-zinc-200">{step.title}</span>
-                          {step.step_type !== "think" && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">{step.step_type}</span>
-                          )}
-                        </div>
-                        {step.description && (
-                          <p className="text-xs text-zinc-500 mt-0.5">{step.description}</p>
-                        )}
-                        {step.output_text && step.status === "completed" && (
-                          <div className="mt-2 p-2 rounded bg-zinc-800/50 text-xs text-zinc-300 leading-relaxed max-h-32 overflow-y-auto">
-                            {step.output_text}
-                          </div>
-                        )}
-                        {step.cost_usd > 0 && (
-                          <div className="text-xs text-zinc-600 mt-1">${step.cost_usd.toFixed(5)}</div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Approval gate inline */}
-                    {step.status === "awaiting_approval" && (
-                      <ApprovalGateCard
-                        step={step}
-                        onApprove={(stepId) => handleApprove(selectedRun.id, stepId)}
-                        onDeny={(stepId) => handleDeny(selectedRun.id, stepId)}
-                      />
-                    )}
-                  </div>
+                  <StepCard
+                    key={step.id}
+                    step={step}
+                    onApprove={
+                      step.status === "awaiting_approval"
+                        ? (stepId) => handleApprove(selectedRun.id, stepId)
+                        : undefined
+                    }
+                    onDeny={
+                      step.status === "awaiting_approval"
+                        ? (stepId) => handleDeny(selectedRun.id, stepId)
+                        : undefined
+                    }
+                  />
                 ))}
               </div>
 
               {/* Final output */}
               {selectedRun.status === "completed" && selectedRun.final_output && (
-                <div className="mt-4 p-4 rounded-lg bg-zinc-800/30 border border-zinc-700">
-                  <h3 className="text-xs font-medium text-zinc-400 uppercase mb-2">최종 결과</h3>
+                <div className="rounded-lg border border-zinc-700/60 bg-zinc-800/30 p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+                    최종 결과
+                  </p>
                   <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
                     {selectedRun.final_output}
                   </p>
@@ -406,8 +634,9 @@ export default function AgentView() {
 
               {/* Error */}
               {selectedRun.status === "failed" && selectedRun.error_msg && (
-                <div className="mt-4 p-3 rounded bg-red-900/20 border border-red-800 text-red-400 text-sm">
-                  {selectedRun.error_msg}
+                <div className="flex items-start gap-2.5 rounded-lg border border-red-800/50 bg-red-900/10 p-3">
+                  <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-300 leading-relaxed">{selectedRun.error_msg}</p>
                 </div>
               )}
             </div>

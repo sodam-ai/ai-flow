@@ -11,6 +11,10 @@ const MAX_AGENT_STEPS: i64 = 20; // safety cap
 const MAX_AGENT_COST_USD: f64 = 2.0; // per-run cost ceiling (OWASP: resource exhaustion prevention)
 const MAX_GOAL_LEN: usize = 2000;
 const MAX_FEEDBACK_LEN: usize = 500;
+const MAX_SEARCH_QUERY_LEN: usize = 200;
+const MAX_URL_LEN: usize = 2048;
+const MAX_FETCH_BYTES: usize = 50 * 1024; // 50KB response cap
+const TOOL_TIMEOUT_SECS: u64 = 10;
 /// Characters that can be used for prompt injection — stripped from goal before AI planning
 const PROMPT_INJECTION_CHARS: &[char] = &['\x00', '\x01', '\x02', '\x03', '\x04', '\x05',
     '\x06', '\x07', '\x08', '\x0b', '\x0c', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13',
@@ -541,6 +545,35 @@ async fn execute_steps(
 
                 (result_text, 0.0, 0i64, 0i64)
             }
+            "search_web" => {
+                // Web search via DuckDuckGo Instant Answer (no API key required)
+                let query = tool_args
+                    .as_deref()
+                    .and_then(|a| serde_json::from_str::<serde_json::Value>(a).ok())
+                    .and_then(|v| v.get("query").and_then(|q| q.as_str()).map(String::from))
+                    .unwrap_or_else(|| title.clone());
+                // Strip control characters (OWASP ASVS 5.2.3)
+                let safe_query: String = query.chars()
+                    .filter(|c| !c.is_control())
+                    .take(MAX_SEARCH_QUERY_LEN)
+                    .collect();
+                let result = if safe_query.trim().is_empty() {
+                    "오류: 검색어가 없습니다.".to_string()
+                } else {
+                    web_search(http_client, safe_query.trim()).await
+                };
+                (result, 0.0, 0i64, 0i64)
+            }
+            "read_url" => {
+                // Fetch URL content with SSRF defense (OWASP ASVS 4.3.2, CWE-918)
+                let url = tool_args
+                    .as_deref()
+                    .and_then(|a| serde_json::from_str::<serde_json::Value>(a).ok())
+                    .and_then(|v| v.get("url").and_then(|u| u.as_str()).map(String::from))
+                    .unwrap_or_default();
+                let result = fetch_url_content(http_client, url.trim()).await;
+                (result, 0.0, 0i64, 0i64)
+            }
             "think" | "action" | _ => {
                 // AI call for this step
                 let run = get_agent_run(db, run_id)?;
@@ -700,7 +733,13 @@ async fn plan_with_ai(
 ) -> Result<Vec<PlannedStep>, String> {
     let system = "당신은 AI 에이전트 플래너입니다. 주어진 목표를 달성하기 위한 단계를 JSON 배열로 반환하세요.
 각 단계는 다음 형식을 따릅니다:
-{\"step_type\": \"think|action|search_kb\", \"title\": \"단계 제목\", \"description\": \"설명\", \"tool_name\": null|\"search_knowledge_base\"|\"write_file\", \"tool_args\": null|{...}}
+{\"step_type\": \"think|search_web|read_url|search_kb|write_file|action\", \"title\": \"단계 제목\", \"description\": \"설명\", \"tool_name\": null|\"search_web\"|\"read_url\"|\"write_file\"|\"search_kb\", \"tool_args\": null|{...}}
+
+사용 가능한 도구:
+- search_web: 웹 검색 {\"query\": \"검색어\"}
+- read_url: URL 페이지 읽기 {\"url\": \"https://...\"}  (https만 가능)
+- search_kb: 지식베이스 검색 {\"query\": \"검색어\"}
+- write_file: 파일 쓰기 {\"path\": \"/절대/경로\", \"content\": \"내용\"} (승인 필요)
 
 최대 단계 수는 제한이 있습니다. 반드시 JSON 배열만 반환하세요.";
 
@@ -757,4 +796,246 @@ async fn plan_with_ai(
         .collect();
 
     Ok(steps)
+}
+
+// ─── Web Tools ────────────────────────────────────────────────────────────
+
+/// DuckDuckGo Instant Answer API search (no API key required)
+/// Sanitizes query and enforces timeout (OWASP ASVS 4.3.2)
+async fn web_search(http_client: &reqwest::Client, query: &str) -> String {
+    use std::time::Duration;
+
+    let resp = match tokio::time::timeout(
+        Duration::from_secs(TOOL_TIMEOUT_SECS),
+        http_client
+            .get("https://api.duckduckgo.com/")
+            .query(&[
+                ("q", query),
+                ("format", "json"),
+                ("no_html", "1"),
+                ("skip_disambig", "1"),
+                ("no_redirect", "1"),
+            ])
+            .header("User-Agent", "AIFlow/1.0 (desktop; info-only)")
+            .send(),
+    )
+    .await
+    {
+        Ok(Ok(r)) => r,
+        Ok(Err(e)) => return format!("검색 요청 실패: {}", e),
+        Err(_) => return format!("검색 타임아웃 ({}초)", TOOL_TIMEOUT_SECS),
+    };
+
+    let text = match tokio::time::timeout(Duration::from_secs(5), resp.text()).await {
+        Ok(Ok(t)) => t,
+        _ => return "검색 응답 읽기 실패".to_string(),
+    };
+
+    let json: serde_json::Value = match serde_json::from_str(&text) {
+        Ok(v) => v,
+        Err(_) => return "검색 응답 파싱 실패".to_string(),
+    };
+
+    let mut results: Vec<String> = Vec::new();
+
+    if let Some(v) = json.get("Answer").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        results.push(format!("답변: {}", v));
+    }
+    if let Some(v) = json.get("AbstractText").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        results.push(format!("요약: {}", v));
+    }
+    if let Some(v) = json.get("Definition").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        results.push(format!("정의: {}", v));
+    }
+    if let Some(topics) = json.get("RelatedTopics").and_then(|v| v.as_array()) {
+        for topic in topics.iter().take(5) {
+            if let Some(t) = topic.get("Text").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+                results.push(format!("• {}", t));
+            }
+        }
+    }
+
+    if results.is_empty() {
+        format!("'{}' 에 대한 즉시 답변을 찾을 수 없습니다.", query)
+    } else {
+        results.join("\n")
+    }
+}
+
+/// Fetch URL content with SSRF defense (OWASP ASVS 4.3.2, CWE-918)
+/// - https:// only; private/reserved IPs blocked
+/// - 50KB response cap; 10s timeout
+async fn fetch_url_content(http_client: &reqwest::Client, url: &str) -> String {
+    use std::time::Duration;
+
+    // Scheme guard — https only
+    if !url.starts_with("https://") {
+        return "오류: https:// URL만 허용됩니다 (보안 정책).".to_string();
+    }
+    if url.len() > MAX_URL_LEN {
+        return format!("오류: URL이 너무 깁니다 (최대 {}자).", MAX_URL_LEN);
+    }
+
+    // Extract hostname for SSRF hostname-level check
+    let hostname = match extract_url_hostname(url) {
+        Some(h) => h,
+        None => return "오류: URL 파싱 실패 (호스트명 없음).".to_string(),
+    };
+    if is_ssrf_blocked_host(&hostname) {
+        return "오류: 내부/사설 주소 접근은 보안 정책에 의해 차단됩니다.".to_string();
+    }
+
+    let resp = match tokio::time::timeout(
+        Duration::from_secs(TOOL_TIMEOUT_SECS),
+        http_client
+            .get(url)
+            .header("User-Agent", "AIFlow/1.0 (desktop; info-only)")
+            .header("Accept", "text/html,text/plain;q=0.9,*/*;q=0.8")
+            // Prevent tracking via Referer
+            .header("Referer", "")
+            .send(),
+    )
+    .await
+    {
+        Ok(Ok(r)) => r,
+        Ok(Err(e)) => return format!("URL 요청 실패: {}", e),
+        Err(_) => return format!("URL 요청 타임아웃 ({}초).", TOOL_TIMEOUT_SECS),
+    };
+
+    // Post-redirect SSRF check: verify final URL still safe
+    let final_url = resp.url().to_string();
+    if let Some(final_host) = extract_url_hostname(&final_url) {
+        if is_ssrf_blocked_host(&final_host) {
+            return "오류: 리다이렉트 후 내부 주소 접근이 감지되어 차단됩니다.".to_string();
+        }
+    }
+
+    let bytes = match tokio::time::timeout(Duration::from_secs(TOOL_TIMEOUT_SECS), resp.bytes()).await {
+        Ok(Ok(b)) => b,
+        _ => return "응답 본문 읽기 실패 또는 타임아웃.".to_string(),
+    };
+
+    // Apply 50KB cap
+    let slice = if bytes.len() > MAX_FETCH_BYTES { &bytes[..MAX_FETCH_BYTES] } else { &bytes[..] };
+    let raw = String::from_utf8_lossy(slice).into_owned();
+    let text = strip_html_to_text(&raw);
+
+    if text.trim().is_empty() {
+        "페이지에서 텍스트 콘텐츠를 추출하지 못했습니다.".to_string()
+    } else {
+        let truncated: String = text.chars().take(3000).collect();
+        format!("[출처: {}]\n\n{}", url, truncated)
+    }
+}
+
+/// Extract lowercase hostname from an https:// URL (byte-safe)
+fn extract_url_hostname(url: &str) -> Option<String> {
+    let without_scheme = url.strip_prefix("https://")?;
+    let host_and_port = without_scheme.split('/').next()?;
+    let hostname = host_and_port.split(':').next()?.trim();
+    if hostname.is_empty() { None } else { Some(hostname.to_lowercase()) }
+}
+
+/// Block private/reserved/cloud-metadata hosts (SSRF, CWE-918, RFC 6890)
+fn is_ssrf_blocked_host(host: &str) -> bool {
+    // Exact & prefix matches for common private/loopback/metadata
+    let block_prefixes = [
+        "localhost", "127.", "0.0.0.0", "0.",
+        "10.", "192.168.", "169.254.",       // RFC 1918 + link-local
+        "fc00:", "fd",                        // IPv6 ULA
+        "::1", "0:0:0:0:0:0:0:1",
+        "metadata.google.internal", "metadata.goog",
+    ];
+    if block_prefixes.iter().any(|p| host.starts_with(p)) {
+        return true;
+    }
+    // 172.16.0.0/12 (172.16.x.x – 172.31.x.x)
+    if let Some(rest) = host.strip_prefix("172.") {
+        let second_octet = rest.split('.').next().unwrap_or("");
+        if let Ok(n) = second_octet.parse::<u8>() {
+            if (16..=31).contains(&n) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Strip HTML tags and common entities to plain text
+fn strip_html_to_text(html: &str) -> String {
+    // Remove <script> blocks
+    let html = remove_between_tags(html, "<script", "</script>");
+    // Remove <style> blocks
+    let html = remove_between_tags(&html, "<style", "</style>");
+    // Remove HTML comments
+    let html = remove_between_tags(&html, "<!--", "-->");
+    // Remove <head> block
+    let html = remove_between_tags(&html, "<head", "</head>");
+
+    // Strip remaining tags, inserting spaces for block elements
+    let mut out = String::with_capacity(html.len());
+    let mut in_tag = false;
+    let mut prev_space = true;
+    let bytes = html.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        let ch = bytes[i] as char;
+        match ch {
+            '<' => { in_tag = true; out.push(' '); }
+            '>' => { in_tag = false; out.push(' '); }
+            _ if in_tag => {}
+            '\n' | '\r' | '\t' | ' ' => {
+                if !prev_space { out.push(' '); prev_space = true; }
+            }
+            c => { out.push(c); prev_space = false; }
+        }
+        i += 1;
+    }
+
+    // Decode common HTML entities
+    let out = out
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
+        .replace("&nbsp;", " ");
+
+    // Collapse multiple spaces into one and trim lines
+    out.split_whitespace()
+        .collect::<Vec<_>>()
+        .chunks(15) // approximate line-break every ~15 words
+        .map(|words| words.join(" "))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Remove content between two tag markers (case-insensitive open tag match)
+fn remove_between_tags(html: &str, open: &str, close: &str) -> String {
+    let lower_html = html.to_ascii_lowercase();
+    let lower_open = open.to_ascii_lowercase();
+    let lower_close = close.to_ascii_lowercase();
+    let mut result = String::with_capacity(html.len());
+    let mut pos = 0usize;
+
+    while pos < html.len() {
+        match lower_html[pos..].find(&lower_open) {
+            None => {
+                result.push_str(&html[pos..]);
+                break;
+            }
+            Some(rel) => {
+                let abs = pos + rel;
+                result.push_str(&html[pos..abs]);
+                match lower_html[abs..].find(&lower_close) {
+                    None => break, // truncate rest
+                    Some(end_rel) => {
+                        pos = abs + end_rel + lower_close.len();
+                    }
+                }
+            }
+        }
+    }
+    result
 }
