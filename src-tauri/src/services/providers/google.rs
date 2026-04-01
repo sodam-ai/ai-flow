@@ -140,6 +140,12 @@ impl AiProvider for GoogleProvider {
         SseParseResult::Skip
     }
 
+    fn extract_non_stream_text(&self, json: &serde_json::Value) -> Option<String> {
+        json.get("candidates")?.get(0)?
+            .get("content")?.get("parts")?.get(0)?
+            .get("text")?.as_str().map(|s| s.to_string())
+    }
+
     fn model_catalog(&self) -> Vec<ModelInfo> {
         vec![
             ModelInfo {

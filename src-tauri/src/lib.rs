@@ -20,6 +20,7 @@ pub struct AppState {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
@@ -138,7 +139,7 @@ pub fn run() {
                 });
             }
 
-            log::info!("AIFlow initialized successfully (Phase 2: multi-AI + routing + privacy)");
+            log::info!("AIFlow initialized successfully (Phase 2 complete: MCP + workflow + batch + payment + browser ext)");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -200,6 +201,44 @@ pub fn run() {
             // Prompt Versions (Phase 2)
             commands::prompt_version::get_prompt_versions,
             commands::prompt_version::restore_prompt_version,
+            // MCP Plugin Market (Phase 2)
+            commands::mcp::list_mcp_servers,
+            commands::mcp::create_mcp_server,
+            commands::mcp::update_mcp_server,
+            commands::mcp::delete_mcp_server,
+            commands::mcp::toggle_mcp_server,
+            commands::mcp::set_mcp_allowed_paths,
+            // Workflow Builder (Phase 2)
+            commands::workflow::list_workflow_templates,
+            commands::workflow::list_workflows,
+            commands::workflow::create_workflow,
+            commands::workflow::get_workflow,
+            commands::workflow::delete_workflow,
+            commands::workflow::run_workflow,
+            commands::workflow::get_workflow_run,
+            commands::workflow::list_workflow_runs,
+            // Batch Processing (Phase 2)
+            commands::workflow::list_batch_jobs,
+            commands::workflow::create_batch_job,
+            commands::workflow::get_batch_job,
+            commands::workflow::get_batch_items,
+            commands::workflow::run_batch_job,
+            commands::workflow::cancel_batch_job,
+            // Payment / License (Phase 2)
+            commands::payment::get_license_status,
+            commands::payment::get_pro_features,
+            commands::payment::create_lemonsqueezy_checkout,
+            commands::payment::create_toss_checkout,
+            commands::payment::create_naverpay_checkout,
+            commands::payment::activate_license,
+            commands::payment::handle_payment_callback,
+            commands::payment::reset_license,
+            // Browser Extension (Phase 2)
+            commands::browser_ext::get_browser_ext_status,
+            commands::browser_ext::register_native_host,
+            commands::browser_ext::unregister_native_host,
+            commands::browser_ext::receive_browser_context,
+            commands::browser_ext::list_browser_contexts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,13 +1,17 @@
 pub mod ai;
+pub mod browser_ext;
 pub mod chat;
 pub mod cost_report;
 pub mod file;
 pub mod keychain;
 pub mod local_llm;
+pub mod mcp;
 pub mod multi_ai;
 pub mod overlay;
+pub mod payment;
 pub mod persona;
 pub mod privacy;
 pub mod prompt;
 pub mod prompt_version;
 pub mod routing;
+pub mod workflow;

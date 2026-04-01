@@ -441,3 +441,119 @@ export async function getPromptVersions(promptId: string): Promise<PromptVersion
 export async function restorePromptVersion(promptId: string, versionId: string): Promise<void> {
   return invoke("restore_prompt_version", { promptId, versionId });
 }
+
+// ─── MCP Plugin Market (Phase 2) ─────────────────────────────────────────
+import type { MCPServer, WorkflowTemplate, Workflow, WorkflowRun, BatchJob, BatchItem, LicenseInfo, ProFeatures, CheckoutUrlResponse, BrowserExtStatus } from "@/types";
+
+export async function listMcpServers(): Promise<MCPServer[]> {
+  return invoke("list_mcp_servers");
+}
+
+export async function createMcpServer(req: {
+  name: string; description?: string; server_type?: string;
+  command: string; args: string[]; allowed_paths: string[];
+}): Promise<MCPServer> {
+  return invoke("create_mcp_server", { req });
+}
+
+export async function toggleMcpServer(id: number, enabled: boolean): Promise<MCPServer> {
+  return invoke("toggle_mcp_server", { id, enabled });
+}
+
+export async function deleteMcpServer(id: number): Promise<void> {
+  return invoke("delete_mcp_server", { id });
+}
+
+export async function setMcpAllowedPaths(id: number, paths: string[]): Promise<MCPServer> {
+  return invoke("set_mcp_allowed_paths", { id, paths });
+}
+
+// ─── Workflow Builder (Phase 2) ──────────────────────────────────────────
+export async function listWorkflowTemplates(): Promise<WorkflowTemplate[]> {
+  return invoke("list_workflow_templates");
+}
+
+export async function listWorkflows(): Promise<Workflow[]> {
+  return invoke("list_workflows");
+}
+
+export async function createWorkflow(req: {
+  name: string; description?: string; template_id?: number;
+  steps: { name: string; provider?: string; model?: string; system_prompt?: string; user_prompt_template: string }[];
+}): Promise<Workflow> {
+  return invoke("create_workflow", { req });
+}
+
+export async function deleteWorkflow(id: number): Promise<void> {
+  return invoke("delete_workflow", { id });
+}
+
+export async function runWorkflow(req: {
+  workflow_id: number; initial_input: string;
+  provider_override?: string; model_override?: string;
+}): Promise<WorkflowRun> {
+  return invoke("run_workflow", { req });
+}
+
+export async function listWorkflowRuns(workflowId: number): Promise<WorkflowRun[]> {
+  return invoke("list_workflow_runs", { workflowId });
+}
+
+// ─── Batch Processing (Phase 2) ──────────────────────────────────────────
+export async function listBatchJobs(): Promise<BatchJob[]> {
+  return invoke("list_batch_jobs");
+}
+
+export async function createBatchJob(req: {
+  name: string; provider?: string; model?: string;
+  system_prompt?: string; output_dir?: string;
+  items: { input_text?: string; input_file_path?: string }[];
+}): Promise<BatchJob> {
+  return invoke("create_batch_job", { req });
+}
+
+export async function getBatchItems(jobId: number): Promise<BatchItem[]> {
+  return invoke("get_batch_items", { jobId });
+}
+
+export async function runBatchJob(jobId: number): Promise<void> {
+  return invoke("run_batch_job", { jobId });
+}
+
+export async function cancelBatchJob(jobId: number): Promise<void> {
+  return invoke("cancel_batch_job", { jobId });
+}
+
+// ─── Payment / License (Phase 2) ─────────────────────────────────────────
+export async function getLicenseStatus(): Promise<LicenseInfo> {
+  return invoke("get_license_status");
+}
+
+export async function getProFeatures(): Promise<ProFeatures> {
+  return invoke("get_pro_features");
+}
+
+export async function createLemonsqueezyCheckout(): Promise<CheckoutUrlResponse> {
+  return invoke("create_lemonsqueezy_checkout");
+}
+
+export async function createTossCheckout(): Promise<CheckoutUrlResponse> {
+  return invoke("create_toss_checkout");
+}
+
+export async function createNaverpayCheckout(): Promise<CheckoutUrlResponse> {
+  return invoke("create_naverpay_checkout");
+}
+
+export async function activateLicense(licenseKey: string, provider: string): Promise<LicenseInfo> {
+  return invoke("activate_license", { req: { license_key: licenseKey, provider } });
+}
+
+// ─── Browser Extension (Phase 2) ─────────────────────────────────────────
+export async function getBrowserExtStatus(): Promise<BrowserExtStatus> {
+  return invoke("get_browser_ext_status");
+}
+
+export async function registerNativeHost(): Promise<string> {
+  return invoke("register_native_host");
+}

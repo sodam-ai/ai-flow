@@ -22,9 +22,13 @@ import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
 import OverlayChat from "@/components/overlay/OverlayChat";
 import CostReportView from "@/views/CostReportView";
+import MCPMarketView from "@/views/MCPMarketView";
+import WorkflowBuilderView from "@/views/WorkflowBuilderView";
+import BatchQueueView from "@/views/BatchQueueView";
+import ProUpgradeView from "@/views/ProUpgradeView";
 import type { StreamTarget } from "@/types";
 
-type AppView = "chat" | "settings" | "compare" | "costs";
+type AppView = "chat" | "settings" | "compare" | "costs" | "mcp" | "workflow" | "batch" | "pro";
 
 export default function App() {
   // Overlay route: if opened as /overlay, render minimal chat only
@@ -268,16 +272,27 @@ function MainApp() {
         </nav>
 
         <div className="p-2 border-t border-zinc-800 space-y-0.5">
-          <button
-            onClick={() => setCurrentView("costs")}
-            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-              currentView === "costs"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:bg-zinc-800/50"
-            }`}
-          >
-            $ Costs
-          </button>
+          {(
+            [
+              { view: "mcp",      label: "🔌 MCP 마켓" },
+              { view: "workflow", label: "🔀 워크플로우" },
+              { view: "batch",    label: "📦 배치 처리" },
+              { view: "costs",    label: "$ 비용 리포트" },
+              { view: "pro",      label: "👑 Pro 플랜" },
+            ] as const
+          ).map(({ view, label }) => (
+            <button
+              key={view}
+              onClick={() => setCurrentView(view)}
+              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                currentView === view
+                  ? "bg-zinc-800 text-zinc-100"
+                  : "text-zinc-400 hover:bg-zinc-800/50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
           <button
             onClick={() => setCurrentView("settings")}
             className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
@@ -309,6 +324,14 @@ function MainApp() {
           <SettingsView />
         ) : currentView === "costs" ? (
           <CostReportView />
+        ) : currentView === "mcp" ? (
+          <MCPMarketView />
+        ) : currentView === "workflow" ? (
+          <WorkflowBuilderView />
+        ) : currentView === "batch" ? (
+          <BatchQueueView />
+        ) : currentView === "pro" ? (
+          <ProUpgradeView />
         ) : currentView === "compare" && compareTargets ? (
           <MultiStreamView
             targets={compareTargets}

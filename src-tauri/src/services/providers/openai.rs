@@ -111,6 +111,10 @@ impl AiProvider for OpenAiProvider {
         SseParseResult::Skip
     }
 
+    fn extract_non_stream_text(&self, json: &serde_json::Value) -> Option<String> {
+        json.get("choices")?.get(0)?.get("message")?.get("content")?.as_str().map(|s| s.to_string())
+    }
+
     fn model_catalog(&self) -> Vec<ModelInfo> {
         vec![
             ModelInfo {

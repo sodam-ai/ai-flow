@@ -37,6 +37,9 @@ pub trait AiProvider: Send + Sync {
 
     /// Supported models with pricing
     fn model_catalog(&self) -> Vec<ModelInfo>;
+
+    /// Extract text from a non-streaming JSON response (for workflow/batch)
+    fn extract_non_stream_text(&self, json: &serde_json::Value) -> Option<String>;
 }
 
 /// Result of parsing a single SSE line

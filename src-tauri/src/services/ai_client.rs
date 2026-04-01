@@ -1,6 +1,7 @@
 use futures::StreamExt;
 use once_cell::sync::Lazy;
 use reqwest::Client;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::oneshot;
 
@@ -161,6 +162,86 @@ pub async fn stream_chat(
             }
         }
     }
+}
+
+/// Non-streaming AI call — returns (text, usage map) for workflow/batch use
+pub async fn call_ai_non_stream(
+    _http_client: &Arc<reqwest::Client>,
+    provider_id: &str,
+    model_id: &str,
+    system_prompt: Option<&str>,
+    messages: &[serde_json::Value],
+) -> Result<(String, serde_json::Value), String> {
+    let provider = providers::get_provider(provider_id)?;
+    let api_key = crate::services::keychain::get_key_internal(provider_id)
+        .map_err(|e| format!("API 키 없음 ({provider_id}): {e}"))?;
+
+    // Convert JSON messages to Message vec
+    let msgs: Vec<crate::models::conversation::Message> = messages
+        .iter()
+        .filter_map(|m| {
+            let role = m.get("role")?.as_str()?.to_string();
+            let content = m.get("content")?.as_str()?.to_string();
+            Some(crate::models::conversation::Message {
+                id: 0,
+                conversation_id: 0,
+                role,
+                content,
+                provider_id: None,
+                model_id: None,
+                tokens_in: 0,
+                tokens_out: 0,
+                cost_usd: 0.0,
+                cost_krw: 0,
+                comparison_group_id: None,
+                is_selected_variant: false,
+                created_at: String::new(),
+            })
+        })
+        .collect();
+
+    let mut endpoint = provider.chat_endpoint(model_id);
+    let mut body = provider.build_request_body(&msgs, model_id, system_prompt);
+    // Disable streaming for non-stream call
+    if let Some(obj) = body.as_object_mut() {
+        obj.insert("stream".to_string(), serde_json::json!(false));
+    }
+    let auth_headers = provider.auth_headers(&api_key);
+
+    if provider_id == "google" {
+        let separator = if endpoint.contains('?') { "&" } else { "?" };
+        endpoint = format!("{}{}key={}", endpoint, separator, api_key);
+    }
+
+    let client = get_http_client();
+    let mut req = client.post(&endpoint).header("Content-Type", "application/json");
+    for (name, value) in &auth_headers {
+        req = req.header(name, value);
+    }
+
+    let response = req
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("AI_001: {e}"))?;
+
+    let status = response.status();
+    if !status.is_success() {
+        let err = response.text().await.unwrap_or_default();
+        return Err(format!("AI_002: {status}: {}", truncate_error(&err, 300)));
+    }
+
+    let json: serde_json::Value = response.json().await.map_err(|e| format!("AI_004: {e}"))?;
+
+    let text = provider.extract_non_stream_text(&json).unwrap_or_default();
+    let usage = json.get("usage").cloned().unwrap_or(serde_json::json!({}));
+
+    Ok((text, usage))
+}
+
+/// Cost estimate helper for workflow/batch services
+pub fn estimate_cost(provider_id: &str, model_id: &str, tokens_in: i32, tokens_out: i32) -> f64 {
+    cost::calc_cost(provider_id, model_id, tokens_in as u32, tokens_out as u32)
 }
 
 fn truncate_error(s: &str, max_len: usize) -> String {

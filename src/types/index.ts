@@ -257,6 +257,175 @@ export interface FileContent {
 }
 
 // IPC Error (matches 14_ERROR_CATALOG)
+// ─── MCP Plugin Market ───────────────────────────────────────────────────
+export interface MCPServer {
+  id: number;
+  name: string;
+  description?: string;
+  server_type: "filesystem" | "git" | "browser" | "custom";
+  command: string;
+  args: string[];
+  allowed_paths: string[];
+  env_vars: Record<string, string>;
+  is_enabled: boolean;
+  is_builtin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ─── Workflow Builder ────────────────────────────────────────────────────
+export interface WorkflowTemplate {
+  id: number;
+  name: string;
+  description?: string;
+  category: "writing" | "coding" | "translation" | "analysis" | "social";
+  icon: string;
+  steps: TemplateStep[];
+  is_builtin: boolean;
+  created_at: string;
+}
+
+export interface TemplateStep {
+  name: string;
+  prompt: string;
+  model?: string;
+}
+
+export interface WorkflowStep {
+  id: number;
+  workflow_id: number;
+  step_order: number;
+  name: string;
+  provider?: string;
+  model?: string;
+  system_prompt?: string;
+  user_prompt_template: string;
+  mcp_server_id?: number;
+  is_enabled: boolean;
+}
+
+export interface Workflow {
+  id: number;
+  name: string;
+  description?: string;
+  template_id?: number;
+  is_active: boolean;
+  steps: WorkflowStep[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkflowStepResult {
+  id: number;
+  run_id: number;
+  step_id: number;
+  step_order: number;
+  input_text: string;
+  output_text?: string;
+  status: "pending" | "running" | "completed" | "failed";
+  error_message?: string;
+  tokens_in: number;
+  tokens_out: number;
+  cost_usd: number;
+  started_at?: string;
+  completed_at?: string;
+}
+
+export interface WorkflowRun {
+  id: number;
+  workflow_id: number;
+  status: "pending" | "running" | "completed" | "failed";
+  initial_input: string;
+  final_output?: string;
+  error_message?: string;
+  total_cost_usd: number;
+  step_results: WorkflowStepResult[];
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+}
+
+// ─── Batch Processing ────────────────────────────────────────────────────
+export interface BatchJob {
+  id: number;
+  name: string;
+  workflow_id?: number;
+  provider?: string;
+  model?: string;
+  system_prompt?: string;
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
+  total_items: number;
+  processed_items: number;
+  failed_items: number;
+  output_dir?: string;
+  total_cost_usd: number;
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
+}
+
+export interface BatchItem {
+  id: number;
+  job_id: number;
+  item_order: number;
+  input_text?: string;
+  input_file_path?: string;
+  output_text?: string;
+  output_file_path?: string;
+  status: "pending" | "running" | "completed" | "failed";
+  error_message?: string;
+  tokens_in: number;
+  tokens_out: number;
+  cost_usd: number;
+  processed_at?: string;
+}
+
+export interface BatchProgressEvent {
+  job_id: number;
+  item_id: number;
+  item_order: number;
+  total_items: number;
+  processed_items: number;
+  status: string;
+  output_text?: string;
+  error_message?: string;
+}
+
+// ─── Payment / License ───────────────────────────────────────────────────
+export interface LicenseInfo {
+  id: number;
+  tier: "free" | "pro";
+  payment_provider?: string;
+  order_id?: string;
+  activated_at?: string;
+  expires_at?: string;
+  last_verified_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProFeatures {
+  mcp_plugins: boolean;
+  workflow_builder: boolean;
+  batch_processing: boolean;
+  browser_extension: boolean;
+  smart_routing: boolean;
+  unlimited_history: boolean;
+}
+
+export interface CheckoutUrlResponse {
+  url: string;
+  provider: string;
+}
+
+// ─── Browser Extension ───────────────────────────────────────────────────
+export interface BrowserExtStatus {
+  registered: boolean;
+  manifest_path?: string;
+  registry_key?: string;
+  native_host_path?: string;
+}
+
 export interface IpcError {
   code: string;
   message: string;

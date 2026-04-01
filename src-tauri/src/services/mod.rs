@@ -1,4 +1,6 @@
 pub mod ai_client;
+pub mod mcp;
+pub mod workflow;
 pub mod audit;
 pub mod chat;
 pub mod cost;

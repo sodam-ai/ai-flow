@@ -141,6 +141,11 @@ impl AiProvider for AnthropicProvider {
         }
     }
 
+    fn extract_non_stream_text(&self, json: &serde_json::Value) -> Option<String> {
+        // Anthropic non-stream: { "content": [{ "type": "text", "text": "..." }] }
+        json.get("content")?.get(0)?.get("text")?.as_str().map(|s| s.to_string())
+    }
+
     fn model_catalog(&self) -> Vec<ModelInfo> {
         vec![
             ModelInfo {

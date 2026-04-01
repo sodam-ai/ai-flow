@@ -122,6 +122,11 @@ impl AiProvider for OllamaProvider {
         SseParseResult::Skip
     }
 
+    fn extract_non_stream_text(&self, json: &serde_json::Value) -> Option<String> {
+        // Ollama non-stream: { "message": { "content": "..." } }
+        json.get("message")?.get("content")?.as_str().map(|s| s.to_string())
+    }
+
     fn model_catalog(&self) -> Vec<ModelInfo> {
         // Dynamic — populated by local_llm detection
         // Return common defaults for display

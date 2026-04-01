@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "AIFlow Companion",
+  "version": "1.0.0",
+  "description": "현재 페이지를 AIFlow로 전송하여 AI와 대화하세요.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "nativeMessaging",
+    "contextMenus",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AIFlow로 전송"
+  }
+}
