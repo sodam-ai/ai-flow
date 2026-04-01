@@ -242,6 +242,17 @@ pub fn create_branch(
     db: &Arc<Database>,
     req: CreateBranchRequest,
 ) -> Result<ConversationBranch, String> {
+    // Input validation (OWASP ASVS 5.1.3)
+    if let Some(ref label) = req.label {
+        let trimmed = label.trim();
+        if trimmed.len() > 50 {
+            return Err("브랜치 레이블은 50자 이하여야 합니다.".into());
+        }
+    }
+    if req.parent_conversation_id.is_empty() || req.fork_message_id.is_empty() {
+        return Err("유효하지 않은 브랜치 요청입니다.".into());
+    }
+
     // Generate a new conversation ID for the branch
     let branch_id = uuid::Uuid::new_v4().to_string();
 

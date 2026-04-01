@@ -22,7 +22,9 @@ import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
 import OverlayChat from "@/components/overlay/OverlayChat";
 import KbContextBar from "@/components/chat/KbContextBar";
-import { exportConversation } from "@/lib/ipc/invoke";
+import BranchPanel from "@/components/chat/BranchPanel";
+import BranchDialog from "@/components/chat/BranchDialog";
+import { exportConversation, createConversationBranch } from "@/lib/ipc/invoke";
 import CostReportView from "@/views/CostReportView";
 import MCPMarketView from "@/views/MCPMarketView";
 import WorkflowBuilderView from "@/views/WorkflowBuilderView";
@@ -247,6 +249,39 @@ function MainApp() {
   }, []);
 
   const activeConv = conversations.find((c) => c.id === activeConversationId);
+
+  // ── Conversation Branching ───────────────────────────────────────────────
+  const [showBranchPanel, setShowBranchPanel] = useState(false);
+  const [branchDialogState, setBranchDialogState] = useState<{
+    messageId: string;
+    messageIndex: number;
+  } | null>(null);
+
+  // Called from MessageBubble fork button
+  const handleBranchRequest = useCallback((messageId: string, messageIndex: number) => {
+    setBranchDialogState({ messageId, messageIndex });
+  }, []);
+
+  const handleBranchConfirm = useCallback(async (label: string) => {
+    if (!branchDialogState || !activeConversationId) return;
+    setBranchDialogState(null);
+    try {
+      const branch = await createConversationBranch({
+        parent_conversation_id: activeConversationId,
+        fork_message_id: branchDialogState.messageId,
+        fork_message_index: branchDialogState.messageIndex,
+        label: label || undefined,
+      });
+      // Reload conversations so branch appears in sidebar
+      const { loadConversations: reload } = useChatStore.getState();
+      await reload();
+      const { useToastStore } = await import("@/stores/toastStore");
+      useToastStore.getState().addToast("success", `브랜치 생성됨 — ${label || `#${branch.id}`}`);
+    } catch (e) {
+      const { useToastStore } = await import("@/stores/toastStore");
+      useToastStore.getState().addToast("error", String(e));
+    }
+  }, [branchDialogState, activeConversationId]);
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-50 font-sans antialiased">
@@ -489,6 +524,22 @@ function MainApp() {
                     </button>
                   </div>
                 </div>
+                {/* Branch panel toggle */}
+                <button
+                  onClick={() => setShowBranchPanel(true)}
+                  className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-all ${
+                    showBranchPanel
+                      ? "border-violet-600/60 bg-violet-900/30 text-violet-300"
+                      : "border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50"
+                  }`}
+                  title="대화 브랜치 목록"
+                  aria-label="대화 브랜치 패널 열기"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                  </svg>
+                  브랜치
+                </button>
                 <PrivacyToggle />
                 <PersonaSelector />
               </div>
@@ -512,8 +563,13 @@ function MainApp() {
                   </p>
                 </div>
               )}
-              {conversationMessages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} />
+              {conversationMessages.map((msg, idx) => (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  messageIndex={idx}
+                  onBranch={handleBranchRequest}
+                />
               ))}
               {isStreaming && <StreamingBubble content={streamingContent} />}
               <div ref={chatEndRef} />
@@ -527,6 +583,26 @@ function MainApp() {
               onSubmit={(content, opts) => sendMessage(content, { ...opts, kbIds: activeKbIds.length > 0 ? activeKbIds : undefined })}
               onCancel={cancelCurrentStream}
             />
+
+            {/* Branch panel (slide-in from right) */}
+            <BranchPanel
+              conversationId={activeConversationId}
+              isOpen={showBranchPanel}
+              onClose={() => setShowBranchPanel(false)}
+              onNavigate={(branchConvId) => {
+                setActive(branchConvId);
+                setCurrentView("chat");
+              }}
+            />
+
+            {/* Branch creation dialog */}
+            {branchDialogState && (
+              <BranchDialog
+                messageIndex={branchDialogState.messageIndex}
+                onConfirm={handleBranchConfirm}
+                onCancel={() => setBranchDialogState(null)}
+              />
+            )}
           </>
         ) : (
           <WelcomeView onNewChat={handleNewChat} />
