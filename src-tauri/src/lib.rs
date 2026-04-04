@@ -196,6 +196,8 @@ pub fn run() {
             // Privacy (Phase 2)
             commands::privacy::log_pii_detection,
             commands::privacy::get_privacy_stats,
+            commands::privacy::get_global_privacy_stats,
+            commands::privacy::get_audit_log,
             // Cost Report + Budget (Phase 2)
             commands::cost_report::get_cost_report,
             commands::cost_report::get_budget_status,

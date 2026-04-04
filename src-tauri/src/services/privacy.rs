@@ -64,3 +64,48 @@ pub struct PiiStat {
     pub total_count: i64,
     pub masked_count: i64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GlobalPrivacyStats {
+    pub total_detections: i64,
+    pub total_masked: i64,
+    pub total_sent_unmasked: i64,
+    pub by_type: Vec<PiiStat>,
+}
+
+/// Get global privacy stats across all conversations (for dashboard)
+pub fn get_global_stats(db: &Database) -> Result<GlobalPrivacyStats, String> {
+    db.read(|conn| {
+        // Totals
+        let (total_detections, total_masked): (i64, i64) = conn.query_row(
+            "SELECT COALESCE(SUM(pii_count), 0), COALESCE(SUM(CASE WHEN was_masked THEN pii_count ELSE 0 END), 0) FROM privacy_logs",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+
+        // Per-type breakdown
+        let mut stmt = conn.prepare(
+            "SELECT pii_type, SUM(pii_count) as total, SUM(CASE WHEN was_masked THEN pii_count ELSE 0 END) as masked
+             FROM privacy_logs
+             GROUP BY pii_type
+             ORDER BY total DESC",
+        )?;
+
+        let by_type = stmt
+            .query_map([], |row| {
+                Ok(PiiStat {
+                    pii_type: row.get(0)?,
+                    total_count: row.get(1)?,
+                    masked_count: row.get(2)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(GlobalPrivacyStats {
+            total_detections,
+            total_masked,
+            total_sent_unmasked: total_detections - total_masked,
+            by_type,
+        })
+    })
+}

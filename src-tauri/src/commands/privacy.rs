@@ -29,3 +29,21 @@ pub async fn get_privacy_stats(
 ) -> Result<Vec<crate::services::privacy::PiiStat>, String> {
     crate::services::privacy::get_stats(&state.db, &conversation_id)
 }
+
+/// Get global privacy stats (all conversations combined) for dashboard
+#[tauri::command]
+pub async fn get_global_privacy_stats(
+    state: State<'_, AppState>,
+) -> Result<crate::services::privacy::GlobalPrivacyStats, String> {
+    crate::services::privacy::get_global_stats(&state.db)
+}
+
+/// Get audit log entries (read-only, newest first)
+#[tauri::command]
+pub async fn get_audit_log(
+    state: State<'_, AppState>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> Result<Vec<crate::services::audit::AuditEntry>, String> {
+    crate::services::audit::get_entries(&state.db, limit.unwrap_or(100), offset.unwrap_or(0))
+}

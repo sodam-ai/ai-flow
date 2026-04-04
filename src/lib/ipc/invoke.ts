@@ -398,6 +398,29 @@ export async function getPrivacyStats(
   return invoke("get_privacy_stats", { conversationId });
 }
 
+export interface GlobalPrivacyStats {
+  totalDetections: number;
+  totalMasked: number;
+  totalSentUnmasked: number;
+  byType: PiiStat[];
+}
+
+export async function getGlobalPrivacyStats(): Promise<GlobalPrivacyStats> {
+  return invoke("get_global_privacy_stats");
+}
+
+export interface AuditEntry {
+  id: number;
+  eventType: string;
+  severity: string;
+  detail: string | null;
+  createdAt: string;
+}
+
+export async function getAuditLog(limit?: number, offset?: number): Promise<AuditEntry[]> {
+  return invoke("get_audit_log", { limit: limit ?? 100, offset: offset ?? 0 });
+}
+
 // ─── Cost Report + Budget (Phase 2) ───
 
 export interface CostReport {
