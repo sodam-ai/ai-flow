@@ -49,7 +49,7 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **MCP Market** | File, Git, Browser AI tools via MCP protocol |
 | **Browser Extension** | Send current page to AIFlow with one click |
 
-### Phase 3 — Intelligence Features ✨ NEW
+### Phase 3 — Intelligence Features
 | Feature | Description |
 |---------|-------------|
 | **Knowledge Base (RAG)** | Index your documents and search them with full-text AI queries |
@@ -57,6 +57,16 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Conversation Branching** | Fork any conversation at any message, explore different paths |
 | **Workflow Export/Import** | Share workflows as JSON files between machines |
 | **Conditional Workflows** | Improved branching and condition support in workflow steps |
+
+### Phase 4 — Security Hardening & UX Completion ✨ NEW
+| Feature | Description |
+|---------|-------------|
+| **Agent Web Search** | AI Agent searches DuckDuckGo in real time (`search_web` tool) |
+| **Agent URL Fetch** | AI Agent reads web page content (`read_url` tool, SSRF defense included) |
+| **Prompt Version Restore** | Version history accordion UI — restore any previous version in one click |
+| **Local LLM Model Picker** | Select Ollama/LM Studio models directly from dropdown, 30s TTL cache |
+| **Privacy & Audit Dashboard** | PII detection stats by type + masking rate + immutable audit log viewer |
+| **Multi-AI Compare (upgraded)** | Column accent colors, markdown export, API-key filtering, adopt feature |
 
 ---
 
@@ -259,8 +269,12 @@ ai-flow/
 | IPC Parameters | Zod validation on frontend + Rust type system on backend |
 | Streaming | Tauri ipc::Channel (not EventSystem), with cancellation |
 | CSP | `default-src 'self'` (no unsafe-eval) |
-| Audit Log | Immutable INSERT-only log (key events, stream events) |
+| Audit Log | Immutable INSERT-only — DB triggers block UPDATE/DELETE |
 | Privacy Mode | 100% local PII scanner — data never leaves machine |
+| SSRF Defense | Agent URL fetch blocks localhost/private IPs/metadata endpoints (CWE-918) |
+| Redirect Recheck | Final URL re-validated after HTTP redirects (bypass prevention) |
+| Control Char Strip | OWASP ASVS 5.2.3 — control chars removed from web search results |
+| HTML Stripping | script/style/tags removed from URL content, 50KB cap |
 | Template Injection | `{{input}}` values sanitized before AI substitution |
 | FTS5 Injection | Search queries wrapped in double-quotes, special chars stripped |
 | Path Security | `canonicalize()` on all MCP file paths (symlink traversal prevention) |
@@ -277,7 +291,8 @@ ai-flow/
 | **1b** | Hotkey, overlay, personas, prompts, tray, file drop | ✅ Complete |
 | **2** | Multi-AI compare, smart routing, privacy, cost dashboard, budget, workflows | ✅ Complete |
 | **3** | RAG knowledge base, AI agent, conversation branching, workflow export/import | ✅ Complete |
-| **4** | Voice I/O (Whisper.cpp), smart context injection, plugin marketplace | Planned |
+| **4** | Agent web search/URL fetch, prompt version restore, local LLM picker, audit dashboard | ✅ Complete |
+| **5** | Voice I/O (Whisper.cpp), smart context injection, plugin marketplace | Planned |
 
 ---
 
