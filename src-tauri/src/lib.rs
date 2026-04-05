@@ -140,7 +140,7 @@ pub fn run() {
                 });
             }
 
-            log::info!("AIFlow initialized successfully (Phase 3: RAG + Agent + Branching + Workflow Export)");
+            log::info!("AIFlow initialized successfully (Phase 5: Voice STT + Clipboard Context + TTS)");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -265,6 +265,8 @@ pub fn run() {
             // Workflow Export/Import (Phase 3)
             commands::agent::export_workflow,
             commands::agent::import_workflow,
+            // Voice / STT (Phase 5)
+            commands::voice::transcribe_audio,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

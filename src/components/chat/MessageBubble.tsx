@@ -3,7 +3,8 @@ import type { Message, MessageVersion } from "@/types";
 import { useTranslation } from "react-i18next";
 import { useChatStore } from "@/stores/chatStore";
 import { getMessageVersions } from "@/lib/ipc/invoke";
-import { Copy, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTts } from "@/hooks/useTts";
+import { Copy, RefreshCw, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import MarkdownContent from "@/components/shared/MarkdownContent";
 
 interface Props {
@@ -13,9 +14,15 @@ interface Props {
   onBranch?: (messageId: string, messageIndex: number) => void;
 }
 
-export default function MessageBubble({ message, messageIndex = 0, exchangeRate = 1380, onBranch }: Props) {
+export default function MessageBubble({
+  message,
+  messageIndex = 0,
+  exchangeRate = 1380,
+  onBranch,
+}: Props) {
   const { t } = useTranslation();
   const { regenerateMessage, isStreaming } = useChatStore();
+  const { speak, stop, isSpeaking, isSupported: ttsSupported } = useTts();
   const isUser = message.role === "user";
   const hasVersions = !isUser && message.versionCount > 1;
 
@@ -23,14 +30,33 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
   const [versions, setVersions] = useState<MessageVersion[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
 
+  const displayContent = viewingVersion?.content ?? message.content;
+
   const handleCopy = () => {
-    const content = viewingVersion?.content ?? message.content;
-    navigator.clipboard.writeText(content);
+    navigator.clipboard.writeText(displayContent);
   };
 
   const handleRegenerate = () => {
     if (isStreaming) return;
     regenerateMessage(message.id);
+  };
+
+  const handleTts = () => {
+    if (isSpeaking) {
+      stop();
+    } else {
+      // Strip markdown syntax before speaking for cleaner audio
+      const plain = displayContent
+        .replace(/```[\s\S]*?```/g, "code block")
+        .replace(/`[^`]+`/g, "")
+        .replace(/#{1,6}\s+/g, "")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/\*([^*]+)\*/g, "$1")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/>\s+/g, "")
+        .trim();
+      speak(plain);
+    }
   };
 
   const loadVersions = async () => {
@@ -50,7 +76,6 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
     if (!v.length) return;
 
     if (!viewingVersion) {
-      // Currently viewing latest (active) — go to previous version
       if (direction === "prev" && v.length > 0) {
         setViewingVersion(v[v.length - 1]);
       }
@@ -62,34 +87,29 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
         if (idx < v.length - 1) {
           setViewingVersion(v[idx + 1]);
         } else {
-          setViewingVersion(null); // back to current/latest
+          setViewingVersion(null);
         }
       }
     }
   };
 
-  const displayContent = viewingVersion?.content ?? message.content;
-
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} group/msg`}>
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-          isUser
-            ? "bg-zinc-100 text-zinc-900"
-            : "bg-zinc-800/50 text-zinc-100"
+          isUser ? "bg-zinc-100 text-zinc-900" : "bg-zinc-800/50 text-zinc-100"
         }`}
       >
         {isUser ? (
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">
-            {displayContent}
-          </p>
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">{displayContent}</p>
         ) : (
           <MarkdownContent content={displayContent} />
         )}
 
-        {/* Assistant message footer: cost + actions */}
+        {/* ── Assistant message footer ───────────────────────────────── */}
         {!isUser && (
           <div className="flex items-center gap-2 mt-2 pt-1.5 border-t border-zinc-700/50">
+            {/* Cost info */}
             {message.costUsd != null && message.costUsd > 0 && (
               <>
                 <span className="text-[10px] text-zinc-500">
@@ -113,6 +133,7 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
                     onClick={() => navigateVersion("prev")}
                     disabled={loadingVersions}
                     className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
+                    aria-label="Previous version"
                   >
                     <ChevronLeft className="w-3 h-3 text-zinc-500" />
                   </button>
@@ -125,10 +146,31 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
                     onClick={() => navigateVersion("next")}
                     disabled={loadingVersions || !viewingVersion}
                     className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
+                    aria-label="Next version"
                   >
                     <ChevronRight className="w-3 h-3 text-zinc-500" />
                   </button>
                 </div>
+              )}
+
+              {/* TTS button — only if Web Speech API supported */}
+              {ttsSupported && (
+                <button
+                  onClick={handleTts}
+                  className={`p-0.5 rounded transition-colors ${
+                    isSpeaking
+                      ? "text-violet-400 hover:bg-zinc-700/50"
+                      : "hover:bg-zinc-700/50"
+                  }`}
+                  title={isSpeaking ? "Stop reading" : "Read aloud"}
+                  aria-label={isSpeaking ? "Stop reading" : "Read aloud"}
+                >
+                  {isSpeaking ? (
+                    <VolumeX className="w-3 h-3 text-violet-400" />
+                  ) : (
+                    <Volume2 className="w-3 h-3 text-zinc-500" />
+                  )}
+                </button>
               )}
 
               {/* Regenerate button */}
@@ -137,6 +179,7 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
                 disabled={isStreaming}
                 className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
                 title={t("chat.regenerate")}
+                aria-label="Regenerate response"
               >
                 <RefreshCw className="w-3 h-3 text-zinc-500" />
               </button>
@@ -146,6 +189,7 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
                 onClick={handleCopy}
                 className="p-0.5 rounded hover:bg-zinc-700/50"
                 title={t("chat.copy")}
+                aria-label="Copy message"
               >
                 <Copy className="w-3 h-3 text-zinc-500" />
               </button>
@@ -153,7 +197,7 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
           </div>
         )}
 
-        {/* User message footer: copy + branch */}
+        {/* ── User message footer ────────────────────────────────────── */}
         {isUser && (
           <div className="flex items-center justify-end gap-0.5 mt-1">
             {onBranch && (
@@ -163,9 +207,18 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
                 title="이 시점에서 대화 분기"
                 aria-label="이 시점에서 대화 분기"
               >
-                {/* Fork icon */}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 text-zinc-400">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className="w-3 h-3 text-zinc-400"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+                  />
                 </svg>
               </button>
             )}
@@ -173,6 +226,7 @@ export default function MessageBubble({ message, messageIndex = 0, exchangeRate 
               onClick={handleCopy}
               className="p-0.5 rounded hover:bg-zinc-200"
               title={t("chat.copy")}
+              aria-label="Copy message"
             >
               <Copy className="w-3 h-3 text-zinc-400" />
             </button>
