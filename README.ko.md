@@ -77,6 +77,25 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **업데이트 배너** | 앱 상단 비침습 알림 — 진행률 바 + 재시작 유도 |
 | **사이드바 날짜 그룹핑** | 고정됨 / 오늘 / 어제 / 이번 주 / 이전으로 대화 자동 분류 |
 
+### Phase 7 — GitHub Actions CI/CD ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **릴리스 워크플로우** | `v*.*.*` 태그 push → MSI 자동 빌드 + Ed25519 서명 + GitHub Release 업로드 |
+| **PR 체크 게이트** | PR·push 시 TypeScript 타입 검사 + `cargo check` + `cargo clippy` 자동 실행 |
+| **latest.json 자동 생성** | Auto Updater 엔드포인트 — GitHub Release에 버전 메타데이터 자동 첨부 |
+| **최소 권한 원칙** | 릴리스 워크플로우는 `contents: write`만, PR 체크는 `contents: read`만 |
+| **Rust 캐시** | `swatinem/rust-cache` — Windows CI 빌드 시간 대폭 단축 |
+
+### Phase 8 — 지식베이스 UI 보안/UX 업그레이드 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **XSS 취약점 수정** | `dangerouslySetInnerHTML` 제거 → `SnippetHighlight` 컴포넌트로 FTS5 `<mark>` 태그만 안전하게 파싱 (ASVS 5.3.3) |
+| **파일 타입 컬러 뱃지** | `.md`, `.rs`, `.py`, `.ts`, `.tsx`, `.js`, `.json`, `.toml`, `.yaml`, `.csv` — 11가지 확장자 색상 구분 |
+| **인라인 삭제 확인 UI** | `window.confirm()` 제거 → 인라인 2단계 확인 버튼 (WCAG 2.1 + 보안 강화) |
+| **접근성 완성** | `role=dialog/list/menu/menuitem/alert`, `aria-expanded`, `aria-modal`, `aria-labelledby` 전면 적용 |
+| **KB 컨텍스트 바 업그레이드** | 채팅 입력창 위 KB 칩 바 — onClearAll 원자적 초기화, doc count 뱃지, 보라색 활성 상태 표시 |
+| **클릭 토글 드롭다운** | CSS `:hover` 드롭다운 → 클릭 토글 + mousedown outside-click 핸들러 (touch 호환, 키보드 접근 가능) |
+
 ### Phase 4 — 보안 강화 & UX 완성
 | 기능 | 설명 |
 |------|------|
@@ -157,10 +176,12 @@ npm run tauri:build
 ### 지식베이스 (RAG)
 
 1. 사이드바의 **지식베이스** (데이터베이스 아이콘) 클릭
-2. **새 지식베이스**를 클릭하여 지식베이스 생성
-3. 인덱싱할 파일 선택 (`.txt`, `.md`, `.py`, `.ts`, `.rs`, `.json` 등)
-4. 검색창으로 문서 쿼리 — 결과에 일치 텍스트 하이라이팅
-5. AI 에이전트는 작업 실행 중 자동으로 지식베이스를 검색 가능
+2. **새 지식베이스** 버튼으로 지식베이스 생성 후 클릭해서 열기
+3. 인덱싱할 파일 선택 또는 드롭 (`.txt`, `.md`, `.py`, `.ts`, `.rs`, `.json`, `.toml`, `.yaml`, `.csv` 등)
+4. 검색창으로 문서 쿼리 — 결과에 파일 타입 컬러 뱃지 + 일치 텍스트 하이라이팅
+5. 문서 삭제 시 휴지통 아이콘 클릭 → 인라인 2단계 확인 (팝업 없음)
+6. **스마트 컨텍스트 주입**: 채팅 입력창 위의 KB 칩을 클릭하면 활성화 — 활성화된 KB의 검색 결과가 모든 AI 메시지에 자동 주입됨
+7. AI 에이전트는 작업 실행 중 자동으로 지식베이스를 검색 가능
 
 ### AI 에이전트
 
@@ -256,6 +277,10 @@ AIFlow는 `.env` 파일이 **필요하지 않습니다**. 모든 비밀은 OS �
 ```
 ai-flow/
 ├── .PRD/                     # 제품 요구사항 문서
+├── .github/
+│   └── workflows/
+│       ├── release.yml       # v*.*.* 태그 push → MSI 빌드 + Ed25519 서명 + GitHub Release
+│       └── check.yml         # PR·push 게이트: TypeScript tsc + cargo check + cargo clippy
 ├── src/                      # React 프론트엔드
 │   ├── components/           # UI 컴포넌트
 │   │   ├── chat/             # 채팅 전용 컴포넌트
@@ -366,6 +391,8 @@ ai-flow/
 | 음성 보안 | 오디오 바이트 디스크 미기록 (IPC 중 메모리 base64만), 25MB / 60초 하드 리밋 |
 | Vision 보안 | 스크린샷 10MB 캡, 바이트 디스크 미기록 (base64 메모리 전용) |
 | 업데이트 서명 | Ed25519 비대칭 키 — 앱에 공개키만 번들, 다운그레이드 방지 minVersion |
+| XSS 방어 (KB) | FTS5 `snippet()` 출력에 `dangerouslySetInnerHTML` 미사용 — `<mark>` 태그만 React 안전 파싱 (ASVS 5.3.3) |
+| 삭제 확인 UI | `window.confirm()` 제거 — 인라인 2단계 확인 (포커스 흐름 보호, WCAG 2.1) |
 
 ---
 
@@ -380,7 +407,9 @@ ai-flow/
 | **4** | 에이전트 웹검색/URL읽기, 프롬프트 버전 복원, 로컬 LLM 선택, 감사 대시보드 | ✅ 완료 |
 | **5** | 음성 STT (Whisper API) + TTS + 글로벌 단축키 `Alt+Shift+V` | ✅ 완료 |
 | **6** | Screenshot Vision AI (`Ctrl+Shift+S`) + Auto Updater (Ed25519) + UI/UX 개선 | ✅ 완료 |
-| **7** | 지식베이스 UI 연결 완성, 에이전트 도구 확장, GitHub Actions CI/CD | 예정 |
+| **7** | GitHub Actions CI/CD — 릴리스 워크플로우 + PR 체크 게이트 (TypeScript + Rust) | ✅ 완료 |
+| **8** | 지식베이스 UI 전면 업그레이드 — XSS 수정(ASVS 5.3.3), 파일 타입 뱃지, 접근성 완성 | ✅ 완료 |
+| **9** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 

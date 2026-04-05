@@ -77,6 +77,25 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Update Banner** | Non-intrusive top banner — progress bar + restart prompt |
 | **Sidebar Date Grouping** | Conversations bucketed: Pinned / Today / Yesterday / This Week / Older |
 
+### Phase 7 — GitHub Actions CI/CD ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Release Workflow** | `v*.*.*` tag push → MSI build + Ed25519 signing + GitHub Release upload |
+| **PR Check Gate** | TypeScript type-check + `cargo check` + `cargo clippy` on every PR and push |
+| **Auto `latest.json`** | Auto Updater endpoint — version metadata attached to each GitHub Release |
+| **Least-Privilege** | Release: `contents: write` only; PR check: `contents: read` only |
+| **Rust Cache** | `swatinem/rust-cache` — dramatically reduces Windows CI build time |
+
+### Phase 8 — Knowledge Base UI Security & UX Upgrade ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **XSS Fix** | Removed `dangerouslySetInnerHTML` → `SnippetHighlight` component safely parses only FTS5 `<mark>` tags (ASVS 5.3.3) |
+| **File Type Color Badges** | 11 extension types color-coded: `.md`, `.rs`, `.py`, `.ts`, `.tsx`, `.js`, `.json`, `.toml`, `.yaml`, `.csv` |
+| **Inline Delete Confirm** | Removed `window.confirm()` → two-step inline confirmation button (WCAG 2.1 + security) |
+| **Full Accessibility** | `role=dialog/list/menu/menuitem/alert`, `aria-expanded`, `aria-modal`, `aria-labelledby` applied throughout |
+| **KB Context Bar Upgrade** | Chip bar above chat input — atomic `clearAll` callback, doc count badge, violet active state |
+| **Click-Toggle Dropdown** | CSS `:hover` dropdown → click-toggle + `mousedown` outside-click handler (touch-safe, keyboard-accessible) |
+
 ### Phase 4 — Security Hardening & UX Completion
 | Feature | Description |
 |---------|-------------|
@@ -156,11 +175,13 @@ npm run tauri:build
 
 ### Knowledge Base (RAG)
 
-1. Click **지식베이스** (database icon) in the sidebar
-2. Click **새 지식베이스** to create a knowledge base
-3. Select files to index (`.txt`, `.md`, `.py`, `.ts`, `.rs`, `.json`, etc.)
-4. Use the search box to query your documents — results highlight matching text
-5. The AI Agent can automatically search your knowledge base during task execution
+1. Click the **Knowledge Base** icon (database icon) in the sidebar
+2. Click **New Knowledge Base** to create one, then open it
+3. Drop or select files to index (`.txt`, `.md`, `.py`, `.ts`, `.rs`, `.json`, `.toml`, `.yaml`, `.csv`, etc.)
+4. Use the search box to query documents — results show color-coded file type badges and highlighted matching text
+5. To delete a document, click the trash icon and confirm inline (no popup dialogs)
+6. **Smart Context Injection**: Above the chat input, click any KB chip to activate it — every AI message will automatically include matching KB context from that knowledge base
+7. The AI Agent can also automatically search your knowledge bases during task execution
 
 ### AI Agent
 
@@ -203,6 +224,10 @@ AIFlow does **not** require a `.env` file. All secrets are stored in the OS keyc
 ```
 ai-flow/
 ├── .PRD/                     # Product Requirements Documents
+├── .github/
+│   └── workflows/
+│       ├── release.yml       # v*.*.* tag push → MSI build + Ed25519 signing + GitHub Release
+│       └── check.yml         # PR/push gate: TypeScript tsc + cargo check + cargo clippy
 ├── src/                      # React frontend
 │   ├── components/           # UI components (chat, overlay, prompts, palette)
 │   │   └── chat/             # Chat-specific components
@@ -303,6 +328,11 @@ ai-flow/
 | Path Security | `canonicalize()` on all MCP file paths (symlink traversal prevention) |
 | Input Limits | All text inputs have max length validation (goal: 2KB, query: 500 chars) |
 | File Access | Absolute path check + extension allowlist + 5MB size limit for KB |
+| Voice Security | Audio bytes never written to disk (memory-only base64 over IPC), 25 MB / 60s hard limits |
+| Vision Security | Screenshot 10 MB cap, bytes never written to disk (memory base64 only) |
+| Update Signing | Ed25519 asymmetric key — only public key bundled in app, `minVersion` downgrade prevention |
+| XSS Defense (KB) | No `dangerouslySetInnerHTML` for FTS5 `snippet()` output — only `<mark>` tags parsed safely in React (ASVS 5.3.3) |
+| Delete Confirm UI | `window.confirm()` removed — inline two-step confirmation (focus flow protection, WCAG 2.1) |
 
 ---
 
@@ -317,7 +347,9 @@ ai-flow/
 | **4** | Agent web search/URL fetch, prompt version restore, local LLM picker, audit dashboard | ✅ Complete |
 | **5** | Voice STT (Whisper API) + TTS + global `Alt+Shift+V` shortcut | ✅ Complete |
 | **6** | Screenshot Vision AI (`Ctrl+Shift+S`) + Auto Updater (Ed25519) + UI/UX improvements | ✅ Complete |
-| **7** | Knowledge base UI polish, agent tool expansion, GitHub Actions CI/CD | Planned |
+| **7** | GitHub Actions CI/CD — release workflow + PR check gate (TypeScript + Rust) | ✅ Complete |
+| **8** | Knowledge Base UI full upgrade — XSS fix (ASVS 5.3.3), file type badges, full accessibility | ✅ Complete |
+| **9** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 
