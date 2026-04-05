@@ -180,11 +180,16 @@ function MainApp() {
         // Clipboard might be empty — silently ignore
       }
     });
+    const unsubVoice = listen("aiflow://voice-start", () => {
+      // Bridge Tauri IPC event → DOM CustomEvent for VoiceRecordButton
+      window.dispatchEvent(new CustomEvent("aiflow:voice-start"));
+    });
 
     return () => {
       unsubNewChat.then((fn) => fn());
       unsubSettings.then((fn) => fn());
       unsubClipboard.then((fn) => fn());
+      unsubVoice.then((fn) => fn());
     };
   }, [activeConversationId, activeProviderId, activeModelId, createChat, sendMessage]);
 

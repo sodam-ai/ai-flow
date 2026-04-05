@@ -22,6 +22,15 @@ interface SettingsState {
   routingMode: boolean;
   setRoutingMode: (on: boolean) => void;
 
+  // Phase 5: Voice language for Whisper STT
+  // ISO 639-1 code ("ko", "en", "ja", "zh") or "" for auto-detect
+  voiceLang: string;
+  setVoiceLang: (lang: string) => void;
+
+  // Phase 5: TTS playback speed (0.5 – 2.0, default 1.0)
+  ttsRate: number;
+  setTtsRate: (rate: number) => void;
+
   // Persistent store initialization
   loadPersistedSettings: () => Promise<void>;
 
@@ -38,11 +47,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   activeModelId: "gpt-4o",
   privacyMode: false,
   routingMode: false,
+  voiceLang: "ko", // Default to Korean — primary user base
+  ttsRate: 1.0,
   keyStatuses: {},
 
   setActiveProvider: async (id, modelId) => {
     set({ activeProviderId: id, activeModelId: modelId });
-    // Persist to disk
     try {
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
       await store.set("activeProviderId", id);
@@ -72,6 +82,27 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
+  setVoiceLang: async (lang) => {
+    set({ voiceLang: lang });
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      await store.set("voiceLang", lang);
+    } catch (e) {
+      console.warn("Failed to persist voice language:", e);
+    }
+  },
+
+  setTtsRate: async (rate) => {
+    const clamped = Math.max(0.5, Math.min(2.0, rate));
+    set({ ttsRate: clamped });
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      await store.set("ttsRate", clamped);
+    } catch (e) {
+      console.warn("Failed to persist TTS rate:", e);
+    }
+  },
+
   loadPersistedSettings: async () => {
     try {
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
@@ -79,11 +110,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const modelId = (await store.get<string>("activeModelId")) ?? "gpt-4o";
       const privacyMode = (await store.get<boolean>("privacyMode")) ?? false;
       const routingMode = (await store.get<boolean>("routingMode")) ?? false;
+      const voiceLang = (await store.get<string>("voiceLang")) ?? "ko";
+      const ttsRate   = (await store.get<number>("ttsRate"))   ?? 1.0;
       set({
         activeProviderId: providerId as ProviderId,
         activeModelId: modelId,
         privacyMode,
         routingMode,
+        voiceLang,
+        ttsRate,
       });
     } catch (e) {
       console.warn("Failed to load persisted settings:", e);

@@ -695,3 +695,23 @@ export async function exportWorkflow(workflowId: number): Promise<string> {
 export async function importWorkflow(jsonStr: string): Promise<import("@/types").Workflow> {
   return invoke("import_workflow", { jsonStr });
 }
+
+// ─── Voice / STT (Phase 5) ───────────────────────────────────────────────
+
+/**
+ * Transcribe audio via OpenAI Whisper API (server-side call).
+ * @param audioBase64 - base64-encoded audio file (WebM/WAV/MP4/OGG/MP3)
+ * @param language    - optional ISO 639-1 hint ("ko", "en", "ja", …)
+ * @param audioMime   - MIME type; defaults to "audio/webm"
+ */
+export async function transcribeAudio(
+  audioBase64: string,
+  language?: string,
+  audioMime?: string,
+): Promise<string> {
+  return invoke("transcribe_audio", {
+    audioBase64,
+    language: language ?? null,
+    audioMime: audioMime ?? "audio/webm",
+  });
+}

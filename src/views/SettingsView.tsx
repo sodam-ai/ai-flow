@@ -8,11 +8,11 @@ import PersonaEditor from "@/components/chat/PersonaEditor";
 import type { Persona, LocalLlmDetectionResult } from "@/types";
 import { detectLocalLlms, getRoutingRules } from "@/lib/ipc/invoke";
 import type { RoutingRule } from "@/types";
-import { Eye, EyeOff, Trash2, Check, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield } from "lucide-react";
+import { Eye, EyeOff, Trash2, Check, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic, Volume2 } from "lucide-react";
 
 export default function SettingsView() {
   const { t, i18n } = useTranslation();
-  const { keyStatuses, loadAllKeyStatuses, saveKey, removeKey, setActiveProvider } =
+  const { keyStatuses, loadAllKeyStatuses, saveKey, removeKey, setActiveProvider, voiceLang, setVoiceLang, ttsRate, setTtsRate } =
     useSettingsStore();
   const { personas, fetchPersonas, deletePersona } = usePersonaStore();
   const [editorPersona, setEditorPersona] = useState<Persona | null | "new">(null);
@@ -43,6 +43,85 @@ export default function SettingsView() {
               }`}
             >
               {lang === "ko" ? "한국어" : "English"}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Voice Language (Phase 5) */}
+      <section className="mb-8">
+        <h3 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
+          <Mic className="w-3.5 h-3.5" />
+          Voice Input Language
+        </h3>
+        <p className="text-[11px] text-zinc-600 mb-3">
+          Whisper STT language hint — improves transcription accuracy
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {([
+            { code: "ko", label: "한국어", flag: "🇰🇷" },
+            { code: "en", label: "English", flag: "🇺🇸" },
+            { code: "ja", label: "日本語", flag: "🇯🇵" },
+            { code: "zh", label: "中文", flag: "🇨🇳" },
+            { code: "",   label: "Auto",   flag: "🌐" },
+          ] as const).map(({ code, label, flag }) => (
+            <button
+              key={code}
+              onClick={() => setVoiceLang(code)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                voiceLang === code
+                  ? "bg-violet-950/50 border-violet-700/60 text-violet-300"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300"
+              }`}
+            >
+              <span>{flag}</span>
+              <span>{label}</span>
+              {voiceLang === code && (
+                <Check className="w-3 h-3 ml-0.5 text-violet-400" />
+              )}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* TTS Speed (Phase 5) */}
+      <section className="mb-8">
+        <h3 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
+          <Volume2 className="w-3.5 h-3.5" />
+          Read Aloud Speed
+        </h3>
+        <p className="text-[11px] text-zinc-600 mb-3">
+          Controls how fast AI responses are read aloud
+        </p>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-zinc-500 w-8">0.5×</span>
+          <input
+            type="range"
+            min={0.5}
+            max={2.0}
+            step={0.1}
+            value={ttsRate}
+            onChange={(e) => setTtsRate(parseFloat(e.target.value))}
+            className="flex-1 accent-violet-500 h-1.5 rounded-full cursor-pointer"
+            aria-label="TTS playback speed"
+          />
+          <span className="text-[11px] text-zinc-500 w-8 text-right">2×</span>
+          <span className="text-xs font-mono text-violet-400 w-8 text-right">
+            {ttsRate.toFixed(1)}×
+          </span>
+        </div>
+        <div className="flex justify-between mt-1.5">
+          {[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0].map((v) => (
+            <button
+              key={v}
+              onClick={() => setTtsRate(v)}
+              className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                Math.abs(ttsRate - v) < 0.05
+                  ? "text-violet-300 bg-violet-950/50"
+                  : "text-zinc-600 hover:text-zinc-400"
+              }`}
+            >
+              {v}×
             </button>
           ))}
         </div>

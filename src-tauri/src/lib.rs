@@ -36,6 +36,10 @@ pub fn run() {
                                 // Clipboard → AI: emit event for frontend to handle
                                 let _ = app.emit("aiflow://clipboard-to-ai", ());
                             }
+                            "Alt+Shift+V" => {
+                                // Voice recording: emit event for frontend to handle
+                                let _ = app.emit("aiflow://voice-start", ());
+                            }
                             _ => {}
                         }
                     }
@@ -68,13 +72,16 @@ pub fn run() {
             };
             app.manage(state);
 
-            // Register global shortcuts (Alt+Space = overlay, Alt+Shift+A = clipboard)
+            // Register global shortcuts (Alt+Space = overlay, Alt+Shift+A = clipboard, Alt+Shift+V = voice)
             use tauri_plugin_global_shortcut::GlobalShortcutExt;
             if let Err(e) = app.global_shortcut().register("Alt+Space") {
                 log::warn!("Failed to register Alt+Space: {}. Another app may have claimed it.", e);
             }
             if let Err(e) = app.global_shortcut().register("Alt+Shift+A") {
                 log::warn!("Failed to register Alt+Shift+A: {}", e);
+            }
+            if let Err(e) = app.global_shortcut().register("Alt+Shift+V") {
+                log::warn!("Failed to register Alt+Shift+V: {}", e);
             }
 
             // System tray menu
@@ -140,7 +147,7 @@ pub fn run() {
                 });
             }
 
-            log::info!("AIFlow initialized successfully (Phase 3: RAG + Agent + Branching + Workflow Export)");
+            log::info!("AIFlow initialized successfully (Phase 5: Voice STT + Clipboard Context + TTS)");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -265,6 +272,8 @@ pub fn run() {
             // Workflow Export/Import (Phase 3)
             commands::agent::export_workflow,
             commands::agent::import_workflow,
+            // Voice / STT (Phase 5)
+            commands::voice::transcribe_audio,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -16,4 +16,5 @@ pub mod privacy;
 pub mod prompt;
 pub mod prompt_version;
 pub mod routing;
+pub mod voice;
 pub mod workflow;
