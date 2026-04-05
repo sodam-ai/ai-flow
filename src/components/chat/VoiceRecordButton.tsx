@@ -4,95 +4,106 @@ import { transcribeAudio } from "@/lib/ipc/invoke";
 
 type RecordState = "idle" | "requesting" | "recording" | "processing";
 
-/** Maximum recording duration in seconds before auto-stop */
+/** Hard time limit before auto-stop */
 const MAX_DURATION_SEC = 60;
-
-/** Seconds remaining at which to show warning color on timer */
+/** Orange countdown warning threshold */
 const WARN_THRESHOLD_SEC = 10;
+/** 0–255 scale — values below this are treated as silence */
+const SILENCE_THRESHOLD = 14;
+/** Continuous silence duration before auto-stop (ms) */
+const SILENCE_DURATION_MS = 2500;
+/** Number of waveform bars to render */
+const BAR_COUNT = 8;
 
 interface Props {
   /** Called with the final transcription text when ready */
   onTranscript: (text: string) => void;
   disabled?: boolean;
-  /** ISO 639-1 language hint for Whisper ("ko", "en", "ja", …); "" = auto-detect */
+  /** ISO 639-1 language hint for Whisper; "" = auto-detect */
   language?: string;
 }
 
 /**
- * Voice input button using MediaRecorder + OpenAI Whisper API.
+ * Voice input button with live waveform + silence auto-stop.
  *
  * Recording flow:
- * idle → [click] → requesting (mic permission) → recording (max 60s)
- *   → [click or timeout] → processing (Whisper API) → idle + onTranscript(text)
+ *   idle → [click] → requesting → recording (waveform + countdown)
+ *     → [click / silence 2.5s / 60s limit] → processing → idle
  *
  * Security:
- * - Audio bytes are never written to disk — base64 only in memory during IPC call
- * - Mic stream released immediately after recording stops (not held during API call)
- * - 60s hard limit prevents accidental large uploads (ASVS 4.1.3)
+ * - Audio bytes never written to disk (base64 only in memory during IPC)
+ * - Mic stream released immediately after recording stops
+ * - ASVS 4.1.3: 60s / 25 MB hard limit
+ * - AudioContext closed on unmount (no resource leaks)
  */
-export default function VoiceRecordButton({
-  onTranscript,
-  disabled,
-  language,
-}: Props) {
+export default function VoiceRecordButton({ onTranscript, disabled, language }: Props) {
   const [recordState, setRecordState] = useState<RecordState>("idle");
-  const [secsLeft, setSecsLeft] = useState(MAX_DURATION_SEC);
-  const [error, setError] = useState<string | null>(null);
+  const [secsLeft, setSecsLeft]       = useState(MAX_DURATION_SEC);
+  const [waveformBars, setWaveformBars] = useState<number[]>(Array(BAR_COUNT).fill(0));
+  const [error, setError]             = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef        = useRef<Blob[]>([]);
+  const streamRef        = useRef<MediaStream | null>(null);
+  const audioCtxRef      = useRef<AudioContext | null>(null);
+  const analyserRef      = useRef<AnalyserNode | null>(null);
+  const animFrameRef     = useRef<number | null>(null);
+  const silenceStartRef  = useRef<number | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoStopRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Prevent double-stop from silence detection + manual click racing
+  const stoppingRef      = useRef(false);
 
-  /** Show a temporary error message, auto-dismiss after 4 s */
   const showError = useCallback((msg: string) => {
     setError(msg);
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     errorTimerRef.current = setTimeout(() => setError(null), 4000);
   }, []);
 
-  /** Clear countdown timers */
   const clearTimers = useCallback(() => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-    if (autoStopRef.current) {
-      clearTimeout(autoStopRef.current);
-      autoStopRef.current = null;
-    }
+    if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; }
+    if (autoStopRef.current)      { clearTimeout(autoStopRef.current);       autoStopRef.current = null; }
   }, []);
 
-  /** Release microphone stream immediately */
+  const clearAudioContext = useCallback(() => {
+    if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
+    if (audioCtxRef.current)  { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null; }
+    analyserRef.current   = null;
+    silenceStartRef.current = null;
+    setWaveformBars(Array(BAR_COUNT).fill(0));
+  }, []);
+
   const releaseMic = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   }, []);
 
   const stopRecording = useCallback(() => {
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
     clearTimers();
+    clearAudioContext();
     if (mediaRecorderRef.current?.state === "recording") {
       mediaRecorderRef.current.stop();
     }
-  }, [clearTimers]);
+  }, [clearTimers, clearAudioContext]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       clearTimers();
+      clearAudioContext();
       releaseMic();
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     };
-  }, [clearTimers, releaseMic]);
+  }, [clearTimers, clearAudioContext, releaseMic]);
 
   const startRecording = useCallback(async () => {
     setError(null);
+    stoppingRef.current = false;
     setSecsLeft(MAX_DURATION_SEC);
     setRecordState("requesting");
 
-    // Request mic with optimal speech recognition settings
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -113,7 +124,6 @@ export default function VoiceRecordButton({
     streamRef.current = stream;
     chunksRef.current = [];
 
-    // WebM/Opus is native to Chromium — Whisper compatible
     const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
       ? "audio/webm;codecs=opus"
       : "audio/webm";
@@ -126,8 +136,8 @@ export default function VoiceRecordButton({
     };
 
     recorder.onstop = async () => {
-      // Release mic immediately — don't hold during API call
       releaseMic();
+      clearAudioContext();
       clearTimers();
       setRecordState("processing");
 
@@ -138,10 +148,10 @@ export default function VoiceRecordButton({
         if (blob.size < 200) {
           showError("Recording too short — try again");
           setRecordState("idle");
+          stoppingRef.current = false;
           return;
         }
 
-        // Convert Blob → base64 (chunked to avoid stack overflow on large buffers)
         const arrayBuffer = await blob.arrayBuffer();
         const uint8 = new Uint8Array(arrayBuffer);
         let binary = "";
@@ -151,7 +161,6 @@ export default function VoiceRecordButton({
         }
         const base64 = btoa(binary);
 
-        // Pass language or null for Whisper auto-detect
         const lang = language && language !== "" ? language : undefined;
         const text = await transcribeAudio(base64, lang, "audio/webm");
 
@@ -162,61 +171,96 @@ export default function VoiceRecordButton({
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("VOICE_014")) {
-          showError("OpenAI API key not configured");
-        } else if (msg.includes("VOICE_004") || msg.includes("Network")) {
-          showError("Network error — check your connection");
-        } else if (msg.includes("VOICE_002")) {
-          showError("Recording too long — max 25 MB");
-        } else {
-          showError("Transcription failed — try again");
-        }
+        if (msg.includes("VOICE_014"))      showError("OpenAI API key not configured");
+        else if (msg.includes("VOICE_004")) showError("Network error — check connection");
+        else if (msg.includes("VOICE_002")) showError("Recording too long (max 25 MB)");
+        else                                showError("Transcription failed — try again");
       } finally {
         setRecordState("idle");
         setSecsLeft(MAX_DURATION_SEC);
+        stoppingRef.current = false;
       }
     };
 
     recorder.onerror = () => {
       releaseMic();
+      clearAudioContext();
       clearTimers();
       setRecordState("idle");
       setSecsLeft(MAX_DURATION_SEC);
+      stoppingRef.current = false;
       showError("Recording error — try again");
     };
 
     recorder.start();
     setRecordState("recording");
 
-    // Countdown timer — tick every second
+    // ── AudioContext — waveform + silence detection ───────────────────────
+    try {
+      const audioCtx = new AudioContext();
+      audioCtxRef.current = audioCtx;
+      const source  = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufLen = analyser.frequencyBinCount;
+      const freqData = new Uint8Array(bufLen);
+
+      const animate = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(freqData);
+
+        // Waveform bars: sample evenly across frequency bins
+        const step = Math.floor(bufLen / BAR_COUNT);
+        const bars = Array.from({ length: BAR_COUNT }, (_, i) =>
+          freqData[i * step] / 255
+        );
+        setWaveformBars(bars);
+
+        // Silence detection: average amplitude across all bins
+        const avg = freqData.reduce((s, v) => s + v, 0) / bufLen;
+        if (avg < SILENCE_THRESHOLD) {
+          if (silenceStartRef.current === null) {
+            silenceStartRef.current = Date.now();
+          } else if (Date.now() - silenceStartRef.current > SILENCE_DURATION_MS) {
+            // Cancel animation first to prevent re-entry
+            cancelAnimationFrame(animFrameRef.current!);
+            animFrameRef.current = null;
+            stopRecording();
+            return;
+          }
+        } else {
+          silenceStartRef.current = null;
+        }
+
+        animFrameRef.current = requestAnimationFrame(animate);
+      };
+      animFrameRef.current = requestAnimationFrame(animate);
+    } catch {
+      // AudioContext unavailable — waveform/silence detection disabled,
+      // recording continues normally without those features
+    }
+
+    // ── Countdown timer ───────────────────────────────────────────────────
     timerIntervalRef.current = setInterval(() => {
       setSecsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerIntervalRef.current!);
-          timerIntervalRef.current = null;
-          return 0;
-        }
+        if (prev <= 1) { clearInterval(timerIntervalRef.current!); timerIntervalRef.current = null; return 0; }
         return prev - 1;
       });
     }, 1000);
 
-    // Auto-stop at MAX_DURATION_SEC
-    autoStopRef.current = setTimeout(() => {
-      stopRecording();
-    }, MAX_DURATION_SEC * 1000);
-  }, [language, onTranscript, releaseMic, clearTimers, stopRecording, showError]);
+    autoStopRef.current = setTimeout(() => stopRecording(), MAX_DURATION_SEC * 1000);
+  }, [language, onTranscript, releaseMic, clearTimers, clearAudioContext, stopRecording, showError]);
 
   const handleClick = () => {
-    if (disabled || recordState === "requesting" || recordState === "processing")
-      return;
-    if (recordState === "recording") {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (disabled || recordState === "requesting" || recordState === "processing") return;
+    if (recordState === "recording") stopRecording();
+    else startRecording();
   };
 
-  // ── Shared error tooltip ─────────────────────────────────────────────────
+  // ── Error tooltip ────────────────────────────────────────────────────────
   const errorTooltip = error && (
     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
       <div className="whitespace-nowrap bg-red-950/95 border border-red-800/60 text-red-300 text-[11px] px-2.5 py-1 rounded-lg shadow-lg">
@@ -225,16 +269,11 @@ export default function VoiceRecordButton({
     </div>
   );
 
-  // ── Processing state ─────────────────────────────────────────────────────
+  // ── Processing ───────────────────────────────────────────────────────────
   if (recordState === "processing") {
     return (
       <div className="relative flex items-center justify-center">
-        <button
-          disabled
-          className="p-2.5 rounded-xl text-violet-400 bg-violet-950/30 cursor-wait"
-          title="Transcribing audio…"
-          aria-label="Transcribing audio"
-        >
+        <button disabled className="p-2.5 rounded-xl text-violet-400 bg-violet-950/30 cursor-wait" title="Transcribing…" aria-label="Transcribing audio">
           <Loader2 className="w-4 h-4 animate-spin" />
         </button>
         {errorTooltip}
@@ -242,37 +281,35 @@ export default function VoiceRecordButton({
     );
   }
 
-  // ── Recording state ──────────────────────────────────────────────────────
+  // ── Recording — waveform pill + stop button ──────────────────────────────
   if (recordState === "recording") {
     const isWarning = secsLeft <= WARN_THRESHOLD_SEC;
+    const color = isWarning
+      ? { ring: "border-orange-800/50", bg: "bg-orange-950/30", bar: "bg-orange-400/80", btn: "text-orange-400 bg-orange-950/40 hover:bg-orange-950/60 border-orange-800/50", badge: "bg-orange-500" }
+      : { ring: "border-red-800/50",    bg: "bg-red-950/30",    bar: "bg-red-400/80",    btn: "text-red-400 bg-red-950/40 hover:bg-red-950/60 border-red-800/50",       badge: "bg-red-600/90" };
+
     return (
-      <div className="relative flex items-center justify-center">
-        {/* Animated pulse ring */}
-        <span
-          className={`absolute w-9 h-9 rounded-full animate-ping pointer-events-none ${
-            isWarning ? "bg-orange-500/25" : "bg-red-500/20"
-          }`}
-          aria-hidden="true"
-        />
+      <div className="relative flex items-center">
+        {/* Waveform panel */}
+        <div className={`flex items-center gap-[3px] px-2.5 h-9 ${color.bg} border ${color.ring} border-r-0 rounded-l-xl`} aria-hidden="true">
+          {waveformBars.map((v, i) => (
+            <div
+              key={i}
+              className={`w-[3px] rounded-full ${color.bar} transition-all duration-75`}
+              style={{ height: `${Math.max(3, Math.round(v * 22))}px` }}
+            />
+          ))}
+        </div>
+
+        {/* Stop button */}
         <button
           onClick={handleClick}
-          className={`relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-colors ${
-            isWarning
-              ? "text-orange-400 bg-orange-950/40 hover:bg-orange-950/60"
-              : "text-red-400 bg-red-950/40 hover:bg-red-950/60"
-          }`}
+          className={`relative flex items-center justify-center w-9 h-9 border ${color.btn} border-l-0 rounded-r-xl transition-colors`}
           title={`Stop recording (${secsLeft}s left)`}
           aria-label={`Stop recording, ${secsLeft} seconds remaining`}
         >
-          <MicOff className="w-4 h-4" />
-          {/* Countdown badge */}
-          <span
-            className={`absolute -top-1.5 -right-1.5 text-[9px] font-mono font-bold px-1 py-0 rounded-full leading-4 ${
-              isWarning
-                ? "bg-orange-500 text-white"
-                : "bg-red-600/80 text-white"
-            }`}
-          >
+          <MicOff className="w-3.5 h-3.5" />
+          <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-mono font-bold px-1 rounded-full leading-4 text-white ${color.badge}`}>
             {secsLeft}
           </span>
         </button>
@@ -281,7 +318,7 @@ export default function VoiceRecordButton({
     );
   }
 
-  // ── Idle / Requesting state ──────────────────────────────────────────────
+  // ── Idle / Requesting ────────────────────────────────────────────────────
   return (
     <div className="relative flex items-center justify-center">
       <button
@@ -292,11 +329,7 @@ export default function VoiceRecordButton({
             ? "text-violet-400 bg-violet-950/20 cursor-wait"
             : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
         }`}
-        title={
-          recordState === "requesting"
-            ? "Requesting microphone…"
-            : `Voice input — ${language && language !== "" ? language.toUpperCase() : "Auto"}`
-        }
+        title={recordState === "requesting" ? "Requesting microphone…" : `Voice input — ${language && language !== "" ? language.toUpperCase() : "Auto"}`}
         aria-label="Start voice recording"
       >
         <Mic className="w-4 h-4" />

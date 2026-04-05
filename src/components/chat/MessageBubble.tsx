@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useChatStore } from "@/stores/chatStore";
 import { getMessageVersions } from "@/lib/ipc/invoke";
 import { useTts } from "@/hooks/useTts";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { Copy, RefreshCw, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import MarkdownContent from "@/components/shared/MarkdownContent";
 
@@ -22,7 +23,8 @@ export default function MessageBubble({
 }: Props) {
   const { t } = useTranslation();
   const { regenerateMessage, isStreaming } = useChatStore();
-  const { speak, stop, isSpeaking, isSupported: ttsSupported } = useTts();
+  const ttsRate = useSettingsStore((s) => s.ttsRate);
+  const { speak, stop, isSpeaking, isSupported: ttsSupported } = useTts({ rate: ttsRate });
   const isUser = message.role === "user";
   const hasVersions = !isUser && message.versionCount > 1;
 

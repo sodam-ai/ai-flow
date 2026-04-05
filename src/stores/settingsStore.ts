@@ -27,6 +27,10 @@ interface SettingsState {
   voiceLang: string;
   setVoiceLang: (lang: string) => void;
 
+  // Phase 5: TTS playback speed (0.5 – 2.0, default 1.0)
+  ttsRate: number;
+  setTtsRate: (rate: number) => void;
+
   // Persistent store initialization
   loadPersistedSettings: () => Promise<void>;
 
@@ -44,6 +48,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   privacyMode: false,
   routingMode: false,
   voiceLang: "ko", // Default to Korean — primary user base
+  ttsRate: 1.0,
   keyStatuses: {},
 
   setActiveProvider: async (id, modelId) => {
@@ -87,6 +92,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
+  setTtsRate: async (rate) => {
+    const clamped = Math.max(0.5, Math.min(2.0, rate));
+    set({ ttsRate: clamped });
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      await store.set("ttsRate", clamped);
+    } catch (e) {
+      console.warn("Failed to persist TTS rate:", e);
+    }
+  },
+
   loadPersistedSettings: async () => {
     try {
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
@@ -95,12 +111,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const privacyMode = (await store.get<boolean>("privacyMode")) ?? false;
       const routingMode = (await store.get<boolean>("routingMode")) ?? false;
       const voiceLang = (await store.get<string>("voiceLang")) ?? "ko";
+      const ttsRate   = (await store.get<number>("ttsRate"))   ?? 1.0;
       set({
         activeProviderId: providerId as ProviderId,
         activeModelId: modelId,
         privacyMode,
         routingMode,
         voiceLang,
+        ttsRate,
       });
     } catch (e) {
       console.warn("Failed to load persisted settings:", e);
