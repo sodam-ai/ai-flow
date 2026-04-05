@@ -55,6 +55,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_handle = app.handle().clone();
 
@@ -283,6 +284,9 @@ pub fn run() {
             commands::voice::transcribe_audio,
             // Screenshot / Vision AI (Phase 6)
             commands::screenshot::capture_screen,
+            // Auto Updater (Phase 6)
+            commands::updater::check_for_updates,
+            commands::updater::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

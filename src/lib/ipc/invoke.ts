@@ -723,3 +723,21 @@ export async function transcribeAudio(
     audioMime: audioMime ?? "audio/webm",
   });
 }
+
+// ─── Auto Updater (Phase 6) ───
+
+export interface UpdateInfo {
+  available: boolean;
+  version: string | null;
+  notes: string | null;
+  date: string | null;
+  current_version: string;
+}
+
+export async function checkForUpdates(): Promise<UpdateInfo> {
+  return invoke("check_for_updates");
+}
+
+export async function installUpdate(): Promise<void> {
+  return invoke("install_update");
+}

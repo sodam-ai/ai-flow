@@ -33,6 +33,7 @@ import ProUpgradeView from "@/views/ProUpgradeView";
 import KnowledgeBaseView from "@/views/KnowledgeBaseView";
 import AgentView from "@/views/AgentView";
 import PrivacyAuditView from "@/views/PrivacyAuditView";
+import UpdateBanner from "@/components/updater/UpdateBanner";
 import type { StreamTarget } from "@/types";
 
 type AppView = "chat" | "settings" | "compare" | "costs" | "mcp" | "workflow" | "batch" | "pro" | "kb" | "agent" | "privacy";
@@ -326,10 +327,14 @@ function MainApp() {
   }, [branchDialogState, activeConversationId]);
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-50 font-sans antialiased">
+    <div className="flex flex-col h-screen bg-zinc-950 text-zinc-50 font-sans antialiased">
       <ToastContainer />
       <CommandPalette />
       <PromptLibraryModal onUsePrompt={handleUsePrompt} />
+      <UpdateBanner />
+
+      {/* ── Body: sidebar + main (flex-1 so UpdateBanner doesn't shrink them) */}
+      <div className="flex flex-1 overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside className="w-56 border-r border-zinc-800/80 flex flex-col bg-zinc-950 shrink-0">
@@ -670,6 +675,7 @@ function MainApp() {
           <WelcomeView onNewChat={handleNewChat} />
         )}
       </main>
+      </div>{/* end body flex */}
     </div>
   );
 }

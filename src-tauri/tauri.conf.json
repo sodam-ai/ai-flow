@@ -31,6 +31,18 @@
       "iconAsTemplate": false
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "PLACEHOLDER — run: npx tauri signer generate -w ~/.tauri/aiflow.key  then paste the public key here",
+      "endpoints": [
+        "https://github.com/sodam-ai/ai-flow/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "windows": {
+        "installer_args": ["/quiet"]
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["msi"],
