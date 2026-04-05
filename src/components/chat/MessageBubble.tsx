@@ -34,6 +34,11 @@ export default function MessageBubble({
 
   const displayContent = viewingVersion?.content ?? message.content;
 
+  const formattedTime = new Date(message.createdAt).toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   const handleCopy = () => {
     navigator.clipboard.writeText(displayContent);
   };
@@ -97,6 +102,15 @@ export default function MessageBubble({
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} group/msg`}>
+      {/* Timestamp — visible on hover, outside the bubble */}
+      <span
+        className={`self-end mb-1 text-[10px] text-zinc-600 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-150 ${
+          isUser ? "mr-2 order-first" : "ml-2 order-last"
+        }`}
+        aria-label={`Sent at ${formattedTime}`}
+      >
+        {formattedTime}
+      </span>
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
           isUser ? "bg-zinc-100 text-zinc-900" : "bg-zinc-800/50 text-zinc-100"

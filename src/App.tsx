@@ -233,6 +233,37 @@ function MainApp() {
     return conversations.filter((c) => c.title.toLowerCase().includes(q));
   }, [conversations, sidebarSearch]);
 
+  // Group filtered conversations: Pinned → 오늘 → 어제 → 이번 주 → 이전
+  const groupedConversations = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfYesterday = startOfToday - 86_400_000;
+    const startOfWeek = startOfToday - 6 * 86_400_000;
+
+    const pinned: typeof filteredConversations = [];
+    const today: typeof filteredConversations = [];
+    const yesterday: typeof filteredConversations = [];
+    const thisWeek: typeof filteredConversations = [];
+    const older: typeof filteredConversations = [];
+
+    for (const c of filteredConversations) {
+      if (c.isPinned) { pinned.push(c); continue; }
+      const t = new Date(c.updatedAt).getTime();
+      if (t >= startOfToday) today.push(c);
+      else if (t >= startOfYesterday) yesterday.push(c);
+      else if (t >= startOfWeek) thisWeek.push(c);
+      else older.push(c);
+    }
+
+    return [
+      { label: "고정됨", items: pinned },
+      { label: "오늘", items: today },
+      { label: "어제", items: yesterday },
+      { label: "이번 주", items: thisWeek },
+      { label: "이전", items: older },
+    ].filter((g) => g.items.length > 0);
+  }, [filteredConversations]);
+
   const conversationMessages = activeConversationId
     ? (messages[activeConversationId] ?? [])
     : [];
@@ -346,10 +377,15 @@ function MainApp() {
           </div>
         )}
 
-        {/* Conversation list */}
-        <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-px min-h-0">
+        {/* Conversation list — date-grouped */}
+        <nav className="flex-1 overflow-y-auto px-2 py-2 min-h-0">
           {filteredConversations.length === 0 && conversations.length === 0 && (
-            <div className="px-2 py-6 text-center">
+            <div className="px-2 py-8 text-center">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4 text-zinc-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                </svg>
+              </div>
               <p className="text-xs text-zinc-600">아직 대화가 없습니다</p>
               <button
                 onClick={handleNewChat}
@@ -359,15 +395,27 @@ function MainApp() {
               </button>
             </div>
           )}
-          {filteredConversations.map((conv) => (
-            <ConversationItem
-              key={conv.id}
-              conversation={conv}
-              isActive={currentView === "chat" && activeConversationId === conv.id}
-              onClick={() => { setActive(conv.id); setCurrentView("chat"); }}
-              onPin={() => pin(conv.id)}
-              onDelete={() => remove(conv.id)}
-            />
+          {filteredConversations.length === 0 && conversations.length > 0 && (
+            <p className="px-3 py-4 text-xs text-zinc-600 text-center">검색 결과 없음</p>
+          )}
+          {groupedConversations.map((group) => (
+            <div key={group.label} className="mb-2">
+              <p className="px-2 mb-1 mt-1 text-[10px] font-medium text-zinc-600 uppercase tracking-wider">
+                {group.label}
+              </p>
+              <div className="space-y-px">
+                {group.items.map((conv) => (
+                  <ConversationItem
+                    key={conv.id}
+                    conversation={conv}
+                    isActive={currentView === "chat" && activeConversationId === conv.id}
+                    onClick={() => { setActive(conv.id); setCurrentView("chat"); }}
+                    onPin={() => pin(conv.id)}
+                    onDelete={() => remove(conv.id)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -629,55 +677,87 @@ function MainApp() {
 function WelcomeView({ onNewChat }: { onNewChat: () => void }) {
   const { t } = useTranslation();
 
-  const HINTS = [
+  const FEATURES = [
+    { icon: "🤖", title: "멀티 AI 허브", desc: "GPT-4o · Claude · Gemini 동시 비교" },
+    { icon: "🎤", title: "음성 입력", desc: "Whisper STT · 자동 침묵 감지" },
+    { icon: "📷", title: "스크린샷 Vision", desc: "화면 캡처 → AI 분석" },
+    { icon: "📚", title: "지식베이스 RAG", desc: "내 문서 기반 AI 답변" },
+    { icon: "🔒", title: "완전 로컬 보안", desc: "API 키 OS 키체인 · DB AES-256" },
+    { icon: "🤖", title: "AI 에이전트", desc: "멀티스텝 자율 작업 + 승인 게이트" },
+  ];
+
+  const SHORTCUTS = [
+    { keys: ["Alt", "Space"], label: "오버레이" },
+    { keys: ["Alt", "Shift", "A"], label: "클립보드 → AI" },
+    { keys: ["Alt", "Shift", "V"], label: "음성 입력" },
+    { keys: ["Ctrl", "Shift", "S"], label: "스크린샷" },
     { keys: ["Ctrl", "K"], label: "명령 팔레트" },
-    { keys: ["Alt", "Space"], label: "오버레이 열기" },
-    { keys: ["⊞ 파일"], label: "파일 드롭으로 분석" },
   ];
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6 pb-16">
-      {/* Logo mark */}
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-14 h-14 rounded-2xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-7 h-7 text-violet-400">
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 px-8 pb-10 overflow-y-auto">
+      {/* Logo + headline */}
+      <div className="flex flex-col items-center gap-4 mt-8">
+        <div className="w-16 h-16 rounded-2xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center shadow-lg shadow-violet-900/20">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-violet-400">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
           </svg>
         </div>
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-zinc-100 tracking-tight">
+          <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">
             {t("app.name")}
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">{t("app.welcome")}</p>
+          <p className="text-sm text-zinc-500 mt-1.5 max-w-xs">
+            {t("app.welcome")}
+          </p>
         </div>
+        <button
+          onClick={onNewChat}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-sm font-medium transition-all shadow-lg shadow-violet-900/30"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          {t("app.startChat")}
+        </button>
       </div>
 
-      {/* New chat CTA */}
-      <button
-        onClick={onNewChat}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        {t("app.startChat")}
-      </button>
-
-      {/* Keyboard hints */}
-      <div className="flex flex-col items-center gap-2">
-        {HINTS.map(({ keys, label }) => (
-          <p key={label} className="text-xs text-zinc-600 flex items-center gap-1.5">
-            {keys.map((k) => (
-              <kbd
-                key={k}
-                className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono text-zinc-400 text-[10px]"
-              >
-                {k}
-              </kbd>
-            ))}
-            <span>— {label}</span>
-          </p>
+      {/* Feature cards */}
+      <div className="grid grid-cols-2 gap-2 w-full max-w-lg">
+        {FEATURES.map(({ icon, title, desc }) => (
+          <div
+            key={title}
+            className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 hover:border-zinc-700/60 transition-colors"
+          >
+            <span className="text-base leading-none mt-0.5">{icon}</span>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-zinc-300 leading-tight">{title}</p>
+              <p className="text-[10px] text-zinc-600 mt-0.5 leading-relaxed">{desc}</p>
+            </div>
+          </div>
         ))}
+      </div>
+
+      {/* Keyboard shortcuts */}
+      <div className="w-full max-w-lg">
+        <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wider mb-2 text-center">
+          단축키
+        </p>
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5">
+          {SHORTCUTS.map(({ keys, label }) => (
+            <p key={label} className="text-[11px] text-zinc-600 flex items-center gap-1">
+              {keys.map((k, i) => (
+                <span key={k} className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/80 font-mono text-zinc-400 text-[10px] leading-4">
+                    {k}
+                  </kbd>
+                  {i < keys.length - 1 && <span className="text-zinc-700 text-[10px]">+</span>}
+                </span>
+              ))}
+              <span className="ml-0.5 text-zinc-600">— {label}</span>
+            </p>
+          ))}
+        </div>
       </div>
     </div>
   );
