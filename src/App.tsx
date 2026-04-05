@@ -184,12 +184,17 @@ function MainApp() {
       // Bridge Tauri IPC event → DOM CustomEvent for VoiceRecordButton
       window.dispatchEvent(new CustomEvent("aiflow:voice-start"));
     });
+    const unsubScreenshot = listen("aiflow://screenshot-to-ai", () => {
+      // Bridge Tauri IPC event → DOM CustomEvent for ChatInput
+      window.dispatchEvent(new CustomEvent("aiflow:screenshot"));
+    });
 
     return () => {
       unsubNewChat.then((fn) => fn());
       unsubSettings.then((fn) => fn());
       unsubClipboard.then((fn) => fn());
       unsubVoice.then((fn) => fn());
+      unsubScreenshot.then((fn) => fn());
     };
   }, [activeConversationId, activeProviderId, activeModelId, createChat, sendMessage]);
 

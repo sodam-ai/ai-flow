@@ -40,6 +40,10 @@ pub fn run() {
                                 // Voice recording: emit event for frontend to handle
                                 let _ = app.emit("aiflow://voice-start", ());
                             }
+                            "Ctrl+Shift+S" => {
+                                // Screenshot → Vision AI: emit event for frontend to handle
+                                let _ = app.emit("aiflow://screenshot-to-ai", ());
+                            }
                             _ => {}
                         }
                     }
@@ -82,6 +86,9 @@ pub fn run() {
             }
             if let Err(e) = app.global_shortcut().register("Alt+Shift+V") {
                 log::warn!("Failed to register Alt+Shift+V: {}", e);
+            }
+            if let Err(e) = app.global_shortcut().register("Ctrl+Shift+S") {
+                log::warn!("Failed to register Ctrl+Shift+S: {}", e);
             }
 
             // System tray menu
@@ -147,7 +154,7 @@ pub fn run() {
                 });
             }
 
-            log::info!("AIFlow initialized successfully (Phase 5: Voice STT + Clipboard Context + TTS)");
+            log::info!("AIFlow initialized successfully (Phase 6: Screenshot Vision AI)");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -274,6 +281,8 @@ pub fn run() {
             commands::agent::import_workflow,
             // Voice / STT (Phase 5)
             commands::voice::transcribe_audio,
+            // Screenshot / Vision AI (Phase 6)
+            commands::screenshot::capture_screen,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

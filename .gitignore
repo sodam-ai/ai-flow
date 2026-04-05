@@ -57,3 +57,6 @@ test-results/
 
 # SBOM
 sbom*.json
+
+# Local tooling state
+.omc/

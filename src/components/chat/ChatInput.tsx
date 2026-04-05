@@ -1,6 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Send, Square, BookOpen, Zap, Clipboard, CheckCheck } from "lucide-react";
+import {
+  Send, Square, BookOpen, Zap, Clipboard, CheckCheck,
+  Camera, X, Loader2,
+} from "lucide-react";
 import FileDropZone from "./FileDropZone";
 import RoutingBadge from "./RoutingBadge";
 import VoiceRecordButton from "./VoiceRecordButton";
@@ -9,12 +12,15 @@ import { usePromptStore } from "@/stores/promptStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useChatStore } from "@/stores/chatStore";
 import { detectPii, type PiiMatch } from "@/lib/privacy/pii-detector";
-import { logPiiDetection, readClipboardContent } from "@/lib/ipc/invoke";
+import { logPiiDetection, readClipboardContent, captureScreen } from "@/lib/ipc/invoke";
 import type { FileContent } from "@/types";
 
 interface Props {
   isStreaming: boolean;
-  onSubmit: (content: string, options?: { hasFile?: boolean; hasCode?: boolean }) => void;
+  onSubmit: (
+    content: string,
+    options?: { hasFile?: boolean; hasCode?: boolean; imageData?: string | null }
+  ) => void;
   onCancel: () => void;
 }
 
@@ -22,6 +28,8 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<FileContent[]>([]);
   const [clipboardAdded, setClipboardAdded] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [screenshotLoading, setScreenshotLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const clipboardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -58,9 +66,13 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
   };
 
   const doSend = (content: string, wasMasked: boolean) => {
-    onSubmit(content, { hasFile: attachments.length > 0 });
+    onSubmit(content, {
+      hasFile: attachments.length > 0,
+      imageData: pendingImage,
+    });
     setInput("");
     setAttachments([]);
+    setPendingImage(null);
     setShowPiiPreview(false);
     setPiiMatches([]);
     setPendingContent("");
@@ -82,7 +94,8 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
 
   const handleSubmit = () => {
     const trimmed = input.trim();
-    if ((!trimmed && attachments.length === 0) || isStreaming) return;
+    const hasContent = trimmed || attachments.length > 0 || pendingImage;
+    if (!hasContent || isStreaming) return;
 
     const fullContent = buildFullContent();
 
@@ -121,7 +134,6 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
       const trimmed = prev.trimEnd();
       return trimmed ? `${trimmed} ${text}` : text;
     });
-    // Auto-resize textarea after insertion
     setTimeout(() => {
       const el = textareaRef.current;
       if (el) {
@@ -137,21 +149,42 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
     try {
       const text = await readClipboardContent();
       if (!text?.trim()) return;
-
-      // Wrap as a labelled context block, prepend to input
       const block = `[Clipboard context]\n${text.trim()}\n\n`;
       setInput((prev) => block + prev);
-
-      // Brief ✓ feedback
       setClipboardAdded(true);
       if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
       clipboardTimerRef.current = setTimeout(() => setClipboardAdded(false), 2000);
-
       textareaRef.current?.focus();
     } catch {
       // Silently ignore — clipboard may be empty or access denied
     }
   }, []);
+
+  /** Capture screen and attach as Vision AI image */
+  const handleScreenshot = useCallback(async () => {
+    if (screenshotLoading || isStreaming) return;
+    setScreenshotLoading(true);
+    try {
+      const base64 = await captureScreen();
+      setPendingImage(base64);
+      textareaRef.current?.focus();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Minimal error display — SCREEN_ prefix errors surfaced briefly
+      console.warn("Screenshot failed:", msg);
+    } finally {
+      setScreenshotLoading(false);
+    }
+  }, [screenshotLoading, isStreaming]);
+
+  /** Global keyboard shortcut (Ctrl+Shift+S) → take screenshot */
+  useEffect(() => {
+    const handler = () => { handleScreenshot(); };
+    window.addEventListener("aiflow:screenshot", handler);
+    return () => window.removeEventListener("aiflow:screenshot", handler);
+  }, [handleScreenshot]);
+
+  const canSend = (input.trim() || attachments.length > 0 || !!pendingImage) && !isStreaming;
 
   return (
     <>
@@ -197,6 +230,30 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
             )}
           </div>
 
+          {/* Screenshot preview */}
+          {pendingImage && (
+            <div className="max-w-3xl mx-auto mb-2">
+              <div className="relative inline-block">
+                <img
+                  src={`data:image/png;base64,${pendingImage}`}
+                  alt="Screenshot preview"
+                  className="h-20 w-auto rounded-lg border border-zinc-700 object-cover shadow-md"
+                />
+                <button
+                  onClick={() => setPendingImage(null)}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-800 border border-zinc-600 flex items-center justify-center hover:bg-zinc-700 transition-colors"
+                  title="Remove screenshot"
+                  aria-label="Remove screenshot"
+                >
+                  <X className="w-3 h-3 text-zinc-300" />
+                </button>
+                <span className="absolute bottom-1 left-1.5 text-[9px] text-zinc-300 bg-zinc-900/80 px-1 rounded leading-4">
+                  Vision
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Input row */}
           <div className="flex items-end gap-1.5 max-w-3xl mx-auto">
             {/* Prompt library */}
@@ -225,13 +282,32 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                   ? "text-green-400 bg-green-950/30"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
               }`}
-              title="Inject clipboard as context"
+              title="Inject clipboard as context (Alt+Shift+A)"
               aria-label="Inject clipboard content as context"
             >
               {clipboardAdded ? (
                 <CheckCheck className="w-4 h-4" />
               ) : (
                 <Clipboard className="w-4 h-4" />
+              )}
+            </button>
+
+            {/* Screenshot button */}
+            <button
+              onClick={handleScreenshot}
+              disabled={isStreaming || screenshotLoading}
+              className={`p-2.5 rounded-xl transition-colors flex-shrink-0 ${
+                pendingImage
+                  ? "text-violet-400 bg-violet-950/30"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
+              }`}
+              title="Capture screen for Vision AI (Ctrl+Shift+S)"
+              aria-label="Capture screenshot for Vision AI"
+            >
+              {screenshotLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4" />
               )}
             </button>
 
@@ -242,7 +318,11 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               onInput={handleInput}
-              placeholder={t("chat.placeholder")}
+              placeholder={
+                pendingImage
+                  ? t("chat.placeholder_vision") || "Describe what you want to know about this screenshot…"
+                  : t("chat.placeholder")
+              }
               rows={1}
               className="flex-1 resize-none bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-zinc-500 focus:outline-none transition-colors min-w-0"
               disabled={isStreaming}
@@ -261,7 +341,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={!input.trim() && attachments.length === 0}
+                disabled={!canSend}
                 className="p-2.5 rounded-xl bg-zinc-100 text-zinc-900 hover:bg-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
                 title={t("chat.send")}
                 aria-label="Send message"

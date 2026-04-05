@@ -12,6 +12,7 @@ pub async fn stream_ai_message(
     stream_id: String,
     persona_id: Option<String>,
     kb_ids: Option<Vec<i64>>, // Smart Context Injection: KB IDs to auto-search
+    image_data: Option<String>, // Phase 6: base64 PNG for Vision AI (screenshot)
     channel: tauri::ipc::Channel<serde_json::Value>,
 ) -> Result<(), String> {
     // Register stream for cancellation
@@ -66,13 +67,14 @@ pub async fn stream_ai_message(
         }
     };
 
-    // Stream AI response
+    // Stream AI response (pass image_data for Vision AI if present)
     let result = crate::services::ai_client::stream_chat(
         &provider_id,
         &model_id,
         &api_key,
         &messages,
         injected_system.as_deref(),
+        image_data.as_deref(),
         &channel,
         cancel_rx,
     )
@@ -248,13 +250,14 @@ pub async fn regenerate_ai_message(
             .map(|p| p.system_prompt)
     });
 
-    // Stream new AI response
+    // Stream new AI response (regeneration — no image data)
     let result = crate::services::ai_client::stream_chat(
         &provider_id,
         &model_id,
         &api_key,
         &context_messages,
         system_prompt.as_deref(),
+        None,
         &channel,
         cancel_rx,
     )

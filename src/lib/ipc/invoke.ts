@@ -141,6 +141,7 @@ export function streamAiMessage(
   personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
   kbIds?: number[], // Smart Context Injection
+  imageData?: string | null, // Phase 6: base64 PNG for Vision AI
 ): { promise: Promise<void>; channel: Channel<StreamChunk> } {
   // Validate before creating channel
   validate(streamAiMessageSchema, { conversationId, content, providerId, modelId, streamId });
@@ -156,10 +157,17 @@ export function streamAiMessage(
     streamId,
     personaId,
     kbIds: kbIds && kbIds.length > 0 ? kbIds : null,
+    imageData: imageData ?? null,
     channel,
   });
 
   return { promise, channel };
+}
+
+// ─── Screenshot / Vision AI ───
+
+export async function captureScreen(): Promise<string> {
+  return invoke<string>("capture_screen");
 }
 
 export async function cancelStream(streamId: string): Promise<void> {
