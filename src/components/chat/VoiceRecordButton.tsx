@@ -98,6 +98,15 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
     };
   }, [clearTimers, clearAudioContext, releaseMic]);
 
+  // Global keyboard shortcut (Alt+Shift+V) → start recording
+  useEffect(() => {
+    const handler = () => {
+      if (!disabled && recordState === "idle") startRecording();
+    };
+    window.addEventListener("aiflow:voice-start", handler);
+    return () => window.removeEventListener("aiflow:voice-start", handler);
+  }, [disabled, recordState, startRecording]);
+
   const startRecording = useCallback(async () => {
     setError(null);
     stoppingRef.current = false;
