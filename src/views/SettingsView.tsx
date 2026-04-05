@@ -8,11 +8,11 @@ import PersonaEditor from "@/components/chat/PersonaEditor";
 import type { Persona, LocalLlmDetectionResult } from "@/types";
 import { detectLocalLlms, getRoutingRules } from "@/lib/ipc/invoke";
 import type { RoutingRule } from "@/types";
-import { Eye, EyeOff, Trash2, Check, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield } from "lucide-react";
+import { Eye, EyeOff, Trash2, Check, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic } from "lucide-react";
 
 export default function SettingsView() {
   const { t, i18n } = useTranslation();
-  const { keyStatuses, loadAllKeyStatuses, saveKey, removeKey, setActiveProvider } =
+  const { keyStatuses, loadAllKeyStatuses, saveKey, removeKey, setActiveProvider, voiceLang, setVoiceLang } =
     useSettingsStore();
   const { personas, fetchPersonas, deletePersona } = usePersonaStore();
   const [editorPersona, setEditorPersona] = useState<Persona | null | "new">(null);
@@ -43,6 +43,42 @@ export default function SettingsView() {
               }`}
             >
               {lang === "ko" ? "한국어" : "English"}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Voice Language (Phase 5) */}
+      <section className="mb-8">
+        <h3 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
+          <Mic className="w-3.5 h-3.5" />
+          Voice Input Language
+        </h3>
+        <p className="text-[11px] text-zinc-600 mb-3">
+          Whisper STT language hint — improves transcription accuracy
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {([
+            { code: "ko", label: "한국어", flag: "🇰🇷" },
+            { code: "en", label: "English", flag: "🇺🇸" },
+            { code: "ja", label: "日本語", flag: "🇯🇵" },
+            { code: "zh", label: "中文", flag: "🇨🇳" },
+            { code: "",   label: "Auto",   flag: "🌐" },
+          ] as const).map(({ code, label, flag }) => (
+            <button
+              key={code}
+              onClick={() => setVoiceLang(code)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                voiceLang === code
+                  ? "bg-violet-950/50 border-violet-700/60 text-violet-300"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300"
+              }`}
+            >
+              <span>{flag}</span>
+              <span>{label}</span>
+              {voiceLang === code && (
+                <Check className="w-3 h-3 ml-0.5 text-violet-400" />
+              )}
             </button>
           ))}
         </div>

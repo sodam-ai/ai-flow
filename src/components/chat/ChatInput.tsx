@@ -30,6 +30,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
   const routingMode = useSettingsStore((s) => s.routingMode);
   const setRoutingMode = useSettingsStore((s) => s.setRoutingMode);
   const privacyMode = useSettingsStore((s) => s.privacyMode);
+  const voiceLang = useSettingsStore((s) => s.voiceLang);
   const lastRoutingInfo = useChatStore((s) => s.lastRoutingInfo);
   const activeConversationId = useChatStore((s) => s.activeConversationId);
 
@@ -212,6 +213,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
             <VoiceRecordButton
               onTranscript={handleVoiceTranscript}
               disabled={isStreaming}
+              language={voiceLang}
             />
 
             {/* Clipboard inject */}
