@@ -1,0 +1,106 @@
+# ─────────────────────────────────────────────────────────────────
+#  AIFlow — Release Workflow
+#  Trigger  : git tag push  v1.2.3  (semver)
+#  Output   : GitHub Release + MSI installer + latest.json (Auto Updater)
+#  Security : Ed25519 signing (ASVS 10.3.1-3), minimal permissions,
+#             reproducible builds (npm ci), secret via GitHub Secrets
+# ─────────────────────────────────────────────────────────────────
+
+name: Release
+
+on:
+  push:
+    tags:
+      # Only exact semver tags trigger a release  e.g. v0.1.0  v1.2.3
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  # Manual trigger — useful for testing; run only on a version tag ref
+  workflow_dispatch:
+
+# ASVS 6.4.1 / Principle of Least Privilege
+# contents:write  → create GitHub Release & upload assets
+# All other scopes remain read-only (default)
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release (Windows x64)
+    runs-on: windows-latest
+    timeout-minutes: 60       # guard against runaway builds
+
+    steps:
+      # ── 1. Source ────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js ───────────────────────────────────────────────
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      # ── 3. Rust ──────────────────────────────────────────────────
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust build artifacts
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      # ── 4. Dependencies ──────────────────────────────────────────
+      # npm ci: reproducible locked install — never resolves new versions
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # ── 5. Security audit ────────────────────────────────────────
+      # Fail the build if HIGH/CRITICAL npm vulnerabilities are found
+      - name: npm dependency audit
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      # ── 6. Build & Publish ───────────────────────────────────────
+      # tauri-action builds the MSI, signs it with Ed25519,
+      # creates a GitHub Release, and uploads:
+      #   • AIFlow_x.y.z_x64_en-US.msi          (installer)
+      #   • AIFlow_x.y.z_x64_en-US.msi.sig      (Ed25519 signature)
+      #   • latest.json                          (Auto Updater manifest)
+      #
+      # Secrets required (GitHub repo → Settings → Secrets):
+      #   TAURI_SIGNING_PRIVATE_KEY          base64-encoded Ed25519 private key
+      #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  passphrase (set "" if none)
+      #
+      # Generate key pair (run once, locally):
+      #   npx tauri signer generate -w ~/.tauri/aiflow.key
+      #   → copy public key into tauri.conf.json › plugins › updater › pubkey
+      #   → add private key file content as TAURI_SIGNING_PRIVATE_KEY secret
+      - name: Build Tauri app and publish GitHub Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Ed25519 signing — ASVS 10.3.1 (signed updates)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'AIFlow ${{ github.ref_name }}'
+          releaseBody: |
+            ## AIFlow ${{ github.ref_name }}
+
+            ### 설치 방법
+            아래 **Assets** 섹션에서 `AIFlow_*_x64_en-US.msi` 파일을 다운로드하여 실행하세요.
+            기존 사용자는 앱 실행 시 자동으로 업데이트 알림을 받습니다.
+
+            ### 변경사항
+            전체 변경 이력은 [CHANGELOG](https://github.com/sodam-ai/ai-flow/commits/main)를 참고하세요.
+
+            ### 보안
+            모든 릴리스 파일은 **Ed25519**로 서명되며, 앱이 자동으로 서명을 검증합니다.
+          releaseDraft: false
+          prerelease: false
+          # Generate latest.json for tauri-plugin-updater endpoint
+          includeUpdaterJson: true
