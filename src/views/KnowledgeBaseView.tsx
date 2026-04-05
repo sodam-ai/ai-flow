@@ -1,5 +1,36 @@
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+
+// ─── Safe snippet renderer ────────────────────────────────────────────────────
+// ASVS 5.3.3: Replaces dangerouslySetInnerHTML — parses ONLY <mark>…</mark> tags
+// from SQLite FTS5 snippet() output. All other content is rendered as plain text.
+function SnippetHighlight({ text }: { text: string }) {
+  if (!text) return null;
+  const parts: Array<{ content: string; mark: boolean }> = [];
+  let remaining = text;
+  while (remaining) {
+    const start = remaining.indexOf("<mark>");
+    if (start === -1) { parts.push({ content: remaining, mark: false }); break; }
+    if (start > 0) parts.push({ content: remaining.slice(0, start), mark: false });
+    const end = remaining.indexOf("</mark>", start + 6);
+    if (end === -1) { parts.push({ content: remaining.slice(start + 6), mark: false }); break; }
+    parts.push({ content: remaining.slice(start + 6, end), mark: true });
+    remaining = remaining.slice(end + 7);
+  }
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.mark ? (
+          <mark key={i} className="bg-violet-500/20 text-violet-200 rounded px-0.5 not-italic font-medium">
+            {p.content}
+          </mark>
+        ) : (
+          <span key={i}>{p.content}</span>
+        )
+      )}
+    </>
+  );
+}
 import type { KnowledgeBase, KbDocument, KbSearchResult } from "@/types";
 import {
   listKnowledgeBases,
@@ -334,10 +365,9 @@ export default function KnowledgeBaseView() {
                       </svg>
                       <span className="text-xs text-zinc-400 font-medium">{r.filename}</span>
                     </div>
-                    <p
-                      className="text-xs text-zinc-300 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: r.snippet }}
-                    />
+                    <p className="text-xs text-zinc-300 leading-relaxed">
+                      <SnippetHighlight text={r.snippet} />
+                    </p>
                   </div>
                 ))}
               </div>

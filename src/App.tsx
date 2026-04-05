@@ -291,6 +291,9 @@ function MainApp() {
     );
   }, []);
 
+  // Atomically clear all active KBs — avoids stale-closure issues with forEach(toggle)
+  const clearKbs = useCallback(() => setActiveKbIds([]), []);
+
   const activeConv = conversations.find((c) => c.id === activeConversationId);
 
   // ── Conversation Branching ───────────────────────────────────────────────
@@ -643,7 +646,7 @@ function MainApp() {
             </div>
 
             {/* KB context chips (Smart Context Injection UI) */}
-            <KbContextBar activeKbIds={activeKbIds} onToggle={toggleKb} />
+            <KbContextBar activeKbIds={activeKbIds} onToggle={toggleKb} onClearAll={clearKbs} />
 
             <ChatInput
               isStreaming={isStreaming}
