@@ -58,7 +58,26 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Workflow Export/Import** | Share workflows as JSON files between machines |
 | **Conditional Workflows** | Improved branching and condition support in workflow steps |
 
-### Phase 4 — Security Hardening & UX Completion ✨ NEW
+### Phase 5 — Voice I/O ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Voice Input** (`Alt+Shift+V`) | Whisper API STT — press once from anywhere to start recording |
+| **Live Waveform** | Real-time frequency bars during recording (8-channel) |
+| **Silence Auto-Stop** | Auto-stops after 2.5s of silence + 60s hard timeout |
+| **TTS Playback** | Read AI responses aloud via Web Speech API, speed adjustable |
+| **Multilingual** | Whisper language hint (auto-detect or ISO 639-1) |
+
+### Phase 6 — Vision AI & Auto Updater ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Screenshot Vision AI** (`Ctrl+Shift+S`) | Capture full screen → send to GPT-4o / Claude / Gemini Vision |
+| **Multi-Provider Vision** | Auto-formats for OpenAI `image_url`, Anthropic `base64 source`, Google `inline_data` |
+| **Screenshot Preview** | Thumbnail in ChatInput with "Vision" badge and X remove button |
+| **Auto Updater** | GitHub Releases-based updater with Ed25519 signature verification (ASVS 10.3.1-3) |
+| **Update Banner** | Non-intrusive top banner — progress bar + restart prompt |
+| **Sidebar Date Grouping** | Conversations bucketed: Pinned / Today / Yesterday / This Week / Older |
+
+### Phase 4 — Security Hardening & UX Completion
 | Feature | Description |
 |---------|-------------|
 | **Agent Web Search** | AI Agent searches DuckDuckGo in real time (`search_web` tool) |
@@ -82,6 +101,10 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | State | Zustand |
 | Streaming | Tauri ipc::Channel |
 | AI Calls | Rust reqwest (no CORS, keys never reach frontend) |
+| Voice STT | Whisper API (OpenAI) — webm/opus, 25 MB limit |
+| TTS | Web Speech API (browser-native) |
+| Screen Capture | `screenshots` crate (0.8) + `image` crate (0.24) |
+| Auto Updater | tauri-plugin-updater v2 (Ed25519 signature verification) |
 | i18n | react-i18next |
 
 ---
@@ -292,7 +315,9 @@ ai-flow/
 | **2** | Multi-AI compare, smart routing, privacy, cost dashboard, budget, workflows | ✅ Complete |
 | **3** | RAG knowledge base, AI agent, conversation branching, workflow export/import | ✅ Complete |
 | **4** | Agent web search/URL fetch, prompt version restore, local LLM picker, audit dashboard | ✅ Complete |
-| **5** | Voice I/O (Whisper.cpp), smart context injection, plugin marketplace | Planned |
+| **5** | Voice STT (Whisper API) + TTS + global `Alt+Shift+V` shortcut | ✅ Complete |
+| **6** | Screenshot Vision AI (`Ctrl+Shift+S`) + Auto Updater (Ed25519) + UI/UX improvements | ✅ Complete |
+| **7** | Knowledge base UI polish, agent tool expansion, GitHub Actions CI/CD | Planned |
 
 ---
 

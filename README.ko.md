@@ -58,7 +58,26 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **워크플로우 내보내기/가져오기** | 워크플로우를 JSON 파일로 기기 간 공유 |
 | **조건부 워크플로우** | 워크플로우 단계에서 개선된 분기 및 조건 지원 |
 
-### Phase 4 — 보안 강화 & UX 완성 ✨ NEW
+### Phase 5 — 음성 I/O ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **음성 입력** (`Alt+Shift+V`) | Whisper API 기반 STT — 어디서든 단축키 한 번으로 녹음 시작 |
+| **실시간 파형 시각화** | 녹음 중 주파수 스펙트럼 바 표시 (8채널) |
+| **무음 자동 정지** | 2.5초 무음 감지 시 자동 정지 + 60초 하드 타임아웃 |
+| **TTS 읽기** | Web Speech API로 AI 응답 음성 읽기, 속도 설정 저장 |
+| **다국어 음성** | Whisper 언어 힌트 (auto-detect 또는 ISO 639-1) |
+
+### Phase 6 — Vision AI & 자동 업데이트 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **스크린샷 Vision AI** (`Ctrl+Shift+S`) | 전체 화면 캡처 → GPT-4o / Claude / Gemini Vision에 전송 |
+| **멀티프로바이더 Vision** | OpenAI `image_url`, Anthropic `base64 source`, Google `inline_data` 자동 포맷 |
+| **스크린샷 미리보기** | ChatInput에 썸네일 + "Vision" 뱃지, X 버튼으로 제거 |
+| **자동 업데이트** | GitHub Releases 기반 업데이터, Ed25519 서명 검증 (ASVS 10.3.1-3) |
+| **업데이트 배너** | 앱 상단 비침습 알림 — 진행률 바 + 재시작 유도 |
+| **사이드바 날짜 그룹핑** | 고정됨 / 오늘 / 어제 / 이번 주 / 이전으로 대화 자동 분류 |
+
+### Phase 4 — 보안 강화 & UX 완성
 | 기능 | 설명 |
 |------|------|
 | **에이전트 웹 검색** | AI 에이전트가 DuckDuckGo로 실시간 웹 검색 (`search_web` 도구) |
@@ -82,6 +101,10 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | 상태 | Zustand |
 | 스트리밍 | Tauri ipc::Channel |
 | AI 호출 | Rust reqwest (CORS 없음, 키 프론트엔드 미노출) |
+| 음성 STT | Whisper API (OpenAI) — webm/opus, 25MB 제한 |
+| TTS | Web Speech API (브라우저 내장) |
+| 화면 캡처 | `screenshots` crate (0.8) + `image` crate (0.24) |
+| 자동 업데이트 | tauri-plugin-updater v2 (Ed25519 서명 검증) |
 | i18n | react-i18next |
 
 ---
@@ -191,6 +214,29 @@ npm run tauri:build
 4. **채택** 버튼으로 최적 응답 표시
 5. **내보내기** 버튼으로 마크다운 파일로 저장
 
+### 음성 입력 (Phase 5)
+
+1. 채팅 입력창 우측의 **마이크 버튼** 클릭 또는 `Alt+Shift+V`
+2. 마이크 권한 허용 → 파형이 표시되며 녹음 시작
+3. 말하기 — 2.5초 무음 시 자동 정지 (또는 버튼 다시 클릭으로 수동 정지)
+4. Whisper가 텍스트로 변환 → 입력창에 자동 삽입
+5. 설정 → **음성 입력 언어**: 한국어, 영어, 자동 감지 선택 가능
+
+### TTS 읽기 (Phase 5)
+
+1. AI 응답 말풍선 하단의 **스피커 버튼** 클릭
+2. 마크다운 문법 제거 후 자연스러운 음성으로 읽기 시작
+3. 다시 클릭하면 즉시 정지
+4. 설정 → **TTS 읽기 속도**: 0.5×~2.0× 조절 가능
+
+### 스크린샷 Vision AI (Phase 6)
+
+1. `Ctrl+Shift+S` — 어떤 앱에서든 전체 화면 캡처
+2. AIFlow ChatInput에 썸네일 미리보기 표시 + "Vision" 뱃지
+3. 질문 입력 후 전송 → GPT-4o / Claude / Gemini Vision이 화면을 분석
+4. X 버튼으로 스크린샷 제거 가능 (텍스트만 전송)
+5. 지원 프로바이더: OpenAI(GPT-4o), Anthropic(Claude 3.5 Sonnet+), Google(Gemini 1.5+)
+
 ---
 
 ## 환경 변수
@@ -212,7 +258,8 @@ ai-flow/
 ├── .PRD/                     # 제품 요구사항 문서
 ├── src/                      # React 프론트엔드
 │   ├── components/           # UI 컴포넌트
-│   │   └── chat/             # 채팅 전용 컴포넌트
+│   │   ├── chat/             # 채팅 전용 컴포넌트
+│   │   └── updater/          # UpdateBanner (자동 업데이트 알림)
 │   ├── stores/               # Zustand 상태 관리
 │   ├── lib/                  # 유틸리티, IPC, 스키마, 프로바이더
 │   ├── views/                # 페이지 레벨 뷰
@@ -228,7 +275,10 @@ ai-flow/
 │   ├── src/
 │   │   ├── commands/         # Tauri IPC 명령 (얇은 어댑터)
 │   │   │   ├── knowledge_base.rs  # KB/RAG 명령
-│   │   │   └── agent.rs           # 에이전트 + 브랜칭 + 내보내기/가져오기
+│   │   │   ├── agent.rs           # 에이전트 + 브랜칭 + 내보내기/가져오기
+│   │   │   ├── voice.rs           # Whisper STT (Phase 5)
+│   │   │   ├── screenshot.rs      # 화면 캡처 → base64 (Phase 6)
+│   │   │   └── updater.rs         # 업데이트 확인/설치 (Phase 6)
 │   │   ├── services/         # 비즈니스 로직
 │   │   │   ├── knowledge_base.rs  # FTS5 인덱싱 + 검색
 │   │   │   ├── agent.rs           # 멀티스텝 에이전트 (search_web, read_url 포함)
@@ -313,6 +363,9 @@ ai-flow/
 | 경로 보안 | 모든 MCP 파일 경로에 `canonicalize()` 적용 (심볼릭 링크 순회 방지) |
 | 입력 제한 | 모든 텍스트 입력 최대 길이 검증 (목표: 2KB, 쿼리: 500자) |
 | 파일 접근 | 절대 경로 확인 + 확장자 허용 목록 + 5MB 크기 제한 (KB) |
+| 음성 보안 | 오디오 바이트 디스크 미기록 (IPC 중 메모리 base64만), 25MB / 60초 하드 리밋 |
+| Vision 보안 | 스크린샷 10MB 캡, 바이트 디스크 미기록 (base64 메모리 전용) |
+| 업데이트 서명 | Ed25519 비대칭 키 — 앱에 공개키만 번들, 다운그레이드 방지 minVersion |
 
 ---
 
@@ -325,7 +378,9 @@ ai-flow/
 | **2** | 멀티 AI 비교, 스마트 라우팅, 프라이버시, 비용 대시보드, 예산, 워크플로우 | ✅ 완료 |
 | **3** | RAG 지식베이스, AI 에이전트, 대화 브랜칭, 워크플로우 내보내기/가져오기 | ✅ 완료 |
 | **4** | 에이전트 웹검색/URL읽기, 프롬프트 버전 복원, 로컬 LLM 선택, 감사 대시보드 | ✅ 완료 |
-| **5** | 음성 I/O (Whisper.cpp), 스마트 컨텍스트 주입, 플러그인 마켓플레이스 | 예정 |
+| **5** | 음성 STT (Whisper API) + TTS + 글로벌 단축키 `Alt+Shift+V` | ✅ 완료 |
+| **6** | Screenshot Vision AI (`Ctrl+Shift+S`) + Auto Updater (Ed25519) + UI/UX 개선 | ✅ 완료 |
+| **7** | 지식베이스 UI 연결 완성, 에이전트 도구 확장, GitHub Actions CI/CD | 예정 |
 
 ---
 
