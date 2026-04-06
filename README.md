@@ -96,6 +96,16 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **KB Context Bar Upgrade** | Chip bar above chat input — atomic `clearAll` callback, doc count badge, violet active state |
 | **Click-Toggle Dropdown** | CSS `:hover` dropdown → click-toggle + `mousedown` outside-click handler (touch-safe, keyboard-accessible) |
 
+### Phase 9 — Chat Full-Text Search (`Ctrl+F`) ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **In-Conversation Search** | `Ctrl+F` → slide-down search bar, real-time filtering of current conversation messages |
+| **Result Counter + Navigation** | "X / Y results" display, prev (▲·Shift+Enter) / next (▼·Enter) navigation, wraps around |
+| **Auto-Scroll** | Smooth scroll to current focused result, violet ring-2 highlight on active match |
+| **Search Excerpt** | Matched message shows 45-char context snippet with violet-highlighted match text |
+| **Esc to Close** | Escape closes search bar with priority over other modal handlers (`capture:true`) |
+| **Security** | Client-side filter (zero IPC calls), ASVS 5.1.1 (maxLength=500), ASVS 5.3.3 (XSS-safe), `CSS.escape()` defense |
+
 ### Phase 4 — Security Hardening & UX Completion
 | Feature | Description |
 |---------|-------------|
@@ -183,6 +193,15 @@ npm run tauri:build
 6. **Smart Context Injection**: Above the chat input, click any KB chip to activate it — every AI message will automatically include matching KB context from that knowledge base
 7. The AI Agent can also automatically search your knowledge bases during task execution
 
+### Chat Search (`Ctrl+F`) — Phase 9
+
+1. While in any conversation, press `Ctrl+F` — a search bar slides down below the chat header
+2. Type your search term → messages matching the query are filtered in real time
+3. Matching messages show a violet border + excerpt snippet (context + highlighted match text)
+4. `Enter` (or ▼ button) → next result, `Shift+Enter` (or ▲ button) → previous result
+5. Counter shows "X / Y results" at all times
+6. `Esc` or X button to close and clear the search
+
 ### AI Agent
 
 1. Click **AI 에이전트** (beaker icon) in the sidebar
@@ -231,6 +250,7 @@ ai-flow/
 ├── src/                      # React frontend
 │   ├── components/           # UI components (chat, overlay, prompts, palette)
 │   │   └── chat/             # Chat-specific components
+│   │       ├── ChatSearchBar.tsx   # Ctrl+F in-conversation search bar (Phase 9)
 │   ├── stores/               # Zustand state management
 │   ├── lib/                  # Utilities, IPC, schemas, providers
 │   ├── views/                # Page-level views
@@ -349,7 +369,8 @@ ai-flow/
 | **6** | Screenshot Vision AI (`Ctrl+Shift+S`) + Auto Updater (Ed25519) + UI/UX improvements | ✅ Complete |
 | **7** | GitHub Actions CI/CD — release workflow + PR check gate (TypeScript + Rust) | ✅ Complete |
 | **8** | Knowledge Base UI full upgrade — XSS fix (ASVS 5.3.3), file type badges, full accessibility | ✅ Complete |
-| **9** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **9** | Chat full-text search (`Ctrl+F`) — in-conversation real-time search, highlight, auto-scroll | ✅ Complete |
+| **10** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 
