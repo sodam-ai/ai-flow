@@ -22,6 +22,7 @@ import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
 import OverlayChat from "@/components/overlay/OverlayChat";
 import KbContextBar from "@/components/chat/KbContextBar";
+import ChatSearchBar from "@/components/chat/ChatSearchBar";
 import BranchPanel from "@/components/chat/BranchPanel";
 import BranchDialog from "@/components/chat/BranchDialog";
 import { exportConversation, createConversationBranch } from "@/lib/ipc/invoke";
@@ -293,6 +294,94 @@ function MainApp() {
 
   // Atomically clear all active KBs — avoids stale-closure issues with forEach(toggle)
   const clearKbs = useCallback(() => setActiveKbIds([]), []);
+
+  // ── Chat search (Ctrl+F) ─────────────────────────────────────────────────
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchCurrentIdx, setSearchCurrentIdx] = useState(0);
+
+  // Ref for stale-closure-safe access inside keyboard event listener
+  const isSearchOpenRef = useRef(false);
+  useEffect(() => { isSearchOpenRef.current = isSearchOpen; }, [isSearchOpen]);
+
+  // Reset search when active conversation changes
+  useEffect(() => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchCurrentIdx(0);
+  }, [activeConversationId]);
+
+  // Reset result index when query changes
+  useEffect(() => { setSearchCurrentIdx(0); }, [searchQuery]);
+
+  // Client-side filtering — no IPC call, no injection risk
+  // ASVS 5.1.1: empty/whitespace query returns no matches
+  const searchMatches = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return conversationMessages
+      .map((msg, idx) => ({ msg, idx }))
+      .filter(({ msg }) => msg.content.toLowerCase().includes(q));
+  }, [conversationMessages, searchQuery]);
+
+  // Scroll current match into view
+  useEffect(() => {
+    if (!isSearchOpen || searchMatches.length === 0) return;
+    const match = searchMatches[searchCurrentIdx];
+    if (!match) return;
+    // CSS.escape prevents any edge-case injection via message IDs (defensive)
+    const el = document.querySelector(
+      `[data-message-id="${CSS.escape(match.msg.id)}"]`
+    );
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [searchCurrentIdx, isSearchOpen, searchMatches]);
+
+  const searchPrev = useCallback(() => {
+    setSearchCurrentIdx((i) =>
+      searchMatches.length === 0 ? 0 : (i - 1 + searchMatches.length) % searchMatches.length
+    );
+  }, [searchMatches.length]);
+
+  const searchNext = useCallback(() => {
+    setSearchCurrentIdx((i) =>
+      searchMatches.length === 0 ? 0 : (i + 1) % searchMatches.length
+    );
+  }, [searchMatches.length]);
+
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchCurrentIdx(0);
+  }, []);
+
+  // Ctrl+F keyboard handler — capture phase so e.preventDefault() reliably
+  // blocks the browser/Tauri native find dialog before any other listener fires
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f" && !e.shiftKey && !e.altKey) {
+        if (!activeConversationId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setIsSearchOpen((prev) => {
+          if (!prev) {
+            setSearchQuery("");
+            setSearchCurrentIdx(0);
+          }
+          return !prev;
+        });
+        return;
+      }
+      // Escape: close search with priority over other modal handlers
+      if (e.key === "Escape" && isSearchOpenRef.current) {
+        e.stopPropagation();
+        setIsSearchOpen(false);
+        setSearchQuery("");
+        setSearchCurrentIdx(0);
+      }
+    };
+    window.addEventListener("keydown", handler, { capture: true });
+    return () => window.removeEventListener("keydown", handler, { capture: true });
+  }, [activeConversationId]);
 
   const activeConv = conversations.find((c) => c.id === activeConversationId);
 
@@ -615,8 +704,24 @@ function MainApp() {
               </div>
             </div>
 
+            {/* Chat search bar (Ctrl+F) */}
+            {isSearchOpen && (
+              <ChatSearchBar
+                query={searchQuery}
+                onQueryChange={setSearchQuery}
+                resultCount={searchMatches.length}
+                currentIndex={searchCurrentIdx}
+                onPrev={searchPrev}
+                onNext={searchNext}
+                onClose={closeSearch}
+              />
+            )}
+
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <div
+              id="chat-messages"
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+            >
               {conversationMessages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-center pb-16">
                   <div className="w-10 h-10 rounded-xl bg-zinc-800/80 flex items-center justify-center">
@@ -633,14 +738,24 @@ function MainApp() {
                   </p>
                 </div>
               )}
-              {conversationMessages.map((msg, idx) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  messageIndex={idx}
-                  onBranch={handleBranchRequest}
-                />
-              ))}
+              {conversationMessages.map((msg, idx) => {
+                const matchIdx = isSearchOpen && searchQuery.trim()
+                  ? searchMatches.findIndex((m) => m.msg.id === msg.id)
+                  : -1;
+                const isMatch = matchIdx !== -1;
+                const isCurrent = isMatch && matchIdx === searchCurrentIdx;
+                return (
+                  <MessageBubble
+                    key={msg.id}
+                    message={msg}
+                    messageIndex={idx}
+                    onBranch={handleBranchRequest}
+                    isSearchMatch={isMatch}
+                    isCurrentMatch={isCurrent}
+                    searchQuery={isMatch ? searchQuery : ""}
+                  />
+                );
+              })}
               {isStreaming && <StreamingBubble content={streamingContent} />}
               <div ref={chatEndRef} />
             </div>
