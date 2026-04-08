@@ -116,6 +116,17 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
 | **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
 
+### Phase 15 — PersonaSelector + PromptLibraryModal Accessibility & Security ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Instant Delete Removed (2 places)** | Trash buttons in PersonaSelector and PromptLibraryModal → inline red confirmation (X/Check) |
+| **Keyboard Accessibility Fix (2 places)** | `group-hover:flex` → `group-focus-within:flex` added — keyboard users can reach all action buttons |
+| **Full ARIA** | PersonaSelector: `role=listbox/option`, `aria-selected`, `aria-expanded`, `aria-haspopup` |
+| | PromptLibraryModal: `role=dialog/list/listitem/group`, `aria-modal`, `aria-labelledby`, `aria-pressed` |
+| **Pencil Icon Consistency** | PromptLibraryModal "Edit" text button → Pencil icon (matches ConversationItem) |
+| **Sidebar Search Hardening** | `maxLength=200` (ASVS 5.1.1) + `aria-label="대화 목록 검색"` added |
+| **Security** | Zero new IPC, all inputs bounded, no `innerHTML` |
+
 ### Phase 14 — Conversation Management Completion ✅ Complete
 | Feature | Description |
 |---------|-------------|
@@ -431,7 +442,8 @@ ai-flow/
 | **12** | Keyboard shortcuts help modal (`?` / `Ctrl+/`) — categorized shortcut catalog, command palette integration | ✅ Complete |
 | **13** | Prompt version diff view — line-level LCS diff, inline confirm, toast feedback, WCAG accessibility | ✅ Complete |
 | **14** | Conversation management — inline rename (double-click/Pencil), inline confirm delete, keyboard accessibility fix | ✅ Complete |
-| **15** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **15** | PersonaSelector + PromptLibraryModal — inline confirm delete, full ARIA, focus-within keyboard a11y | ✅ Complete |
+| **16** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 

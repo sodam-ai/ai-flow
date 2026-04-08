@@ -116,6 +116,17 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
 | **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
 
+### Phase 15 — PersonaSelector + PromptLibraryModal 접근성/보안 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **즉시 삭제 제거 (2곳)** | PersonaSelector·PromptLibraryModal의 Trash 버튼 → inline red confirm (X/Check) |
+| **키보드 접근성 수정 (2곳)** | `group-hover:flex` → `group-focus-within:flex` 추가 — 키보드 사용자도 버튼 접근 가능 |
+| **ARIA 완성** | PersonaSelector: `role=listbox/option`, `aria-selected`, `aria-expanded`, `aria-haspopup` |
+| | PromptLibraryModal: `role=dialog/list/listitem/group`, `aria-modal`, `aria-labelledby`, `aria-pressed` |
+| **Pencil 아이콘 통일** | PromptLibraryModal "Edit" 텍스트 버튼 → Pencil 아이콘 (ConversationItem과 일관성) |
+| **사이드바 검색 보완** | `maxLength=200` (ASVS 5.1.1) + `aria-label="대화 목록 검색"` 추가 |
+| **보안** | 새 IPC 없음, 모든 입력 bounded, innerHTML 없음 |
+
 ### Phase 14 — 대화 관리 완성 (inline rename + inline confirm) ✅ 완료
 | 기능 | 설명 |
 |------|------|
@@ -491,7 +502,8 @@ ai-flow/
 | **12** | 키보드 단축키 도움말 모달 (`?` / `Ctrl+/`) — 전체 단축키 카테고리별 정리, 명령 팔레트 통합 | ✅ 완료 |
 | **13** | 프롬프트 버전 비교 diff 뷰 — 줄 단위 LCS diff, inline confirm, 토스트 피드백, WCAG 접근성 | ✅ 완료 |
 | **14** | 대화 관리 완성 — inline rename (더블클릭/Pencil), inline confirm delete, 키보드 접근성 수정 | ✅ 완료 |
-| **15** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
+| **15** | PersonaSelector·PromptLibraryModal 접근성/보안 완성 — inline confirm, ARIA, focus-within | ✅ 완료 |
+| **16** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 

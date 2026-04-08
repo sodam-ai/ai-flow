@@ -609,6 +609,8 @@ function MainApp() {
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 placeholder="대화 검색..."
+                aria-label="대화 목록 검색"
+                maxLength={200}
                 className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-zinc-900 border border-zinc-800 rounded-lg focus:border-zinc-600 focus:outline-none placeholder-zinc-600 text-zinc-300"
               />
             </div>
