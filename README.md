@@ -2,7 +2,7 @@
 
 **One hotkey to rule all AIs.** A local desktop AI hub that lets you chat with GPT, Claude, Gemini, and local LLMs from any app — with knowledge bases, multi-step agents, and workflow automation.
 
-[Korean](README.ko.md) | [Japanese](README.ja.md) | [Chinese](README.zh.md)
+[Korean](README.ko.md)
 
 ---
 
@@ -315,8 +315,6 @@ ai-flow/
 │       └── 019_conversation_kb.sql  # Per-conversation active KB IDs (Phase 10)
 ├── README.md                 # This file (English)
 ├── README.ko.md              # Korean
-├── README.ja.md              # Japanese
-├── README.zh.md              # Chinese
 ├── .resume.md                # Work continuation guide
 └── LICENSE                   # MIT License (SoDam AI Studio)
 ```

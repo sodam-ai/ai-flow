@@ -2,7 +2,7 @@
 
 **단축키 하나로 모든 AI를.** 어느 앱에서든 GPT, Claude, Gemini, 로컬 LLM과 대화할 수 있는 로컬 데스크톱 AI 허브 — 지식베이스, 멀티스텝 에이전트, 워크플로우 자동화까지.
 
-[English](README.md) | [Japanese](README.ja.md) | [Chinese](README.zh.md)
+[English](README.md)
 
 ---
 
@@ -375,8 +375,6 @@ ai-flow/
 │       └── 019_conversation_kb.sql  # 대화별 활성 KB ID (Phase 10)
 ├── README.md                 # 영어 (기본)
 ├── README.ko.md              # 한국어 (이 파일)
-├── README.ja.md              # 일본어
-├── README.zh.md              # 중국어
 ├── .resume.md                # 작업 재개 가이드
 └── LICENSE                   # MIT 라이선스 (SoDam AI Studio)
 ```
