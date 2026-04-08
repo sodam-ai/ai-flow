@@ -116,6 +116,18 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
 | **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
 
+### Phase 13 — Prompt Version Diff View ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Version Diff Modal** | Line-by-line comparison between a saved version and the current editor content — removed lines in red (-), added lines in green (+) |
+| **Pure TS LCS Algorithm** | Zero external diff libraries — Myers-style LCS in pure TypeScript (zero supply chain risk) |
+| **+N / -N Stats** | Added/removed line counts shown in the modal header at a glance |
+| **Restore from Diff** | "Restore v{N}" button directly inside the diff modal |
+| **Inline Confirm** | `window.confirm()` replaced by inline amber confirmation box (WCAG compliant) |
+| **Toast Feedback** | `alert()` replaced by toastStore success/error notifications |
+| **Full Accessibility** | `role=dialog`, `aria-modal`, `aria-labelledby`, focus-on-open, Escape close, backdrop dismiss |
+| **Security** | Zero new IPC calls, no `innerHTML`, all text rendered as React nodes — zero XSS surface |
+
 ### Phase 12 — Keyboard Shortcuts Help Modal (`?` / `Ctrl+/`) ✅ Complete
 | Feature | Description |
 |---------|-------------|
@@ -406,7 +418,8 @@ ai-flow/
 | **10** | Per-conversation active KB persistence — restore KB context across restart/switch (migration 019) | ✅ Complete |
 | **11** | Copy / Export UX completion — visual feedback, accessible menu, Lucide icon consistency | ✅ Complete |
 | **12** | Keyboard shortcuts help modal (`?` / `Ctrl+/`) — categorized shortcut catalog, command palette integration | ✅ Complete |
-| **13** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **13** | Prompt version diff view — line-level LCS diff, inline confirm, toast feedback, WCAG accessibility | ✅ Complete |
+| **14** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 

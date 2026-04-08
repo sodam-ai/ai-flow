@@ -116,6 +116,18 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
 | **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
 
+### Phase 13 — 프롬프트 버전 비교 diff 뷰 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **버전 diff 모달** | 저장된 버전과 현재 편집 내용을 줄 단위로 비교 — 제거(-) 빨강 / 추가(+) 초록 |
+| **LCS 순수 TS 구현** | 외부 라이브러리 0개 — 순수 TypeScript LCS 알고리즘으로 diff 계산 (supply chain 리스크 없음) |
+| **+N / -N 통계** | 헤더에 추가/삭제 줄 수 즉시 표시 |
+| **복원 통합** | diff 모달 안에서 바로 "v{N} 복원" 버튼 클릭 가능 |
+| **inline confirm** | window.confirm() 제거 → amber 경고 박스 inline confirm (WCAG 준수) |
+| **토스트 피드백** | 복원 성공/실패 시 alert() 대신 toastStore 알림 |
+| **접근성 완전** | role=dialog, aria-modal, aria-labelledby, focus-on-open, Escape 닫기, 백드롭 클릭 해제 |
+| **보안** | 새 IPC 0개, innerHTML 없음, 모든 텍스트 React text node — XSS 표면 0 |
+
 ### Phase 12 — 키보드 단축키 도움말 (`?` / `Ctrl+/`) ✅ 완료
 | 기능 | 설명 |
 |------|------|
@@ -466,7 +478,8 @@ ai-flow/
 | **10** | 대화별 활성 KB 저장 — 세션/재시작 간 KB 컨텍스트 자동 복원 (마이그레이션 019) | ✅ 완료 |
 | **11** | 복사/내보내기 UX 완성 — 시각 피드백, 접근성 있는 메뉴, Lucide 아이콘 일관성 | ✅ 완료 |
 | **12** | 키보드 단축키 도움말 모달 (`?` / `Ctrl+/`) — 전체 단축키 카테고리별 정리, 명령 팔레트 통합 | ✅ 완료 |
-| **13** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
+| **13** | 프롬프트 버전 비교 diff 뷰 — 줄 단위 LCS diff, inline confirm, 토스트 피드백, WCAG 접근성 | ✅ 완료 |
+| **14** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 
