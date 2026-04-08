@@ -25,7 +25,12 @@ import KbContextBar from "@/components/chat/KbContextBar";
 import ChatSearchBar from "@/components/chat/ChatSearchBar";
 import BranchPanel from "@/components/chat/BranchPanel";
 import BranchDialog from "@/components/chat/BranchDialog";
-import { exportConversation, createConversationBranch } from "@/lib/ipc/invoke";
+import {
+  exportConversation,
+  createConversationBranch,
+  getConversationKbIds,
+  saveConversationKbIds,
+} from "@/lib/ipc/invoke";
 import CostReportView from "@/views/CostReportView";
 import MCPMarketView from "@/views/MCPMarketView";
 import WorkflowBuilderView from "@/views/WorkflowBuilderView";
@@ -285,15 +290,70 @@ function MainApp() {
 
   const [activeKbIds, setActiveKbIds] = useState<number[]>([]);
 
-  // Toggle a KB in the active context set
-  const toggleKb = useCallback((id: number) => {
-    setActiveKbIds((prev) =>
-      prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
-    );
+  // ── Per-conversation KB persistence (Phase 10) ───────────────────────────
+  // Track which conversation the current activeKbIds belong to, so a
+  // race between loader and toggle cannot save IDs to the wrong conversation.
+  const activeKbConvIdRef = useRef<string | null>(null);
+
+  // Load persisted KB IDs whenever the active conversation changes.
+  // The AbortController prevents stale writes if the user switches fast.
+  useEffect(() => {
+    if (!activeConversationId) {
+      setActiveKbIds([]);
+      activeKbConvIdRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    const targetConvId = activeConversationId;
+    (async () => {
+      try {
+        const ids = await getConversationKbIds(targetConvId);
+        if (!cancelled) {
+          setActiveKbIds(ids);
+          activeKbConvIdRef.current = targetConvId;
+        }
+      } catch {
+        if (!cancelled) {
+          setActiveKbIds([]);
+          activeKbConvIdRef.current = targetConvId;
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeConversationId]);
+
+  /**
+   * Persist KB IDs — silently swallows errors to avoid disrupting the UI for
+   * what is a non-critical convenience feature. If the save fails the UI
+   * state is still correct; it just won't survive a restart.
+   * The convId check prevents writes to a stale conversation (race on switch).
+   */
+  const persistKbIds = useCallback((convId: string | null, ids: number[]) => {
+    if (!convId) return;
+    if (activeKbConvIdRef.current !== convId) return;
+    saveConversationKbIds(convId, ids).catch((err) => {
+      // Log but don't surface — KB context persistence is best-effort
+      console.warn("Failed to persist KB IDs:", err);
+    });
   }, []);
 
+  // Toggle a KB in the active context set (with persistence)
+  const toggleKb = useCallback(
+    (id: number) => {
+      setActiveKbIds((prev) => {
+        const next = prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id];
+        persistKbIds(activeConversationId, next);
+        return next;
+      });
+    },
+    [activeConversationId, persistKbIds],
+  );
+
   // Atomically clear all active KBs — avoids stale-closure issues with forEach(toggle)
-  const clearKbs = useCallback(() => setActiveKbIds([]), []);
+  const clearKbs = useCallback(() => {
+    setActiveKbIds([]);
+    persistKbIds(activeConversationId, []);
+  }, [activeConversationId, persistKbIds]);
 
   // ── Chat search (Ctrl+F) ─────────────────────────────────────────────────
   const [isSearchOpen, setIsSearchOpen] = useState(false);

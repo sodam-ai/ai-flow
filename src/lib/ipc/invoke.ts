@@ -222,6 +222,47 @@ export async function exportConversation(
   return invoke("export_conversation", { conversationId, format });
 }
 
+// ─── Per-conversation active KB persistence (Phase 10) ───
+
+/**
+ * Load active KB IDs for a conversation.
+ * Backend returns `[]` on missing/corrupt data — never throws on normal operation.
+ */
+export async function getConversationKbIds(
+  conversationId: string,
+): Promise<number[]> {
+  if (typeof conversationId !== "string" || conversationId.length === 0) {
+    throw new Error("Invalid conversationId");
+  }
+  return invoke("get_conversation_kb_ids", { conversationId });
+}
+
+/**
+ * Persist active KB IDs for a conversation.
+ * Defense in depth: frontend validates array shape and bounds
+ * (max 20, positive integers) BEFORE the IPC call — Rust side re-validates.
+ */
+export async function saveConversationKbIds(
+  conversationId: string,
+  kbIds: number[],
+): Promise<void> {
+  if (typeof conversationId !== "string" || conversationId.length === 0) {
+    throw new Error("Invalid conversationId");
+  }
+  if (!Array.isArray(kbIds)) {
+    throw new Error("kbIds must be an array");
+  }
+  if (kbIds.length > 20) {
+    throw new Error("Too many KB IDs (max 20)");
+  }
+  for (const id of kbIds) {
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error(`Invalid KB id: ${id}`);
+    }
+  }
+  return invoke("save_conversation_kb_ids", { conversationId, kbIds });
+}
+
 // ─── Personas (Phase 1b) ───
 
 export async function listPersonas(): Promise<Persona[]> {

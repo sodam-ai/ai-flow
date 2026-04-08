@@ -161,3 +161,94 @@ pub async fn export_conversation(
         }
     }
 }
+
+// ── Phase 10 — Per-conversation active KB persistence ─────────────────────
+
+/// Max number of KB IDs that can be active on a single conversation.
+/// Defensive bound against UI bugs or malicious callers trying to store
+/// oversized arrays. 20 is ~10x realistic usage.
+const MAX_ACTIVE_KB_IDS: usize = 20;
+
+/// Load the persisted active KB IDs for a conversation.
+///
+/// Returns an empty vec if:
+///   - conversation does not exist
+///   - stored JSON is malformed (defensive — treat as reset)
+///   - no column value (shouldn't happen due to DEFAULT '[]')
+#[tauri::command]
+pub async fn get_conversation_kb_ids(
+    state: State<'_, AppState>,
+    conversation_id: String,
+) -> Result<Vec<i64>, String> {
+    state.db.read(|conn| {
+        let json: String = conn
+            .query_row(
+                "SELECT active_kb_ids FROM conversations WHERE id = ?1",
+                rusqlite::params![conversation_id],
+                |row| row.get(0),
+            )
+            .unwrap_or_else(|_| "[]".to_string());
+
+        // Defensive parse — if stored JSON is corrupt, return empty (don't error)
+        let ids: Vec<i64> = serde_json::from_str(&json).unwrap_or_default();
+
+        // Filter out any non-positive IDs that may have crept in from older rows
+        Ok(ids.into_iter().filter(|&id| id > 0).collect())
+    })
+}
+
+/// Persist the active KB IDs for a conversation.
+///
+/// Security (ASVS 5.1.1 — Input validation):
+///   - Max 20 IDs enforced
+///   - All IDs must be positive (> 0)
+///   - Duplicate IDs are deduplicated
+///   - Ordering preserved (first occurrence wins)
+///   - Serialized via serde_json (no string interpolation — prevents injection)
+///   - Parameterized SQL (rusqlite params)
+///   - Returns error if conversation_id does not exist (rows_affected == 0)
+#[tauri::command]
+pub async fn save_conversation_kb_ids(
+    state: State<'_, AppState>,
+    conversation_id: String,
+    kb_ids: Vec<i64>,
+) -> Result<(), String> {
+    // ── Input validation ─────────────────────────────────────────────────
+    if kb_ids.len() > MAX_ACTIVE_KB_IDS {
+        return Err(format!(
+            "Too many active KBs: {} (max {})",
+            kb_ids.len(),
+            MAX_ACTIVE_KB_IDS
+        ));
+    }
+
+    // Reject non-positive IDs and deduplicate (preserve first-seen order)
+    let mut seen: std::collections::HashSet<i64> = std::collections::HashSet::new();
+    let mut clean_ids: Vec<i64> = Vec::with_capacity(kb_ids.len());
+    for id in kb_ids {
+        if id <= 0 {
+            return Err(format!("Invalid KB id: {} (must be positive)", id));
+        }
+        if seen.insert(id) {
+            clean_ids.push(id);
+        }
+    }
+
+    // Serialize as JSON array — serde_json guarantees valid JSON output
+    let json = serde_json::to_string(&clean_ids)
+        .map_err(|e| format!("Failed to serialize KB IDs: {}", e))?;
+
+    state.db.write(|conn| {
+        let affected = conn.execute(
+            "UPDATE conversations SET active_kb_ids = ?2, updated_at = datetime('now') WHERE id = ?1",
+            rusqlite::params![conversation_id, json],
+        )?;
+
+        if affected == 0 {
+            // Tauri command errors are strings, so we can't return a typed error here
+            // — just signal via rusqlite error which services wrap into String.
+            return Err(rusqlite::Error::QueryReturnedNoRows);
+        }
+        Ok(())
+    })
+}

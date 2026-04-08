@@ -24,6 +24,8 @@ pub fn run(conn: &mut rusqlite::Connection) -> Result<(), Box<dyn std::error::Er
         M::up(include_str!("../../migrations/016_knowledge_base.sql")),
         M::up(include_str!("../../migrations/017_agent_runs.sql")),
         M::up(include_str!("../../migrations/018_conversation_branches.sql")),
+        // Phase 10 — Per-conversation active KB IDs (persists KbContextBar state)
+        M::up(include_str!("../../migrations/019_conversation_kb.sql")),
     ]);
 
     migrations.to_latest(conn)?;

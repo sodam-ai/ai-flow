@@ -174,6 +174,8 @@ pub fn run() {
             commands::chat::get_message_versions,
             commands::chat::search_messages,
             commands::chat::export_conversation,
+            commands::chat::get_conversation_kb_ids,
+            commands::chat::save_conversation_kb_ids,
             // AI streaming
             commands::ai::stream_ai_message,
             commands::ai::regenerate_ai_message,
