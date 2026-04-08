@@ -116,6 +116,19 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
 | **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
 
+### Phase 11 — Copy / Export UX Completion ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Copy Button Visual Feedback** | Icon swaps Copy → Check (emerald) for 1.5s on click + toast "Copied to clipboard" |
+| **Copy Error Handling** | Clipboard permission denial surfaces via error toast (no silent failure) |
+| **Timer Cleanup** | `useRef` + `useEffect` cleanup prevents memory leaks on component unmount |
+| **aria-live Announce** | Screen readers hear copy completion in real-time (WCAG 4.1.3) |
+| **Export Menu Accessibility** | CSS `:hover` → click-toggle + `mousedown` outside-click + Escape key dismissal |
+| **Full ARIA** | `role=menu/menuitem`, `aria-haspopup`, `aria-expanded`, `aria-label` applied throughout |
+| **Rich Menu Items** | Each option has icon + title + description with color coding (sky / amber) |
+| **Lucide Icon Consistency** | Download, FileText, FileCode, ChevronDown replace all inline SVGs |
+| **Export Success Feedback** | Toast confirms file was exported successfully |
+
 ### Phase 4 — Security Hardening & UX Completion
 | Feature | Description |
 |---------|-------------|
@@ -382,7 +395,8 @@ ai-flow/
 | **8** | Knowledge Base UI full upgrade — XSS fix (ASVS 5.3.3), file type badges, full accessibility | ✅ Complete |
 | **9** | Chat full-text search (`Ctrl+F`) — in-conversation real-time search, highlight, auto-scroll | ✅ Complete |
 | **10** | Per-conversation active KB persistence — restore KB context across restart/switch (migration 019) | ✅ Complete |
-| **11** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **11** | Copy / Export UX completion — visual feedback, accessible menu, Lucide icon consistency | ✅ Complete |
+| **12** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 

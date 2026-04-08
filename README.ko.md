@@ -116,6 +116,19 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
 | **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
 
+### Phase 11 — 복사/내보내기 UX 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **복사 버튼 시각 피드백** | 클릭 시 Copy → Check 아이콘 1.5초 전환(emerald), 토스트 알림 "클립보드에 복사됨" |
+| **복사 에러 처리** | 클립보드 권한 거부 시 에러 토스트로 사용자에게 즉시 알림 |
+| **언마운트 타이머 정리** | useRef + useEffect cleanup으로 메모리 릭 방지 |
+| **aria-live 안내** | 스크린 리더에게 복사 완료 실시간 전달 (WCAG 4.1.3) |
+| **내보내기 메뉴 접근성 개선** | CSS `:hover` → 클릭 토글 + mousedown outside-click + Escape 키 닫기 |
+| **전면 ARIA 속성** | `role=menu/menuitem`, `aria-haspopup`, `aria-expanded`, `aria-label` 전면 적용 |
+| **리치 메뉴 아이템** | Markdown/JSON 각각에 아이콘 + 제목 + 설명 + 색상 구분 (sky/amber) |
+| **Lucide 아이콘 일관성** | Download, FileText, FileCode, ChevronDown — inline SVG 전면 교체 |
+| **내보내기 성공 피드백** | 파일 다운로드 후 성공 토스트로 결과 확인 가능 |
+
 ### Phase 4 — 보안 강화 & UX 완성
 | 기능 | 설명 |
 |------|------|
@@ -442,7 +455,8 @@ ai-flow/
 | **8** | 지식베이스 UI 전면 업그레이드 — XSS 수정(ASVS 5.3.3), 파일 타입 뱃지, 접근성 완성 | ✅ 완료 |
 | **9** | 채팅 전체 검색 (`Ctrl+F`) — 인-대화 실시간 검색, 결과 하이라이트, 자동 스크롤 | ✅ 완료 |
 | **10** | 대화별 활성 KB 저장 — 세션/재시작 간 KB 컨텍스트 자동 복원 (마이그레이션 019) | ✅ 완료 |
-| **11** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
+| **11** | 복사/내보내기 UX 완성 — 시각 피드백, 접근성 있는 메뉴, Lucide 아이콘 일관성 | ✅ 완료 |
+| **12** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 
