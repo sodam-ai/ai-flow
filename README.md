@@ -116,6 +116,17 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
 | **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
 
+### Phase 12 — Keyboard Shortcuts Help Modal (`?` / `Ctrl+/`) ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **`?` Shortcut** | Press `?` outside inputs → instantly opens full shortcut modal (GitHub/Gmail standard) |
+| **`Ctrl+/` Shortcut** | Works everywhere, including in input fields (VS Code standard) |
+| **Categorized Groups** | Global / Chat / Search Bar / Help — 4 groups, 13+ shortcuts organized |
+| **Full Accessibility** | `role=dialog`, `aria-modal`, `aria-labelledby`, focus-on-open, backdrop dismiss, Escape close (WCAG 2.1 AA) |
+| **Command Palette Integration** | Ctrl+K → search "Keyboard Shortcuts" → Enter to open |
+| **Chat Header `?` Button** | Discoverable hint button at the right of the chat header (NNGroup: Recognition over Recall) |
+| **Security** | Static constants only, zero IPC, zero XSS surface |
+
 ### Phase 11 — Copy / Export UX Completion ✅ Complete
 | Feature | Description |
 |---------|-------------|
@@ -396,7 +407,8 @@ ai-flow/
 | **9** | Chat full-text search (`Ctrl+F`) — in-conversation real-time search, highlight, auto-scroll | ✅ Complete |
 | **10** | Per-conversation active KB persistence — restore KB context across restart/switch (migration 019) | ✅ Complete |
 | **11** | Copy / Export UX completion — visual feedback, accessible menu, Lucide icon consistency | ✅ Complete |
-| **12** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **12** | Keyboard shortcuts help modal (`?` / `Ctrl+/`) — categorized shortcut catalog, command palette integration | ✅ Complete |
+| **13** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 
