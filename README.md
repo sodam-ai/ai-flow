@@ -106,6 +106,16 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Esc to Close** | Escape closes search bar with priority over other modal handlers (`capture:true`) |
 | **Security** | Client-side filter (zero IPC calls), ASVS 5.1.1 (maxLength=500), ASVS 5.3.3 (XSS-safe), `CSS.escape()` defense |
 
+### Phase 10 — Per-Conversation Active KB Persistence ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Session-Persistent KB Context** | KbContextBar chip state is now saved per conversation — survives app restart & conversation switching |
+| **Migration 019** | `conversations.active_kb_ids TEXT DEFAULT '[]'` — JSON array, zero-friction for existing rows |
+| **Atomic Replacement** | toggle/clearAll replaces the whole array in a single UPDATE — no partial-update inconsistency |
+| **Race Condition Defense** | `activeKbConvIdRef` ref guards against stale writes during conversation switches |
+| **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
+| **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
+
 ### Phase 4 — Security Hardening & UX Completion
 | Feature | Description |
 |---------|-------------|
@@ -277,7 +287,8 @@ ai-flow/
 │   └── migrations/           # SQL migrations (001~018)
 │       ├── 016_knowledge_base.sql  # Knowledge bases, documents, FTS5
 │       ├── 017_agent_runs.sql      # Agent runs, steps, tools
-│       └── 018_conversation_branches.sql  # Branching + workflow exports
+│       ├── 018_conversation_branches.sql  # Branching + workflow exports
+│       └── 019_conversation_kb.sql  # Per-conversation active KB IDs (Phase 10)
 ├── README.md                 # This file (English)
 ├── README.ko.md              # Korean
 ├── README.ja.md              # Japanese
@@ -370,7 +381,8 @@ ai-flow/
 | **7** | GitHub Actions CI/CD — release workflow + PR check gate (TypeScript + Rust) | ✅ Complete |
 | **8** | Knowledge Base UI full upgrade — XSS fix (ASVS 5.3.3), file type badges, full accessibility | ✅ Complete |
 | **9** | Chat full-text search (`Ctrl+F`) — in-conversation real-time search, highlight, auto-scroll | ✅ Complete |
-| **10** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **10** | Per-conversation active KB persistence — restore KB context across restart/switch (migration 019) | ✅ Complete |
+| **11** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 

@@ -106,6 +106,16 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **Esc 닫기** | Escape로 검색 닫기 — 다른 모달보다 우선 처리 (capture:true) |
 | **보안** | 클라이언트 사이드 필터링(IPC 없음), ASVS 5.1.1(maxLength=500), ASVS 5.3.3(XSS-safe), CSS.escape() 방어 |
 
+### Phase 10 — 대화별 활성 KB 저장 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **세션 간 KB 컨텍스트 유지** | KbContextBar에서 활성화한 KB가 대화별로 DB에 저장 — 앱 재시작·대화 전환 후에도 복원 |
+| **마이그레이션 019** | `conversations.active_kb_ids TEXT DEFAULT '[]'` (JSON 배열, 기존 데이터 마찰 없음) |
+| **원자적 교체** | toggle/clearAll 시 전체 배열을 한 번에 UPDATE — 부분 업데이트로 인한 불일치 없음 |
+| **경쟁 조건 방어** | `activeKbConvIdRef` ref로 대화 전환 중 stale 저장 방지 (다른 대화에 덮어쓰기 불가) |
+| **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
+| **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
+
 ### Phase 4 — 보안 강화 & UX 완성
 | 기능 | 설명 |
 |------|------|
@@ -337,7 +347,8 @@ ai-flow/
 │   └── migrations/           # SQL 마이그레이션 (001~018)
 │       ├── 016_knowledge_base.sql  # 지식베이스, 문서, FTS5
 │       ├── 017_agent_runs.sql      # 에이전트 실행, 단계, 도구
-│       └── 018_conversation_branches.sql  # 브랜칭 + 워크플로우 내보내기
+│       ├── 018_conversation_branches.sql  # 브랜칭 + 워크플로우 내보내기
+│       └── 019_conversation_kb.sql  # 대화별 활성 KB ID (Phase 10)
 ├── README.md                 # 영어 (기본)
 ├── README.ko.md              # 한국어 (이 파일)
 ├── README.ja.md              # 일본어
@@ -430,7 +441,8 @@ ai-flow/
 | **7** | GitHub Actions CI/CD — 릴리스 워크플로우 + PR 체크 게이트 (TypeScript + Rust) | ✅ 완료 |
 | **8** | 지식베이스 UI 전면 업그레이드 — XSS 수정(ASVS 5.3.3), 파일 타입 뱃지, 접근성 완성 | ✅ 완료 |
 | **9** | 채팅 전체 검색 (`Ctrl+F`) — 인-대화 실시간 검색, 결과 하이라이트, 자동 스크롤 | ✅ 완료 |
-| **10** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
+| **10** | 대화별 활성 KB 저장 — 세션/재시작 간 KB 컨텍스트 자동 복원 (마이그레이션 019) | ✅ 완료 |
+| **11** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 
