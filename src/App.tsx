@@ -21,6 +21,7 @@ import PrivacyToggle from "@/components/privacy/PrivacyToggle";
 import CommandPalette from "@/components/palette/CommandPalette";
 import PromptLibraryModal from "@/components/prompts/PromptLibraryModal";
 import ToastContainer from "@/components/shared/ToastContainer";
+import KeyboardShortcutsModal from "@/components/shared/KeyboardShortcutsModal";
 import OverlayChat from "@/components/overlay/OverlayChat";
 import KbContextBar from "@/components/chat/KbContextBar";
 import ChatSearchBar from "@/components/chat/ChatSearchBar";
@@ -121,6 +122,15 @@ function MainApp() {
         action: () => setPromptModalOpen(true),
       },
       {
+        id: "keyboard-shortcuts",
+        label: "Keyboard Shortcuts",
+        labelKo: "키보드 단축키",
+        keywords: ["keyboard", "shortcuts", "help", "단축키", "키보드", "도움말", "?"],
+        icon: "keyboard",
+        category: "settings",
+        action: () => setShowKbdHelp(true),
+      },
+      {
         id: "cost-report",
         label: "Cost Report",
         labelKo: "비용 리포트",
@@ -214,6 +224,36 @@ function MainApp() {
     await createChat(activeProviderId, activeModelId);
     setCurrentView("chat");
   };
+
+  // ── Keyboard shortcuts help modal (? / Ctrl+/) ──────────────────────────
+  const [showKbdHelp, setShowKbdHelp] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore if the user is typing in an input/textarea/contenteditable
+      const target = e.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase();
+      const isTyping =
+        tagName === "input" ||
+        tagName === "textarea" ||
+        target?.isContentEditable === true;
+
+      // `?` key (Shift+/) — only when NOT typing
+      if (e.key === "?" && !isTyping) {
+        e.preventDefault();
+        setShowKbdHelp((p) => !p);
+        return;
+      }
+      // Ctrl+/ — works everywhere, including in inputs
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        e.preventDefault();
+        setShowKbdHelp((p) => !p);
+        return;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   // ── Conversation export menu (click-toggle, accessible) ────────────────
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -519,6 +559,10 @@ function MainApp() {
       <ToastContainer />
       <CommandPalette />
       <PromptLibraryModal onUsePrompt={handleUsePrompt} />
+      <KeyboardShortcutsModal
+        isOpen={showKbdHelp}
+        onClose={() => setShowKbdHelp(false)}
+      />
       <UpdateBanner />
 
       {/* ── Body: sidebar + main (flex-1 so UpdateBanner doesn't shrink them) */}
@@ -839,6 +883,19 @@ function MainApp() {
                 </button>
                 <PrivacyToggle />
                 <PersonaSelector />
+                {/* Keyboard shortcuts help button */}
+                <button
+                  onClick={() => setShowKbdHelp(true)}
+                  className="w-6 h-6 flex items-center justify-center rounded-md
+                             border border-zinc-800 text-zinc-500 hover:text-zinc-200
+                             hover:border-zinc-700 hover:bg-zinc-800/50 transition-all
+                             focus-visible:outline-none focus-visible:ring-2
+                             focus-visible:ring-violet-500/50"
+                  title="키보드 단축키 (?)"
+                  aria-label="키보드 단축키 도움말 열기"
+                >
+                  <span className="text-[11px] font-semibold font-mono leading-none">?</span>
+                </button>
               </div>
             </div>
 
