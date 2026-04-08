@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from "react";
+import { Pin, Trash2, MessageSquare, Pencil, Check, X, AlertTriangle } from "lucide-react";
 import type { Conversation } from "@/types";
-import { Pin, Trash2, MessageSquare } from "lucide-react";
 
 interface Props {
   conversation: Conversation;
@@ -7,7 +8,28 @@ interface Props {
   onClick: () => void;
   onPin: () => void;
   onDelete: () => void;
+  onRename: (newTitle: string) => void;
 }
+
+/**
+ * ConversationItem — sidebar entry for a single conversation.
+ *
+ * Features (Phase 14):
+ *   - Inline rename: double-click title OR pencil button → edit input → Enter/blur saves, Esc cancels
+ *   - Inline delete confirm: amber warning box instead of immediate delete
+ *   - focus-within action visibility: keyboard users can reach pin/rename/delete buttons
+ *
+ * Security (ASVS 5.1.1):
+ *   - maxLength=100 on rename input — prevents oversized titles
+ *   - trim + non-empty check before calling onRename
+ *   - No innerHTML, no dangerouslySetInnerHTML
+ *
+ * Accessibility (WCAG 2.1 AA):
+ *   - action buttons visible on hover OR focus-within (not CSS-only hover)
+ *   - autoFocus on rename input
+ *   - aria-label on all icon buttons
+ *   - role="alert" on delete confirmation for screen reader announcement
+ */
 
 /** Returns a compact relative-time string for the sidebar */
 function relativeTime(iso: string): string {
@@ -32,67 +54,229 @@ export default function ConversationItem({
   onClick,
   onPin,
   onDelete,
+  onRename,
 }: Props) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(conversation.title);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync title if prop changes externally (e.g. optimistic update reverted)
+  useEffect(() => {
+    if (!isEditing) setEditTitle(conversation.title);
+  }, [conversation.title, isEditing]);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [isEditing]);
+
+  const startEditing = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    setEditTitle(conversation.title);
+    setConfirmDelete(false);
+    setIsEditing(true);
+  };
+
+  const commitRename = () => {
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== conversation.title) {
+      onRename(trimmed);
+    }
+    setIsEditing(false);
+  };
+
+  const cancelRename = () => {
+    setEditTitle(conversation.title);
+    setIsEditing(false);
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.preventDefault(); commitRename(); }
+    if (e.key === "Escape") { e.preventDefault(); cancelRename(); }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDelete(true);
+    setIsEditing(false);
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete();
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDelete(false);
+  };
+
   return (
     <div
-      onClick={onClick}
-      className={`group relative flex flex-col px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 ${
+      className={`group relative flex flex-col px-3 py-2 rounded-lg transition-all duration-150 ${
         isActive
           ? "bg-zinc-800 text-zinc-100 shadow-sm"
           : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
-      }`}
+      } ${!isEditing ? "cursor-pointer" : ""}`}
+      onClick={!isEditing && !confirmDelete ? onClick : undefined}
     >
-      {/* Top row: pin icon + title + actions */}
+      {/* ── Top row: pin icon + title/input + actions ────────────── */}
       <div className="flex items-center gap-1.5 min-w-0">
-        {conversation.isPinned && (
-          <Pin className="w-2.5 h-2.5 text-violet-400 shrink-0" />
+        {conversation.isPinned && !isEditing && (
+          <Pin className="w-2.5 h-2.5 text-violet-400 shrink-0" aria-hidden="true" />
         )}
-        <span className="text-xs font-medium truncate flex-1 leading-relaxed">
-          {conversation.title}
-        </span>
 
-        {/* Hover actions */}
-        <div className="hidden group-hover:flex items-center gap-0.5 shrink-0 ml-auto">
-          <button
-            onClick={(e) => { e.stopPropagation(); onPin(); }}
-            className={`p-1 rounded transition-colors ${
-              conversation.isPinned
-                ? "text-violet-400 hover:bg-zinc-700"
-                : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
-            }`}
-            title={conversation.isPinned ? "핀 해제" : "핀 고정"}
-            aria-label={conversation.isPinned ? "Unpin" : "Pin"}
+        {/* Title — double-click to rename */}
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+            onBlur={commitRename}
+            maxLength={100}
+            aria-label="대화 제목 편집"
+            className="flex-1 min-w-0 text-xs font-medium bg-zinc-700 text-zinc-100
+                       px-1.5 py-0.5 rounded border border-zinc-600
+                       focus:outline-none focus:border-violet-500
+                       focus-visible:ring-1 focus-visible:ring-violet-500/50"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span
+            className="text-xs font-medium truncate flex-1 leading-relaxed select-none"
+            onDoubleClick={startEditing}
+            title={`${conversation.title} (더블클릭으로 이름 변경)`}
           >
-            <Pin className="w-3 h-3" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1 rounded hover:bg-zinc-700 text-zinc-500 hover:text-red-400 transition-colors"
-            title="삭제"
-            aria-label="Delete conversation"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+            {conversation.title}
+          </span>
+        )}
+
+        {/* Action buttons — visible on hover OR keyboard focus-within */}
+        {!isEditing && !confirmDelete && (
+          <div className="hidden group-hover:flex group-focus-within:flex items-center gap-0.5 shrink-0 ml-auto">
+            {/* Rename */}
+            <button
+              onClick={startEditing}
+              className="p-1 rounded transition-colors text-zinc-500
+                         hover:bg-zinc-700 hover:text-zinc-300
+                         focus-visible:outline-none focus-visible:ring-1
+                         focus-visible:ring-zinc-500/50"
+              title="이름 변경 (더블클릭도 가능)"
+              aria-label="대화 이름 변경"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+            {/* Pin */}
+            <button
+              onClick={(e) => { e.stopPropagation(); onPin(); }}
+              className={`p-1 rounded transition-colors ${
+                conversation.isPinned
+                  ? "text-violet-400 hover:bg-zinc-700"
+                  : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
+              } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50`}
+              title={conversation.isPinned ? "핀 해제" : "상단 고정"}
+              aria-label={conversation.isPinned ? "Unpin conversation" : "Pin conversation to top"}
+            >
+              <Pin className="w-3 h-3" />
+            </button>
+            {/* Delete */}
+            <button
+              onClick={handleDeleteClick}
+              className="p-1 rounded transition-colors text-zinc-500
+                         hover:bg-zinc-700 hover:text-red-400
+                         focus-visible:outline-none focus-visible:ring-1
+                         focus-visible:ring-red-500/50"
+              title="대화 삭제"
+              aria-label="Delete conversation"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
+        {/* Confirm/cancel icons while editing */}
+        {isEditing && (
+          <div className="flex items-center gap-0.5 shrink-0 ml-auto">
+            <button
+              onMouseDown={(e) => { e.preventDefault(); commitRename(); }}
+              className="p-1 rounded transition-colors text-green-400 hover:bg-zinc-700
+                         focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500/50"
+              aria-label="이름 변경 확인"
+              title="저장 (Enter)"
+            >
+              <Check className="w-3 h-3" />
+            </button>
+            <button
+              onMouseDown={(e) => { e.preventDefault(); cancelRename(); }}
+              className="p-1 rounded transition-colors text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300
+                         focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50"
+              aria-label="이름 변경 취소"
+              title="취소 (Esc)"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Bottom row: message count + time + cost ─────────────── */}
+      {!isEditing && !confirmDelete && (
+        <div className="flex items-center gap-2 mt-0.5">
+          {conversation.messageCount > 0 && (
+            <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
+              <MessageSquare className="w-2.5 h-2.5" />
+              {conversation.messageCount}
+            </span>
+          )}
+          <span className="text-[10px] text-zinc-600">
+            {relativeTime(conversation.updatedAt)}
+          </span>
+          {conversation.totalCostUsd > 0 && (
+            <span className="text-[10px] text-zinc-600 ml-auto">
+              ${conversation.totalCostUsd.toFixed(3)}
+            </span>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Bottom row: message count + time + cost */}
-      <div className="flex items-center gap-2 mt-0.5">
-        {conversation.messageCount > 0 && (
-          <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
-            <MessageSquare className="w-2.5 h-2.5" />
-            {conversation.messageCount}
-          </span>
-        )}
-        <span className="text-[10px] text-zinc-600">
-          {relativeTime(conversation.updatedAt)}
-        </span>
-        {conversation.totalCostUsd > 0 && (
-          <span className="text-[10px] text-zinc-600 ml-auto">
-            ${conversation.totalCostUsd.toFixed(3)}
-          </span>
-        )}
-      </div>
+      {/* ── Inline delete confirm ────────────────────────────────── */}
+      {confirmDelete && (
+        <div
+          role="alert"
+          className="mt-1.5 flex items-center gap-1.5 px-2 py-1.5
+                     bg-red-950/40 border border-red-800/40 rounded-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" aria-hidden="true" />
+          <p className="text-[10px] text-red-300 flex-1 leading-tight">
+            이 대화를 삭제합니다. 복구 불가.
+          </p>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={handleCancelDelete}
+              className="px-1.5 py-0.5 text-[10px] text-zinc-400 hover:text-zinc-200
+                         rounded transition-colors
+                         focus-visible:outline-none focus-visible:ring-1
+                         focus-visible:ring-zinc-500/50"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              className="px-1.5 py-0.5 text-[10px] font-medium text-white
+                         bg-red-600 hover:bg-red-500 rounded transition-colors
+                         focus-visible:outline-none focus-visible:ring-1
+                         focus-visible:ring-red-400/50"
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

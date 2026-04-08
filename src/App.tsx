@@ -70,6 +70,7 @@ function MainApp() {
     setActive,
     pin,
     remove,
+    rename,
     sendMessage,
     cancelCurrentStream,
   } = useChatStore();
@@ -649,6 +650,7 @@ function MainApp() {
                     onClick={() => { setActive(conv.id); setCurrentView("chat"); }}
                     onPin={() => pin(conv.id)}
                     onDelete={() => remove(conv.id)}
+                    onRename={(title) => rename(conv.id, title)}
                   />
                 ))}
               </div>

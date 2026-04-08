@@ -116,6 +116,17 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
 | **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
 
+### Phase 14 — Conversation Management Completion ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Inline Rename** | Double-click title or pencil button → inline input → Enter saves, Esc cancels |
+| **Inline Delete Confirm** | Immediate delete replaced with red warning box + cancel/delete buttons |
+| **Keyboard Accessibility Fix** | CSS `hover-only` buttons → `group-focus-within:flex` added so keyboard users can reach Pin/Rename/Delete |
+| **role="alert"** | Delete confirmation box announces to screen readers on appearance (WCAG 4.1.3) |
+| **Input Validation** | `maxLength=100` + trim + non-empty check (ASVS 5.1.1) |
+| **Pencil Button** | Visible rename button on hover (NNGroup: Recognition over Recall) |
+| **Security** | Zero new IPC, no `innerHTML`, bounded input length |
+
 ### Phase 13 — Prompt Version Diff View ✅ Complete
 | Feature | Description |
 |---------|-------------|
@@ -419,7 +430,8 @@ ai-flow/
 | **11** | Copy / Export UX completion — visual feedback, accessible menu, Lucide icon consistency | ✅ Complete |
 | **12** | Keyboard shortcuts help modal (`?` / `Ctrl+/`) — categorized shortcut catalog, command palette integration | ✅ Complete |
 | **13** | Prompt version diff view — line-level LCS diff, inline confirm, toast feedback, WCAG accessibility | ✅ Complete |
-| **14** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **14** | Conversation management — inline rename (double-click/Pencil), inline confirm delete, keyboard accessibility fix | ✅ Complete |
+| **15** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 

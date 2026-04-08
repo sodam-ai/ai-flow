@@ -116,6 +116,17 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
 | **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
 
+### Phase 14 — 대화 관리 완성 (inline rename + inline confirm) ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **대화 이름 변경** | 더블클릭 또는 연필 버튼 → 인라인 입력 편집 → Enter 저장, Esc 취소 |
+| **삭제 확인 UI** | 즉시 삭제 제거 → red 경고 박스 + 취소/삭제 버튼 (복구 불가 명시) |
+| **키보드 접근성 수정** | CSS `hover-only` 버튼 → `group-focus-within:flex` 추가로 키보드 사용자도 버튼 접근 가능 |
+| **role="alert"** | 삭제 확인 박스 등장 시 스크린 리더 즉시 알림 (WCAG 4.1.3) |
+| **입력 검증** | maxLength=100 + trim + non-empty 체크 (ASVS 5.1.1) |
+| **Pencil 버튼** | hover 시 이름 변경 버튼 명시적 노출 (NNGroup: Recognition over Recall) |
+| **보안** | 새 IPC 없음, innerHTML 없음, maxLength 제한 |
+
 ### Phase 13 — 프롬프트 버전 비교 diff 뷰 ✅ 완료
 | 기능 | 설명 |
 |------|------|
@@ -479,7 +490,8 @@ ai-flow/
 | **11** | 복사/내보내기 UX 완성 — 시각 피드백, 접근성 있는 메뉴, Lucide 아이콘 일관성 | ✅ 완료 |
 | **12** | 키보드 단축키 도움말 모달 (`?` / `Ctrl+/`) — 전체 단축키 카테고리별 정리, 명령 팔레트 통합 | ✅ 완료 |
 | **13** | 프롬프트 버전 비교 diff 뷰 — 줄 단위 LCS diff, inline confirm, 토스트 피드백, WCAG 접근성 | ✅ 완료 |
-| **14** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
+| **14** | 대화 관리 완성 — inline rename (더블클릭/Pencil), inline confirm delete, 키보드 접근성 수정 | ✅ 완료 |
+| **15** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 
