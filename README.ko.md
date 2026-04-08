@@ -116,6 +116,16 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
 | **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
 
+### Phase 16 — ChatInput 완성 (이미지 붙여넣기 + 글자 수 + 오류 피드백) ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **이미지 붙여넣기** | Ctrl+V로 이미지 붙여넣기 → Vision AI 자동 첨부 (FileReader base64, image/* 전용 필터) |
+| **글자 수 표시** | 2,000자 이상 시 textarea 우하단에 카운터 표시 — 정상/경고(2K+)/위험(6K+) 색상 |
+| **스크린샷 오류 toast** | console.warn 제거 → addToast("error") — 사용자에게 즉시 알림 (silent failure 완전 제거) |
+| **이미지 붙여넣기 피드백** | 2초간 "이미지 첨부됨" 배지 표시 (ImagePlus 아이콘) |
+| **ARIA 보완** | textarea `aria-label`, `aria-describedby` 글자 수 연결, `aria-live="polite"` |
+| **보안** | 새 IPC 없음, FileReader image/* 필터, base64 안전 추출, 클라이언트 사이드 처리 |
+
 ### Phase 15 — PersonaSelector + PromptLibraryModal 접근성/보안 완성 ✅ 완료
 | 기능 | 설명 |
 |------|------|
@@ -503,7 +513,8 @@ ai-flow/
 | **13** | 프롬프트 버전 비교 diff 뷰 — 줄 단위 LCS diff, inline confirm, 토스트 피드백, WCAG 접근성 | ✅ 완료 |
 | **14** | 대화 관리 완성 — inline rename (더블클릭/Pencil), inline confirm delete, 키보드 접근성 수정 | ✅ 완료 |
 | **15** | PersonaSelector·PromptLibraryModal 접근성/보안 완성 — inline confirm, ARIA, focus-within | ✅ 완료 |
-| **16** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
+| **16** | ChatInput 완성 — 이미지 붙여넣기(Vision AI), 글자 수 표시, 스크린샷 오류 toast | ✅ 완료 |
+| **17** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 

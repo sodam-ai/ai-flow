@@ -116,6 +116,16 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
 | **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
 
+### Phase 16 — ChatInput Completion (Image Paste + Char Count + Error Feedback) ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Image Paste** | Ctrl+V with image → auto-attached as Vision AI input (FileReader base64, image/* filter only) |
+| **Character Counter** | Shows char count at bottom-right of textarea when ≥2,000 chars — normal/warn(2K+)/danger(6K+) colors |
+| **Screenshot Error Toast** | Removes `console.warn` → `addToast("error", ...)` — user immediately notified (silent failure eliminated) |
+| **Image Paste Feedback** | 2-second "이미지 첨부됨" badge with ImagePlus icon after paste |
+| **ARIA Improvements** | `aria-label` on textarea, conditional `aria-describedby` for char counter, `aria-live="polite"` |
+| **Security** | Zero new IPC, FileReader image/* filter, safe base64 extraction, client-side only |
+
 ### Phase 15 — PersonaSelector + PromptLibraryModal Accessibility & Security ✅ Complete
 | Feature | Description |
 |---------|-------------|
@@ -443,7 +453,8 @@ ai-flow/
 | **13** | Prompt version diff view — line-level LCS diff, inline confirm, toast feedback, WCAG accessibility | ✅ Complete |
 | **14** | Conversation management — inline rename (double-click/Pencil), inline confirm delete, keyboard accessibility fix | ✅ Complete |
 | **15** | PersonaSelector + PromptLibraryModal — inline confirm delete, full ARIA, focus-within keyboard a11y | ✅ Complete |
-| **16** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| **16** | ChatInput completion — image paste (Vision AI), char counter, screenshot error toast | ✅ Complete |
+| **17** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
 
 ---
 

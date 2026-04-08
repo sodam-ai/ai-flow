@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Send, Square, BookOpen, Zap, Clipboard, CheckCheck,
-  Camera, X, Loader2,
+  Camera, X, Loader2, ImagePlus,
 } from "lucide-react";
 import FileDropZone from "./FileDropZone";
 import RoutingBadge from "./RoutingBadge";
@@ -11,9 +11,14 @@ import PiiPreview from "@/components/privacy/PiiPreview";
 import { usePromptStore } from "@/stores/promptStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useChatStore } from "@/stores/chatStore";
+import { useToastStore } from "@/stores/toastStore";
 import { detectPii, type PiiMatch } from "@/lib/privacy/pii-detector";
 import { logPiiDetection, readClipboardContent, captureScreen } from "@/lib/ipc/invoke";
 import type { FileContent } from "@/types";
+
+// Character count thresholds for color coding
+const CHAR_WARN = 2000;
+const CHAR_DANGER = 6000;
 
 interface Props {
   isStreaming: boolean;
@@ -30,11 +35,15 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
   const [clipboardAdded, setClipboardAdded] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [screenshotLoading, setScreenshotLoading] = useState(false);
+  // Image paste: true when a pasted image was just accepted (brief visual feedback)
+  const [imagePasted, setImagePasted] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const clipboardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imagePasteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { t } = useTranslation();
   const { setModalOpen } = usePromptStore();
+  const { addToast } = useToastStore();
   const routingMode = useSettingsStore((s) => s.routingMode);
   const setRoutingMode = useSettingsStore((s) => s.setRoutingMode);
   const privacyMode = useSettingsStore((s) => s.privacyMode);
@@ -170,12 +179,44 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
       textareaRef.current?.focus();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      // Minimal error display — SCREEN_ prefix errors surfaced briefly
-      console.warn("Screenshot failed:", msg);
+      addToast("error", `스크린샷 실패: ${msg}`);
     } finally {
       setScreenshotLoading(false);
     }
-  }, [screenshotLoading, isStreaming]);
+  }, [screenshotLoading, isStreaming, addToast]);
+
+  /**
+   * Handle image paste (Ctrl+V with image in clipboard).
+   * Security: reads only image/* items — ignores all other clipboard types.
+   * The base64 string is extracted from the DataURL prefix safely.
+   */
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const items = Array.from(e.clipboardData.items);
+      const imageItem = items.find((item) => item.type.startsWith("image/"));
+      if (!imageItem) return; // No image — let default text paste proceed
+
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target?.result as string | undefined;
+        // Extract pure base64 from "data:image/png;base64,<BASE64>"
+        const base64 = result?.split(",")[1];
+        if (!base64) return;
+        setPendingImage(base64);
+        // Brief visual feedback on the paste button
+        if (imagePasteTimerRef.current) clearTimeout(imagePasteTimerRef.current);
+        setImagePasted(true);
+        imagePasteTimerRef.current = setTimeout(() => setImagePasted(false), 2000);
+        textareaRef.current?.focus();
+      };
+      reader.readAsDataURL(file);
+    },
+    []
+  );
 
   /** Global keyboard shortcut (Ctrl+Shift+S) → take screenshot */
   useEffect(() => {
@@ -183,6 +224,22 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
     window.addEventListener("aiflow:screenshot", handler);
     return () => window.removeEventListener("aiflow:screenshot", handler);
   }, [handleScreenshot]);
+
+  /** Cleanup imagePaste timer on unmount */
+  useEffect(() => {
+    return () => {
+      if (imagePasteTimerRef.current) clearTimeout(imagePasteTimerRef.current);
+    };
+  }, []);
+
+  // Character count color: normal / warn / danger
+  const charCount = input.length;
+  const charCountColor =
+    charCount >= CHAR_DANGER
+      ? "text-red-400"
+      : charCount >= CHAR_WARN
+      ? "text-amber-400"
+      : "text-zinc-600";
 
   const canSend = (input.trim() || attachments.length > 0 || !!pendingImage) && !isStreaming;
 
@@ -311,22 +368,44 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
               )}
             </button>
 
-            {/* Textarea */}
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onInput={handleInput}
-              placeholder={
-                pendingImage
-                  ? t("chat.placeholder_vision") || "Describe what you want to know about this screenshot…"
-                  : t("chat.placeholder")
-              }
-              rows={1}
-              className="flex-1 resize-none bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-zinc-500 focus:outline-none transition-colors min-w-0"
-              disabled={isStreaming}
-            />
+            {/* Textarea + char counter */}
+            <div className="flex-1 relative min-w-0">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onInput={handleInput}
+                onPaste={handlePaste}
+                placeholder={
+                  pendingImage
+                    ? t("chat.placeholder_vision") || "Describe what you want to know about this screenshot…"
+                    : t("chat.placeholder")
+                }
+                rows={1}
+                aria-label="메시지 입력"
+                aria-describedby={charCount >= CHAR_WARN ? "char-counter" : undefined}
+                className="w-full resize-none bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-zinc-500 focus:outline-none transition-colors"
+                disabled={isStreaming}
+              />
+              {/* Character counter — shown only when >= CHAR_WARN */}
+              {charCount >= CHAR_WARN && (
+                <span
+                  id="char-counter"
+                  aria-live="polite"
+                  className={`absolute bottom-1.5 right-2.5 text-[9px] font-mono select-none pointer-events-none ${charCountColor}`}
+                >
+                  {charCount.toLocaleString()}
+                </span>
+              )}
+              {/* Image paste hint — shown on first paste */}
+              {imagePasted && (
+                <span className="absolute bottom-1.5 left-3 text-[9px] text-violet-400 select-none pointer-events-none flex items-center gap-1">
+                  <ImagePlus className="w-2.5 h-2.5" aria-hidden="true" />
+                  이미지 첨부됨
+                </span>
+              )}
+            </div>
 
             {/* Send / Stop */}
             {isStreaming ? (
