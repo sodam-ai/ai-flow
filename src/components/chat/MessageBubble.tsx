@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Message, MessageVersion } from "@/types";
 import { useTranslation } from "react-i18next";
 import { useChatStore } from "@/stores/chatStore";
+import { useToastStore } from "@/stores/toastStore";
 import { getMessageVersions } from "@/lib/ipc/invoke";
 import { useTts } from "@/hooks/useTts";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { Copy, RefreshCw, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { Copy, Check, RefreshCw, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import MarkdownContent from "@/components/shared/MarkdownContent";
 
 interface Props {
@@ -94,6 +95,17 @@ export default function MessageBubble({
   const [versions, setVersions] = useState<MessageVersion[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
 
+  // Copy feedback state — shows a Check icon for 1.5s after clicking Copy.
+  // Timer ref prevents memory leaks if the component unmounts mid-feedback.
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const displayContent = viewingVersion?.content ?? message.content;
 
   const formattedTime = new Date(message.createdAt).toLocaleTimeString("ko-KR", {
@@ -101,8 +113,26 @@ export default function MessageBubble({
     minute: "2-digit",
   });
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(displayContent);
+  /**
+   * Copy message content to clipboard with visual + toast feedback.
+   *
+   * Uses the modern Clipboard API (HTTPS/Tauri webview only; no legacy
+   * document.execCommand fallback needed in this environment).
+   *
+   * Error handling: a failed write is rare (permission denied) but we still
+   * surface it via the error toast so the user isn't left wondering why the
+   * Check icon didn't appear.
+   */
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(displayContent);
+      setCopied(true);
+      useToastStore.getState().addToast("success", "메시지가 클립보드에 복사되었습니다");
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 1500);
+    } catch {
+      useToastStore.getState().addToast("error", "복사 실패 — 클립보드 권한을 확인하세요");
+    }
   };
 
   const handleRegenerate = () => {
@@ -280,14 +310,21 @@ export default function MessageBubble({
                 <RefreshCw className="w-3 h-3 text-zinc-500" />
               </button>
 
-              {/* Copy button */}
+              {/* Copy button with visual feedback */}
               <button
                 onClick={handleCopy}
-                className="p-0.5 rounded hover:bg-zinc-700/50"
-                title={t("chat.copy")}
-                aria-label="Copy message"
+                className="p-0.5 rounded hover:bg-zinc-700/50 transition-colors
+                           focus-visible:outline-none focus-visible:ring-2
+                           focus-visible:ring-violet-500/50"
+                title={copied ? "복사됨" : t("chat.copy")}
+                aria-label={copied ? "메시지 복사 완료" : "Copy message"}
+                aria-live="polite"
               >
-                <Copy className="w-3 h-3 text-zinc-500" />
+                {copied ? (
+                  <Check className="w-3 h-3 text-emerald-400" />
+                ) : (
+                  <Copy className="w-3 h-3 text-zinc-500" />
+                )}
               </button>
             </div>
           </div>
@@ -320,11 +357,18 @@ export default function MessageBubble({
             )}
             <button
               onClick={handleCopy}
-              className="p-0.5 rounded hover:bg-zinc-200"
-              title={t("chat.copy")}
-              aria-label="Copy message"
+              className="p-0.5 rounded hover:bg-zinc-200 transition-colors
+                         focus-visible:outline-none focus-visible:ring-2
+                         focus-visible:ring-violet-500/50"
+              title={copied ? "복사됨" : t("chat.copy")}
+              aria-label={copied ? "메시지 복사 완료" : "Copy message"}
+              aria-live="polite"
             >
-              <Copy className="w-3 h-3 text-zinc-400" />
+              {copied ? (
+                <Check className="w-3 h-3 text-emerald-600" />
+              ) : (
+                <Copy className="w-3 h-3 text-zinc-400" />
+              )}
             </button>
           </div>
         )}

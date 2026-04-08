@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
+import { Download, FileText, FileCode, ChevronDown } from "lucide-react";
 import { useChatStore } from "@/stores/chatStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { usePersonaStore } from "@/stores/personaStore";
@@ -214,7 +215,37 @@ function MainApp() {
     setCurrentView("chat");
   };
 
+  // ── Conversation export menu (click-toggle, accessible) ────────────────
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close export menu on outside click (mousedown for earlier dismissal)
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+    window.addEventListener("mousedown", handler);
+    return () => window.removeEventListener("mousedown", handler);
+  }, [showExportMenu]);
+
+  // Close on Escape (only when menu is open)
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowExportMenu(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showExportMenu]);
+
   const handleExportConversation = async (format: "markdown" | "json") => {
+    setShowExportMenu(false);
     if (!activeConversationId) return;
     try {
       const content = await exportConversation(activeConversationId, format);
@@ -227,6 +258,11 @@ function MainApp() {
       a.download = `${title}.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
+      const { useToastStore } = await import("@/stores/toastStore");
+      useToastStore.getState().addToast(
+        "success",
+        `대화를 ${format === "json" ? "JSON" : "Markdown"}으로 내보냈습니다`,
+      );
     } catch (e) {
       const { useToastStore } = await import("@/stores/toastStore");
       useToastStore.getState().addToast("error", String(e));
@@ -710,38 +746,80 @@ function MainApp() {
                     {activeConv.title}
                   </span>
                 )}
-                {/* Export dropdown */}
-                <div className="relative group">
+                {/* Export menu — click-toggle with outside-click dismissal */}
+                <div className="relative" ref={exportMenuRef}>
                   <button
-                    className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all"
+                    onClick={() => setShowExportMenu((p) => !p)}
+                    className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-all
+                                focus-visible:outline-none focus-visible:ring-2
+                                focus-visible:ring-violet-500/50 focus-visible:ring-offset-1
+                                focus-visible:ring-offset-zinc-950 ${
+                                  showExportMenu
+                                    ? "border-violet-600/60 bg-violet-900/30 text-violet-300"
+                                    : "border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50"
+                                }`}
                     title="대화 내보내기"
-                    aria-label="대화 내보내기"
+                    aria-label="대화 내보내기 메뉴 열기"
+                    aria-haspopup="menu"
+                    aria-expanded={showExportMenu}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    저장
+                    <Download className="w-3 h-3" aria-hidden="true" />
+                    <span>저장</span>
+                    <ChevronDown
+                      className={`w-2.5 h-2.5 transition-transform duration-150 ${
+                        showExportMenu ? "rotate-180" : ""
+                      }`}
+                      aria-hidden="true"
+                    />
                   </button>
-                  <div className="absolute right-0 top-full mt-1 w-36 rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl z-50 overflow-hidden hidden group-hover:block">
-                    <button
-                      onClick={() => handleExportConversation("markdown")}
-                      className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-center gap-2 transition-colors"
+
+                  {showExportMenu && (
+                    <div
+                      role="menu"
+                      aria-label="내보내기 형식"
+                      className="absolute right-0 top-full mt-1.5 w-44 rounded-lg
+                                 border border-zinc-700 bg-zinc-900/95 backdrop-blur-sm
+                                 shadow-2xl z-50 overflow-hidden animate-search-bar-in"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 text-zinc-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
-                      Markdown (.md)
-                    </button>
-                    <button
-                      onClick={() => handleExportConversation("json")}
-                      className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-center gap-2 transition-colors"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 text-zinc-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
-                      </svg>
-                      JSON (.json)
-                    </button>
-                  </div>
+                      <button
+                        role="menuitem"
+                        onClick={() => handleExportConversation("markdown")}
+                        className="w-full px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-800/80
+                                   text-left flex items-center gap-2.5 transition-colors
+                                   focus-visible:outline-none focus-visible:bg-zinc-800"
+                      >
+                        <FileText
+                          className="w-3.5 h-3.5 text-sky-400 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium leading-tight">Markdown</span>
+                          <span className="text-[10px] text-zinc-500 leading-tight">
+                            읽기 편한 형식 (.md)
+                          </span>
+                        </div>
+                      </button>
+                      <div className="h-px bg-zinc-800" aria-hidden="true" />
+                      <button
+                        role="menuitem"
+                        onClick={() => handleExportConversation("json")}
+                        className="w-full px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-800/80
+                                   text-left flex items-center gap-2.5 transition-colors
+                                   focus-visible:outline-none focus-visible:bg-zinc-800"
+                      >
+                        <FileCode
+                          className="w-3.5 h-3.5 text-amber-400 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium leading-tight">JSON</span>
+                          <span className="text-[10px] text-zinc-500 leading-tight">
+                            구조화된 데이터 (.json)
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {/* Branch panel toggle */}
                 <button
