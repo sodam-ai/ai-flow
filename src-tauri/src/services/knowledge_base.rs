@@ -409,7 +409,12 @@ pub fn auto_kb_context(
     let docs = all_results
         .iter()
         .enumerate()
-        .map(|(i, r)| format!("[{}] {}\n{}", i + 1, r.filename, r.snippet))
+        .map(|(i, r)| {
+            // Use content (plain text) not snippet — snippet contains <mark> HTML
+            // that would inject markup into the AI system prompt.
+            let excerpt: String = r.content.chars().take(400).collect();
+            format!("[{}] {}\n{}", i + 1, r.filename, excerpt)
+        })
         .collect::<Vec<_>>()
         .join("\n\n");
 
