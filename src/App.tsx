@@ -677,6 +677,7 @@ function MainApp() {
             <button
               key={view}
               onClick={() => setCurrentView(view)}
+              aria-current={currentView === view ? "page" : undefined}
               className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 currentView === view
                   ? "bg-zinc-800 text-zinc-100"
@@ -706,6 +707,7 @@ function MainApp() {
             <button
               key={view}
               onClick={() => setCurrentView(view)}
+              aria-current={currentView === view ? "page" : undefined}
               className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 currentView === view
                   ? "bg-zinc-800 text-zinc-100"
@@ -718,6 +720,7 @@ function MainApp() {
           ))}
           <button
             onClick={() => setCurrentView("settings")}
+            aria-current={currentView === "settings" ? "page" : undefined}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
               currentView === "settings"
                 ? "bg-zinc-800 text-zinc-100"

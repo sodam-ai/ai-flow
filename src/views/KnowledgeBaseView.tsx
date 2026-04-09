@@ -312,7 +312,7 @@ export default function KnowledgeBaseView() {
                   ) : (
                     <button
                       onClick={(e) => { e.stopPropagation(); setPendingDeleteKbId(kb.id); }}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-zinc-700 text-zinc-600 hover:text-red-400 transition-all"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 rounded-lg hover:bg-zinc-700 text-zinc-600 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
                       title={`${kb.name} 삭제`}
                       aria-label={`${kb.name} 삭제`}
                     >
@@ -429,6 +429,7 @@ export default function KnowledgeBaseView() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="지식베이스에서 검색… (Enter)"
+                maxLength={500}
                 className="w-full pl-8 pr-3 py-1.5 text-sm bg-zinc-900 border border-zinc-800 rounded-lg focus:border-zinc-600 focus:outline-none placeholder-zinc-700 transition-colors"
                 aria-label="지식베이스 검색"
               />
@@ -610,7 +611,7 @@ export default function KnowledgeBaseView() {
                         ) : (
                           <button
                             onClick={() => setPendingDeleteDocId(doc.id)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 hover:text-red-400 transition-all shrink-0"
+                            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 hover:text-red-400 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
                             title={`${doc.filename} 삭제`}
                             aria-label={`${doc.filename} 삭제`}
                           >
