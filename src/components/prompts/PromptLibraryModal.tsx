@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { useTranslation } from "react-i18next";
 import { usePromptStore } from "@/stores/promptStore";
 import type { PromptTemplate } from "@/types";
@@ -31,6 +32,7 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, isModalOpen);
+  useFocusReturn(isModalOpen);
 
   useEffect(() => {
     if (isModalOpen) fetchPrompts();

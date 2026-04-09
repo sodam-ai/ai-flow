@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import type { PiiMatch } from "@/lib/privacy/pii-detector";
 import { maskPii, piiTypeLabel } from "@/lib/privacy/pii-detector";
 
@@ -33,6 +34,7 @@ export default function PiiPreview({
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef);
+  useFocusReturn();
 
   // Escape to cancel
   useEffect(() => {

@@ -279,7 +279,7 @@ function MainApp() {
   useEffect(() => {
     if (!showExportMenu) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowExportMenu(false);
+      if (e.key === "Escape") { e.stopPropagation(); setShowExportMenu(false); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);

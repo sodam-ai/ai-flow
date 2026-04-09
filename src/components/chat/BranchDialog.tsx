@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 
 interface Props {
   messageIndex: number;   // 0-based index shown as human-readable (index+1)
@@ -16,6 +17,7 @@ export default function BranchDialog({ messageIndex, onConfirm, onCancel }: Prop
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef);
+  useFocusReturn();
 
   useEffect(() => {
     inputRef.current?.focus();

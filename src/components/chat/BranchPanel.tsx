@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { GitBranch, ArrowRight, X } from "lucide-react";
 import { listConversationBranches } from "@/lib/ipc/invoke";
 import type { ConversationBranch } from "@/types";
@@ -27,6 +28,7 @@ export default function BranchPanel({ conversationId, onNavigate, isOpen, onClos
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   useFocusTrap(panelRef, isOpen);
+  useFocusReturn(isOpen);
 
   const loadBranches = useCallback(async () => {
     if (!conversationId) return;

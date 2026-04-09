@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { useTranslation } from "react-i18next";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
 import { Search } from "lucide-react";
@@ -21,6 +22,7 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef);
+  useFocusReturn(isOpen);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus input when opened

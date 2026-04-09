@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { usePromptStore } from "@/stores/promptStore";
 import type { PromptTemplate } from "@/types";
 
@@ -36,6 +37,7 @@ export default function VariableFillDialog({ prompt, onApply, onCancel }: Props)
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef);
+  useFocusReturn();
 
   // Escape closes the dialog
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { useTranslation } from "react-i18next";
 import { usePersonaStore } from "@/stores/personaStore";
 import type { Persona } from "@/types";
@@ -44,6 +45,7 @@ export default function PersonaEditor({ persona, onClose }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef);
+  useFocusReturn();
 
   const canSave = name.trim().length > 0 && systemPrompt.trim().length > 0;
 

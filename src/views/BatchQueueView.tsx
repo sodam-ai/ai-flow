@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { ListTodo, Play, X, Plus, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import type { BatchJob, BatchItem, BatchProgressEvent } from "@/types";
@@ -26,6 +27,7 @@ export default function BatchQueueView() {
   const [liveProgress, setLiveProgress] = useState<Record<number, BatchProgressEvent>>({});
   const createDialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(createDialogRef, showCreate);
+  useFocusReturn(showCreate);
 
   // 새 배치 폼 상태
   const [newJobName, setNewJobName] = useState("");

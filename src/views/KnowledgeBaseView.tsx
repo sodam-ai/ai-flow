@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   Plus, Trash2, Search, Database,
@@ -81,6 +82,7 @@ export default function KnowledgeBaseView() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const kbModalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(kbModalRef, showCreateModal);
+  useFocusReturn(showCreateModal);
   const [newKbName, setNewKbName] = useState("");
   const [newKbDesc, setNewKbDesc] = useState("");
   const [loading, setLoading] = useState(true);

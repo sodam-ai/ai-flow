@@ -30,11 +30,13 @@ export function useGlobalKeyboard() {
       if (e.key === "Escape") {
         const palette = useCommandPaletteStore.getState();
         if (palette.isOpen) {
+          e.stopPropagation();
           palette.close();
           return;
         }
         const prompts = usePromptStore.getState();
         if (prompts.isModalOpen) {
+          e.stopPropagation();
           prompts.setModalOpen(false);
           return;
         }

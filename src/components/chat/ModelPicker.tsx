@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { CheckCircle2, X } from "lucide-react";
 import type { ModelInfo, StreamTarget } from "@/types";
 import { getModelCatalog } from "@/lib/ipc/invoke";
@@ -26,6 +27,7 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef);
+  useFocusReturn();
 
   useEffect(() => {
     getModelCatalog().then(setModels).catch(() => setModels([]));
