@@ -77,6 +77,7 @@ export default function KnowledgeBaseView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<KbSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
   const [folderIndexResult, setFolderIndexResult] = useState<{ indexed: number; failed: number } | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -187,6 +188,7 @@ export default function KnowledgeBaseView() {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     setSearchResults([]);
+    setHasSearched(false);
     try {
       const results = await searchKnowledgeBase({
         kb_id: selectedKb?.id,
@@ -194,6 +196,7 @@ export default function KnowledgeBaseView() {
         limit: 10,
       });
       setSearchResults(results);
+      setHasSearched(true);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -448,9 +451,9 @@ export default function KnowledgeBaseView() {
             >
               {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Search className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>
-            {searchResults.length > 0 && (
+            {(searchResults.length > 0 || hasSearched) && (
               <button
-                onClick={() => setSearchResults([])}
+                onClick={() => { setSearchResults([]); setHasSearched(false); setSearchQuery(""); }}
                 className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50"
                 aria-label="검색 결과 닫기"
               >
@@ -482,15 +485,30 @@ export default function KnowledgeBaseView() {
           )}
 
           {/* ── Search results ── */}
+          {hasSearched && searchResults.length === 0 && (
+            <div className="px-5 pt-6 flex flex-col items-center text-center">
+              <Search className="w-8 h-8 text-zinc-800 mb-2" aria-hidden="true" />
+              <p className="text-sm text-zinc-500">일치하는 결과 없음</p>
+              <p className="text-[11px] text-zinc-700 mt-1">다른 검색어를 시도하거나 문서를 추가하세요</p>
+            </div>
+          )}
           {searchResults.length > 0 && (
             <div className="px-5 pt-4 pb-2">
               <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-3">
                 검색 결과 {searchResults.length}건
               </p>
               <div className="space-y-2">
-                {searchResults.map((r) => {
+                {searchResults.map((r, i) => {
                   const ext = r.filename.split(".").pop() ?? "";
                   const style = fileTypeStyle(ext);
+                  // Normalize rank to 0-100 relevance (rank=0 → best, higher = worse)
+                  // Display top 3 as high, rest as medium/low
+                  const relevanceLabel = i === 0 ? "최고" : i < 3 ? "높음" : "보통";
+                  const relevanceColor = i === 0
+                    ? "text-violet-400 bg-violet-950/50"
+                    : i < 3
+                    ? "text-emerald-500 bg-emerald-950/40"
+                    : "text-zinc-600 bg-zinc-800/60";
                   return (
                     <div
                       key={r.chunk_id}
@@ -500,7 +518,10 @@ export default function KnowledgeBaseView() {
                         <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${style.bg} ${style.text}`}>
                           {ext.toUpperCase() || "?"}
                         </span>
-                        <span className="text-xs text-zinc-400 font-medium truncate">{r.filename}</span>
+                        <span className="text-xs text-zinc-400 font-medium truncate flex-1">{r.filename}</span>
+                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${relevanceColor}`}>
+                          {relevanceLabel}
+                        </span>
                       </div>
                       <p className="text-xs text-zinc-400 leading-relaxed">
                         <SnippetHighlight text={r.snippet} />
