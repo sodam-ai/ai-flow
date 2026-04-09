@@ -273,7 +273,11 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
   // ── Error tooltip ────────────────────────────────────────────────────────
   const errorTooltip = error && (
     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-      <div className="whitespace-nowrap bg-red-950/95 border border-red-800/60 text-red-300 text-[11px] px-2.5 py-1 rounded-lg shadow-lg">
+      <div
+        role="alert"
+        aria-live="assertive"
+        className="whitespace-nowrap bg-red-950/95 border border-red-800/60 text-red-300 text-[11px] px-2.5 py-1 rounded-lg shadow-lg"
+      >
         {error}
       </div>
     </div>
@@ -283,7 +287,7 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
   if (recordState === "processing") {
     return (
       <div className="relative flex items-center justify-center">
-        <button disabled className="p-2.5 rounded-xl text-violet-400 bg-violet-950/30 cursor-wait" title="Transcribing…" aria-label="Transcribing audio">
+        <button disabled className="p-2.5 rounded-xl text-violet-400 bg-violet-950/30 cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label="음성 변환 중…">
           <Loader2 className="w-4 h-4 animate-spin" />
         </button>
         {errorTooltip}
@@ -314,9 +318,8 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
         {/* Stop button */}
         <button
           onClick={handleClick}
-          className={`relative flex items-center justify-center w-9 h-9 border ${color.btn} border-l-0 rounded-r-xl transition-colors`}
-          title={`Stop recording (${secsLeft}s left)`}
-          aria-label={`Stop recording, ${secsLeft} seconds remaining`}
+          className={`relative flex items-center justify-center w-9 h-9 border ${color.btn} border-l-0 rounded-r-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400/70`}
+          aria-label={`녹음 중지, ${secsLeft}초 남음`}
         >
           <MicOff className="w-3.5 h-3.5" />
           <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-mono font-bold px-1 rounded-full leading-4 text-white ${color.badge}`}>
@@ -334,13 +337,16 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
       <button
         onClick={handleClick}
         disabled={disabled || recordState === "requesting"}
-        className={`p-2.5 rounded-xl transition-colors ${
+        className={`p-2.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 ${
           recordState === "requesting"
             ? "text-violet-400 bg-violet-950/20 cursor-wait"
             : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
         }`}
-        title={recordState === "requesting" ? "Requesting microphone…" : `Voice input — ${language && language !== "" ? language.toUpperCase() : "Auto"}`}
-        aria-label="Start voice recording"
+        aria-label={
+          recordState === "requesting"
+            ? "마이크 권한 요청 중…"
+            : `음성 입력 시작${language && language !== "" ? ` (${language.toUpperCase()})` : ""}`
+        }
       >
         <Mic className="w-4 h-4" />
       </button>
