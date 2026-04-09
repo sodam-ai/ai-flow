@@ -782,10 +782,11 @@ function MainApp() {
                 <div className="w-px h-4 bg-zinc-800" />
                 <button
                   onClick={() => setShowModelPicker(true)}
-                  className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all"
+                  className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"
                   title="2~3개 AI 모델 동시 비교"
+                  aria-label="AI 모델 비교 열기"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
                   </svg>
                   비교
@@ -874,16 +875,17 @@ function MainApp() {
                 </div>
                 {/* Branch panel toggle */}
                 <button
-                  onClick={() => setShowBranchPanel(true)}
-                  className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-all ${
+                  onClick={() => setShowBranchPanel((p) => !p)}
+                  className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 ${
                     showBranchPanel
                       ? "border-violet-600/60 bg-violet-900/30 text-violet-300"
                       : "border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/50"
                   }`}
                   title="대화 브랜치 목록"
                   aria-label="대화 브랜치 패널 열기"
+                  aria-pressed={showBranchPanel}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                   </svg>
                   브랜치
@@ -1009,7 +1011,7 @@ function WelcomeView({ onNewChat }: { onNewChat: () => void }) {
     { icon: "📷", title: "스크린샷 Vision", desc: "화면 캡처 → AI 분석" },
     { icon: "📚", title: "지식베이스 RAG", desc: "내 문서 기반 AI 답변" },
     { icon: "🔒", title: "완전 로컬 보안", desc: "API 키 OS 키체인 · DB AES-256" },
-    { icon: "🤖", title: "AI 에이전트", desc: "멀티스텝 자율 작업 + 승인 게이트" },
+    { icon: "⚡", title: "AI 에이전트", desc: "멀티스텝 자율 작업 + 승인 게이트" },
   ];
 
   const SHORTCUTS = [
@@ -1020,12 +1022,22 @@ function WelcomeView({ onNewChat }: { onNewChat: () => void }) {
     { keys: ["Ctrl", "K"], label: "명령 팔레트" },
   ];
 
+  const SUGGESTIONS = [
+    "GPT-4o, Claude, Gemini를 동시에 비교해줘",
+    "내 화면을 캡처해서 코드 리뷰해줘",
+    "문서를 업로드해서 핵심 내용 요약해줘",
+    "웹에서 최신 AI 뉴스를 검색해줘",
+  ];
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-8 px-8 pb-10 overflow-y-auto">
+    <div className="flex-1 flex flex-col items-center justify-center gap-7 px-8 pb-10 overflow-y-auto">
       {/* Logo + headline */}
       <div className="flex flex-col items-center gap-4 mt-8">
-        <div className="w-16 h-16 rounded-2xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center shadow-lg shadow-violet-900/20">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-violet-400">
+        <div
+          className="w-16 h-16 rounded-2xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center shadow-lg shadow-violet-900/20"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-violet-400" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
           </svg>
         </div>
@@ -1033,32 +1045,52 @@ function WelcomeView({ onNewChat }: { onNewChat: () => void }) {
           <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">
             {t("app.name")}
           </h1>
-          <p className="text-sm text-zinc-500 mt-1.5 max-w-xs">
+          <p className="text-sm text-zinc-400 mt-2 max-w-sm leading-relaxed">
             {t("app.welcome")}
           </p>
         </div>
         <button
           onClick={onNewChat}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-sm font-medium transition-all shadow-lg shadow-violet-900/30"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-sm font-medium transition-all shadow-lg shadow-violet-900/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
           {t("app.startChat")}
         </button>
       </div>
 
+      {/* Suggested prompts */}
+      <div className="w-full max-w-lg">
+        <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wider mb-2.5 text-center">
+          시작 제안
+        </p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {SUGGESTIONS.map((text) => (
+            <button
+              key={text}
+              onClick={onNewChat}
+              className="text-left px-3 py-2.5 rounded-lg bg-zinc-900/70 border border-zinc-800/80 text-[11px] text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/60 transition-all leading-snug focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/60 group"
+              aria-label={`"${text}" 로 새 대화 시작`}
+            >
+              <span className="line-clamp-2 group-hover:text-zinc-200 transition-colors">{text}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Feature cards */}
-      <div className="grid grid-cols-2 gap-2 w-full max-w-lg">
+      <div className="grid grid-cols-2 gap-2 w-full max-w-lg" role="list" aria-label="주요 기능">
         {FEATURES.map(({ icon, title, desc }) => (
           <div
             key={title}
-            className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 hover:border-zinc-700/60 transition-colors"
+            role="listitem"
+            className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60"
           >
-            <span className="text-base leading-none mt-0.5">{icon}</span>
+            <span className="text-base leading-none mt-0.5 shrink-0" aria-hidden="true">{icon}</span>
             <div className="min-w-0">
               <p className="text-xs font-medium text-zinc-300 leading-tight">{title}</p>
-              <p className="text-[10px] text-zinc-600 mt-0.5 leading-relaxed">{desc}</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5 leading-relaxed">{desc}</p>
             </div>
           </div>
         ))}
@@ -1066,24 +1098,26 @@ function WelcomeView({ onNewChat }: { onNewChat: () => void }) {
 
       {/* Keyboard shortcuts */}
       <div className="w-full max-w-lg">
-        <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wider mb-2 text-center">
+        <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wider mb-2.5 text-center">
           단축키
         </p>
-        <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5">
+        <dl className="flex flex-wrap justify-center gap-x-5 gap-y-1.5">
           {SHORTCUTS.map(({ keys, label }) => (
-            <p key={label} className="text-[11px] text-zinc-600 flex items-center gap-1">
-              {keys.map((k, i) => (
-                <span key={k} className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/80 font-mono text-zinc-400 text-[10px] leading-4">
-                    {k}
-                  </kbd>
-                  {i < keys.length - 1 && <span className="text-zinc-700 text-[10px]">+</span>}
-                </span>
-              ))}
-              <span className="ml-0.5 text-zinc-600">— {label}</span>
-            </p>
+            <div key={label} className="flex items-center gap-1">
+              <dt className="flex items-center gap-1">
+                {keys.map((k, i) => (
+                  <span key={k} className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/80 font-mono text-zinc-400 text-[10px] leading-4">
+                      {k}
+                    </kbd>
+                    {i < keys.length - 1 && <span className="text-zinc-700 text-[10px]" aria-hidden="true">+</span>}
+                  </span>
+                ))}
+              </dt>
+              <dd className="text-[11px] text-zinc-600 ml-0.5">— {label}</dd>
+            </div>
           ))}
-        </div>
+        </dl>
       </div>
     </div>
   );
