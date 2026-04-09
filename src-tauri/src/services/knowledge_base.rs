@@ -279,27 +279,69 @@ pub fn search_kb(db: &Arc<Database>, req: SearchKbRequest) -> Result<Vec<KbSearc
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
+/// Split text into overlapping chunks, snapping boundaries to sentence ends
+/// where possible (search for `.!?\n\n` within last 15% of each window).
+/// Falls back to exact char boundary when no sentence end is found.
 fn split_into_chunks(text: &str, chunk_size: usize, overlap: usize) -> Vec<String> {
     if text.len() <= chunk_size {
         return vec![text.to_string()];
     }
 
     let chars: Vec<char> = text.chars().collect();
+    let len = chars.len();
     let mut chunks = Vec::new();
     let mut start = 0;
 
-    while start < chars.len() {
-        let end = (start + chunk_size).min(chars.len());
-        let chunk: String = chars[start..end].iter().collect();
-        chunks.push(chunk);
+    while start < len {
+        let end = (start + chunk_size).min(len);
 
-        if end == chars.len() {
+        // Try to snap to a sentence boundary in the last 15% of the window
+        let snap_from = start + (chunk_size * 85 / 100);
+        let actual_end = if end < len {
+            find_break_point(&chars, snap_from, end).unwrap_or(end)
+        } else {
+            end
+        };
+
+        chunks.push(chars[start..actual_end].iter().collect());
+        if actual_end >= len {
             break;
         }
-        start += chunk_size.saturating_sub(overlap);
+
+        // Step back by overlap chars, then skip leading whitespace
+        let next = actual_end.saturating_sub(overlap);
+        start = skip_whitespace(&chars, next);
     }
 
     chunks
+}
+
+/// Search backwards from `end` toward `from` for a sentence break:
+/// `.!?` followed by space/newline, or double-newline (paragraph).
+fn find_break_point(chars: &[char], from: usize, end: usize) -> Option<usize> {
+    for i in (from..end).rev() {
+        if i + 1 >= chars.len() {
+            continue;
+        }
+        let c = chars[i];
+        let n = chars[i + 1];
+        if matches!(c, '.' | '!' | '?') && matches!(n, ' ' | '\n' | '\r') {
+            return Some(i + 2);
+        }
+        if c == '\n' && n == '\n' {
+            return Some(i + 2);
+        }
+    }
+    None
+}
+
+/// Skip forward past any leading whitespace from `pos`.
+fn skip_whitespace(chars: &[char], pos: usize) -> usize {
+    let mut i = pos;
+    while i < chars.len() && matches!(chars[i], ' ' | '\n' | '\r' | '\t') {
+        i += 1;
+    }
+    i
 }
 
 /// Sanitize user query for FTS5 to prevent injection

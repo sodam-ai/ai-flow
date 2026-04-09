@@ -8,7 +8,7 @@ import PersonaEditor from "@/components/chat/PersonaEditor";
 import type { Persona, LocalLlmDetectionResult } from "@/types";
 import { detectLocalLlms, getRoutingRules } from "@/lib/ipc/invoke";
 import type { RoutingRule } from "@/types";
-import { Eye, EyeOff, Trash2, Check, X, AlertTriangle, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic, Volume2 } from "lucide-react";
+import { Eye, EyeOff, Trash2, Check, X, AlertTriangle, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic, Volume2, Info, Globe, ExternalLink } from "lucide-react";
 
 export default function SettingsView() {
   const { t, i18n } = useTranslation();
@@ -29,7 +29,7 @@ export default function SettingsView() {
 
       {/* Language */}
       <section className="mb-8">
-        <h2 className="text-sm font-medium text-zinc-400 mb-3">
+        <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-3">
           {t("settings.language")}
         </h2>
         <div className="flex gap-2">
@@ -53,7 +53,7 @@ export default function SettingsView() {
 
       {/* Voice Language (Phase 5) */}
       <section className="mb-8">
-        <h2 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
+        <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-2">
           <Mic className="w-3.5 h-3.5" aria-hidden="true" />
           Voice Input Language
         </h2>
@@ -90,7 +90,7 @@ export default function SettingsView() {
 
       {/* TTS Speed (Phase 5) */}
       <section className="mb-8">
-        <h2 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
+        <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-2">
           <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
           Read Aloud Speed
         </h2>
@@ -135,7 +135,7 @@ export default function SettingsView() {
 
       {/* API Keys */}
       <section className="mb-8">
-        <h2 className="text-sm font-medium text-zinc-400 mb-3">
+        <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-3">
           {t("settings.apiKeys")}
         </h2>
         <div className="space-y-3">
@@ -256,7 +256,7 @@ export default function SettingsView() {
 
       {/* Keyboard Shortcuts */}
       <section className="mb-8">
-        <h2 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+        <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
           <Keyboard className="w-4 h-4" aria-hidden="true" />
           Shortcuts
         </h2>
@@ -285,6 +285,9 @@ export default function SettingsView() {
           ))}
         </div>
       </section>
+
+      {/* App Info */}
+      <AppInfoSection />
 
       {/* Persona editor modal */}
       {editorPersona !== null && (
@@ -482,7 +485,7 @@ function LocalLlmSection() {
 
   return (
     <section className="mb-8">
-      <h2 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+      <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
         <Cpu className="w-4 h-4" aria-hidden="true" />
         Local AI (Ollama / LM Studio)
       </h2>
@@ -540,6 +543,46 @@ function LocalLlmSection() {
   );
 }
 
+/** App version + links */
+function AppInfoSection() {
+  return (
+    <section className="mb-8">
+      <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+        <Info className="w-3.5 h-3.5" aria-hidden="true" />
+        About
+      </h2>
+      <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-zinc-200">AIFlow</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Local desktop AI chat hub</p>
+          </div>
+          <span className="px-2 py-0.5 text-[10px] font-mono bg-violet-950/60 text-violet-400 border border-violet-800/40 rounded-full">
+            v0.1.0
+          </span>
+        </div>
+        <div className="border-t border-zinc-800/60 pt-3 flex items-center gap-4">
+          <a
+            href="https://github.com/sodam-ai/ai-flow"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+            aria-label="GitHub repository (opens in new window)"
+          >
+            <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+            sodam-ai/ai-flow
+          </a>
+          <span className="text-zinc-800 select-none">·</span>
+          <span className="flex items-center gap-1.5 text-[11px] text-zinc-600">
+            <Globe className="w-3.5 h-3.5" aria-hidden="true" />
+            MIT License
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** Routing Rules + Privacy Toggle Section */
 function RoutingRulesSection() {
   const [rules, setRules] = useState<RoutingRule[]>([]);
@@ -560,7 +603,7 @@ function RoutingRulesSection() {
 
   return (
     <section className="mb-8">
-      <h2 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+      <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
         <Zap className="w-4 h-4" aria-hidden="true" />
         Smart Features
       </h2>
