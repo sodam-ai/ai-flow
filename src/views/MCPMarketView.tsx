@@ -237,9 +237,9 @@ export default function MCPMarketView() {
             onKeyDown={(e) => { if (e.key === "Escape") setPathModalId(null); }}
           >
             <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md space-y-4">
-              <h3 id="path-modal-title" className="font-semibold text-zinc-100">
+              <h2 id="path-modal-title" className="font-semibold text-zinc-100">
                 허용 경로 설정
-              </h3>
+              </h2>
               <p className="text-sm text-zinc-400">
                 MCP 서버가 접근할 수 있는 절대 경로를 줄 단위로 입력하세요.<br />
                 <span className="text-amber-400">지정된 경로 외에는 접근이 차단됩니다.</span>
