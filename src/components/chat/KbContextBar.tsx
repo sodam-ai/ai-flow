@@ -64,7 +64,7 @@ export default function KbContextBar({ activeKbIds, onToggle, onClearAll }: Prop
             key={kb.id}
             onClick={() => onToggle(kb.id)}
             aria-pressed={isActive}
-            title={
+            aria-label={
               kb.description
                 ? `${kb.name} — ${kb.description}${kb.doc_count ? ` (${kb.doc_count}개 문서)` : ""}`
                 : `${kb.name}${kb.doc_count ? ` · ${kb.doc_count}개 문서` : ""}`
@@ -85,6 +85,7 @@ export default function KbContextBar({ activeKbIds, onToggle, onClearAll }: Prop
               className={`w-2.5 h-2.5 shrink-0 transition-colors ${
                 isActive ? "text-violet-400" : "text-zinc-600"
               }`}
+              aria-hidden="true"
             />
             <span className="truncate max-w-[80px]">{kb.name}</span>
 
@@ -115,11 +116,10 @@ export default function KbContextBar({ activeKbIds, onToggle, onClearAll }: Prop
       {activeCount > 0 && onClearAll && (
         <button
           onClick={onClearAll}
-          className="ml-auto flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer shrink-0 py-0.5 px-1 rounded hover:bg-zinc-800/60"
-          title="모든 KB 컨텍스트 비활성화"
+          className="ml-auto flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer shrink-0 py-0.5 px-1 rounded hover:bg-zinc-800/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-600/50"
           aria-label="모든 KB 해제"
         >
-          <X className="w-2.5 h-2.5" />
+          <X className="w-2.5 h-2.5" aria-hidden="true" />
           <span>해제</span>
         </button>
       )}

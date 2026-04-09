@@ -132,7 +132,7 @@ export default function PersonaSelector() {
                       className="p-0.5 rounded hover:bg-zinc-700 transition-colors
                                  focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50"
                     >
-                      <Pencil className="w-3 h-3 text-zinc-500" />
+                      <Pencil className="w-3 h-3 text-zinc-500" aria-hidden="true" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -143,7 +143,7 @@ export default function PersonaSelector() {
                       className="p-0.5 rounded hover:bg-zinc-700 transition-colors
                                  focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/50"
                     >
-                      <Trash2 className="w-3 h-3 text-red-400" />
+                      <Trash2 className="w-3 h-3 text-red-400" aria-hidden="true" />
                     </button>
                   </div>
                 )}
@@ -167,7 +167,7 @@ export default function PersonaSelector() {
                                  transition-colors focus-visible:outline-none focus-visible:ring-1
                                  focus-visible:ring-zinc-500/50"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -180,7 +180,7 @@ export default function PersonaSelector() {
                                  transition-colors focus-visible:outline-none focus-visible:ring-1
                                  focus-visible:ring-red-400/50"
                     >
-                      <Check className="w-3 h-3" />
+                      <Check className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </div>
                 </div>

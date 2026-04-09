@@ -104,7 +104,7 @@ export default function ModelSelector() {
           <span className="text-zinc-500 text-xs truncate max-w-[120px]">
             {activeModel?.name ?? activeModelId}
           </span>
-          <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
 
         {/* Dropdown */}
@@ -117,7 +117,7 @@ export default function ModelSelector() {
             <div className="max-h-[70vh] overflow-y-auto">
               {!hasAnySource && !scanningLocal ? (
                 <div className="px-4 py-6 text-center">
-                  <Wifi className="w-6 h-6 text-zinc-700 mx-auto mb-2" />
+                  <Wifi className="w-6 h-6 text-zinc-700 mx-auto mb-2" aria-hidden="true" />
                   <p className="text-xs text-zinc-500 font-medium">사용 가능한 모델 없음</p>
                   <p className="text-[10px] text-zinc-600 mt-1">
                     설정에서 API 키를 추가하거나<br />Ollama를 실행하세요
@@ -129,7 +129,7 @@ export default function ModelSelector() {
                   {cloudProviders.length > 0 && (
                     <div className="py-1">
                       <div className="px-3 pt-2 pb-1 text-[10px] font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Wifi className="w-3 h-3" />
+                        <Wifi className="w-3 h-3" aria-hidden="true" />
                         Cloud AI
                       </div>
                       {cloudProviders.map((provider) => (
@@ -157,7 +157,7 @@ export default function ModelSelector() {
                   <div className="py-1">
                     <div className="px-3 pt-2 pb-1 text-[10px] font-semibold text-zinc-500 uppercase tracking-wider flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <Cpu className="w-3 h-3" />
+                        <Cpu className="w-3 h-3" aria-hidden="true" />
                         로컬 AI
                         {runningLocalEndpoints.length > 0 && (
                           <span className="px-1.5 py-px rounded-full bg-emerald-900/40 text-emerald-400 text-[9px] font-medium">
@@ -173,13 +173,12 @@ export default function ModelSelector() {
                         }}
                         disabled={scanningLocal}
                         className="p-1 rounded-md text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800 transition-colors cursor-pointer disabled:opacity-30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50"
-                        title="로컬 AI 재스캔"
                         aria-label="로컬 AI 재스캔"
                       >
                         {scanningLocal ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
                         ) : (
-                          <RefreshCw className="w-3 h-3" />
+                          <RefreshCw className="w-3 h-3" aria-hidden="true" />
                         )}
                       </button>
                     </div>
@@ -200,7 +199,7 @@ export default function ModelSelector() {
                         <div key={endpoint.baseUrl}>
                           {/* Endpoint header */}
                           <div className="px-3 py-1 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" aria-hidden="true" />
                             <span className="text-[10px] text-zinc-500">
                               {endpoint.endpointName}
                             </span>
@@ -245,7 +244,7 @@ export default function ModelSelector() {
                                     무료
                                   </span>
                                   {isActive && (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
                                   )}
                                 </div>
                               </button>
@@ -304,7 +303,7 @@ function ProviderSection({
   return (
     <div>
       <div className="px-3 py-1 text-[10px] font-medium text-zinc-600 flex items-center gap-1">
-        <span className="w-1 h-1 rounded-full bg-zinc-600" />
+        <span className="w-1 h-1 rounded-full bg-zinc-600" aria-hidden="true" />
         {providerName}
       </div>
       {models.map((model) => {
@@ -332,7 +331,7 @@ function ProviderSection({
                 ${model.inputPricePerM}/{model.outputPricePerM}
               </span>
               {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" aria-hidden="true" />
               )}
             </div>
           </button>

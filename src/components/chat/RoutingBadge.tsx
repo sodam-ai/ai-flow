@@ -47,8 +47,9 @@ export default function RoutingBadge({ prompt, hasFile, onRoutingReady }: Routin
     <div className="relative inline-block">
       <button
         onClick={() => setShowDetails(!showDetails)}
-        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] rounded border ${colors} transition-colors`}
-        title="Smart Routing: why this AI was selected"
+        aria-label="스마트 라우팅 상세 보기"
+        aria-expanded={showDetails}
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] rounded border ${colors} transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50`}
       >
         <span className="font-medium">{suggestion.complexityLabel}</span>
         <span className="text-zinc-400">→</span>

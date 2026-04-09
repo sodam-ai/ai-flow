@@ -125,9 +125,10 @@ function CodeBlock({ children, language }: { children: string; language: string 
         <span className="text-zinc-500 font-mono">{language || "text"}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+          aria-label={copied ? "코드 복사됨" : "코드 복사"}
+          className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50 rounded"
         >
-          {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+          {copied ? <Check className="w-3 h-3" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
