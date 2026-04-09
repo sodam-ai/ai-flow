@@ -148,7 +148,7 @@ function PrivacyTab() {
     );
   }
 
-  if (!stats || stats.totalDetections === 0) {
+  if (!stats || !stats.totalDetections) {
     return (
       <div role="status" className="p-10 text-center">
         <ShieldCheck className="w-8 h-8 text-emerald-600 mx-auto mb-3" aria-hidden="true" />

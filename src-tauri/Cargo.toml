@@ -52,7 +52,7 @@ ring = "0.17"
 zeroize = { version = "1", features = ["derive"] }
 
 # OS Keychain
-keyring = "3"
+keyring = { version = "3", features = ["windows-native"] }
 
 # Utilities
 uuid = { version = "1", features = ["v4"] }
