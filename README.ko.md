@@ -116,6 +116,52 @@ AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 �
 | **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
 | **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
 
+### Phase 21 — AI 에이전트 접근성 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **승인 게이트 접근성** | `role="alert"` 추가 — AI가 승인을 요청하는 즉시 스크린 리더 자동 알림 (WCAG 4.1.3) |
+| **Approve/Deny 버튼** | `focus-visible:ring-2`, 스텝 제목 포함 `aria-label` — 키보드로 보안 흐름 완전 제어 |
+| **진행률 바** | `role="progressbar"`, `aria-valuenow/min/max`, `aria-label` 추가 (WCAG 4.1.2) |
+| **실행 기록 사이드바** | `<nav aria-label>`, 선택 항목 `aria-current`, 각 항목 `aria-label` (목표+상태 포함) |
+| **전체 버튼 완성** | 실행/취소/도구도움말/오류닫기/예시칩/expand 토글 — focus-visible ring + aria-label 전면 |
+| **보안** | 새 IPC 없음, innerHTML 없음 |
+
+### Phase 20 — PrivacyToggle + UpdateBanner + ModelSelector 접근성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **PrivacyToggle** | `role="switch"` + `aria-checked` — 토글 상태를 스크린 리더에 명시 (WCAG 4.1.2) |
+| | `aria-label` (상태 설명 포함), SVG `aria-hidden`, `focus-visible:ring-2 ring-blue-500/50` |
+| **UpdateBanner** | Install/Restart/Dismiss 버튼 `focus-visible:ring-2` + `aria-label` 추가 |
+| **ModelSelector** | Trigger `aria-label="AI 모델 선택"` + `focus-visible:ring-2` |
+| | Cloud/Local 옵션 버튼 `focus-visible:ring-1 ring-inset`, 재스캔 버튼 `focus-visible:ring-1` |
+
+### Phase 19 — 채팅 헤더 + WelcomeView UX 전면 업그레이드 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **제안 프롬프트 칩** | WelcomeView에 4개 클릭 가능 예시 프롬프트 칩 추가 (blank-slate anxiety 해소) |
+| **Feature 카드 시맨틱** | `role="list/listitem"`, emoji `aria-hidden`, 오해 유발 hover 어포던스 제거 |
+| **단축키 시맨틱** | `<p>` 나열 → `<dl>/<dt>/<dd>` 구조 (HTML5 정의 목록 표준) |
+| **CTA 버튼** | `focus-visible:ring-2 ring-violet-400 ring-offset-2`, SVG `aria-hidden` |
+| **Compare 버튼** | `aria-label`, `focus-visible:ring-2`, SVG `aria-hidden` 추가 |
+| **Branch 버튼** | `focus-visible:ring-2`, `aria-pressed={showBranchPanel}`, 토글 동작 수정 |
+
+### Phase 18 — KnowledgeBaseView + App.tsx 접근성 보완 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **hover-only 삭제 버튼 수정** | `opacity-0 group-hover:opacity-100` → `group-focus-within:opacity-100` 추가 (WCAG 2.1.1) + `focus-visible:ring-1` |
+| **KB 검색 maxLength** | `maxLength={500}` 추가 (ASVS 5.1.1) |
+| **사이드바 nav** | 9개 뷰 전환 버튼 모두 `aria-current="page"` 조건부 추가 (WCAG 4.1.2) |
+
+### Phase 17 — SettingsView 보안/접근성 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **API 키 삭제 inline confirm** | Trash → `confirmDelete` state → red 경고 박스 — OS 키체인 영구 삭제 전 2단계 확인 |
+| **삭제 성공 토스트** | `addToast("success")` 피드백 (silent success 제거) |
+| **페르소나 삭제 inline confirm** | `confirmDeletePersonaId` state + inline red confirm, `role="alert"` (WCAG 4.1.3) |
+| **maxLength=200** | API 키 입력 길이 제한 (ASVS 5.1.1) |
+| **aria-labels + focus rings** | 모든 버튼 `aria-label` + `focus-visible:ring` 전면 적용 |
+| **단축키 목록 완성** | 6개 → 10개 — Alt+Shift+V, Ctrl+F, Ctrl+Shift+S, ?/Ctrl+/ 추가 |
+
 ### Phase 16 — ChatInput 완성 (이미지 붙여넣기 + 글자 수 + 오류 피드백) ✅ 완료
 | 기능 | 설명 |
 |------|------|

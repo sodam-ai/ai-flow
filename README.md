@@ -116,6 +116,52 @@ AIFlow is a **Windows desktop application** that brings all your AI providers in
 | **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
 | **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
 
+### Phase 21 — AgentView Full Accessibility ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Approval Gate Accessibility** | `role="alert"` — screen reader announces approval request the moment it appears (WCAG 4.1.3) |
+| **Approve/Deny Buttons** | `focus-visible:ring-2`, `aria-label` with step title — full keyboard control of security flow |
+| **Progress Bar** | `role="progressbar"`, `aria-valuenow/min/max`, `aria-label` (WCAG 4.1.2) |
+| **Run History Sidebar** | `<nav aria-label>`, selected item `aria-current`, each button `aria-label` with goal + status |
+| **All Buttons Complete** | Start/Cancel/Tools toggle/Error dismiss/Example chips/Expand toggle — focus rings + labels throughout |
+| **Security** | Zero new IPC, no `innerHTML` |
+
+### Phase 20 — PrivacyToggle + UpdateBanner + ModelSelector Accessibility ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **PrivacyToggle** | `role="switch"` + `aria-checked` — announces toggle state to screen readers (WCAG 4.1.2) |
+| | `aria-label` with state description, SVG `aria-hidden`, `focus-visible:ring-2 ring-blue-500/50` |
+| **UpdateBanner** | Install/Restart/Dismiss buttons: `focus-visible:ring-2` + `aria-label` |
+| **ModelSelector** | Trigger: `aria-label="AI 모델 선택"` + `focus-visible:ring-2` |
+| | Cloud/Local option buttons: `focus-visible:ring-1 ring-inset`; rescan button: `focus-visible:ring-1` |
+
+### Phase 19 — Chat Header + WelcomeView Full UX Upgrade ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Suggested Prompt Chips** | 4 clickable example prompt chips in WelcomeView — eliminates blank-slate anxiety |
+| **Feature Card Semantics** | `role="list/listitem"`, emoji `aria-hidden`, removed misleading hover affordance on non-interactive cards |
+| **Shortcut Semantics** | `<p>` list → `<dl>/<dt>/<dd>` structure (HTML5 definition list standard) |
+| **CTA Button** | `focus-visible:ring-2 ring-violet-400 ring-offset-2`, SVG `aria-hidden` |
+| **Compare Button** | `aria-label`, `focus-visible:ring-2`, SVG `aria-hidden` |
+| **Branch Button** | `focus-visible:ring-2`, `aria-pressed={showBranchPanel}`, fixed toggle behavior |
+
+### Phase 18 — KnowledgeBaseView + App.tsx Accessibility ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **Hover-Only Delete Buttons Fixed** | `opacity-0 group-hover:opacity-100` → `group-focus-within:opacity-100` added (WCAG 2.1.1) + `focus-visible:ring-1` |
+| **KB Search maxLength** | `maxLength={500}` (ASVS 5.1.1) |
+| **Sidebar Nav Buttons** | All 9 view buttons get `aria-current="page"` when active (WCAG 4.1.2) |
+
+### Phase 17 — SettingsView Security & Accessibility ✅ Complete
+| Feature | Description |
+|---------|-------------|
+| **API Key Delete Inline Confirm** | Trash → `confirmDelete` state → red warning box — 2-step confirm before irreversible OS keychain deletion |
+| **Delete Success Toast** | `addToast("success")` feedback (no more silent success) |
+| **Persona Delete Inline Confirm** | `confirmDeletePersonaId` state + inline red confirm, `role="alert"` (WCAG 4.1.3) |
+| **maxLength=200** | API key input length bounded (ASVS 5.1.1) |
+| **aria-labels + focus rings** | All buttons: `aria-label` + `focus-visible:ring` throughout |
+| **Shortcuts List Complete** | 6 → 10 shortcuts — Alt+Shift+V, Ctrl+F, Ctrl+Shift+S, ?/Ctrl+/ added |
+
 ### Phase 16 — ChatInput Completion (Image Paste + Char Count + Error Feedback) ✅ Complete
 | Feature | Description |
 |---------|-------------|
