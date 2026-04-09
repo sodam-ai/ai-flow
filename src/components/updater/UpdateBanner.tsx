@@ -110,9 +110,10 @@ export default function UpdateBanner({ checkDelayMs = 5_000 }: Props) {
           )}
           <button
             onClick={handleInstall}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+            aria-label="업데이트 지금 설치"
           >
-            <Download className="w-3 h-3" />
+            <Download className="w-3 h-3" aria-hidden="true" />
             지금 설치
           </button>
         </>
@@ -149,9 +150,10 @@ export default function UpdateBanner({ checkDelayMs = 5_000 }: Props) {
           </span>
           <button
             onClick={handleRestart}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+            aria-label="앱 지금 재시작하여 업데이트 적용"
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className="w-3 h-3" aria-hidden="true" />
             지금 재시작
           </button>
         </>
@@ -161,8 +163,8 @@ export default function UpdateBanner({ checkDelayMs = 5_000 }: Props) {
       {state !== "downloading" && (
         <button
           onClick={() => setBannerState("hidden")}
-          className="p-0.5 rounded hover:bg-violet-900/60 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0 ml-1"
-          aria-label="닫기"
+          className="p-0.5 rounded hover:bg-violet-900/60 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0 ml-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50"
+          aria-label="업데이트 배너 닫기"
         >
           <X className="w-3.5 h-3.5" />
         </button>
