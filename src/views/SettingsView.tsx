@@ -25,18 +25,20 @@ export default function SettingsView() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-2xl">
-      <h2 className="text-xl font-bold mb-6">{t("settings.title")}</h2>
+      <h1 className="text-xl font-bold mb-6">{t("settings.title")}</h1>
 
       {/* Language */}
       <section className="mb-8">
-        <h3 className="text-sm font-medium text-zinc-400 mb-3">
+        <h2 className="text-sm font-medium text-zinc-400 mb-3">
           {t("settings.language")}
-        </h3>
+        </h2>
         <div className="flex gap-2">
           {(["ko", "en"] as const).map((lang) => (
             <button
               key={lang}
               onClick={() => i18n.changeLanguage(lang)}
+              aria-pressed={i18n.language === lang}
+              aria-label={lang === "ko" ? "한국어로 변경" : "Switch to English"}
               className={`px-3 py-1.5 rounded text-sm transition-colors ${
                 i18n.language === lang
                   ? "bg-zinc-100 text-zinc-900"
@@ -51,10 +53,10 @@ export default function SettingsView() {
 
       {/* Voice Language (Phase 5) */}
       <section className="mb-8">
-        <h3 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
-          <Mic className="w-3.5 h-3.5" />
+        <h2 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
+          <Mic className="w-3.5 h-3.5" aria-hidden="true" />
           Voice Input Language
-        </h3>
+        </h2>
         <p className="text-[11px] text-zinc-600 mb-3">
           Whisper STT language hint — improves transcription accuracy
         </p>
@@ -69,16 +71,17 @@ export default function SettingsView() {
             <button
               key={code}
               onClick={() => setVoiceLang(code)}
+              aria-pressed={voiceLang === code}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
                 voiceLang === code
                   ? "bg-violet-950/50 border-violet-700/60 text-violet-300"
                   : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300"
               }`}
             >
-              <span>{flag}</span>
+              <span aria-hidden="true">{flag}</span>
               <span>{label}</span>
               {voiceLang === code && (
-                <Check className="w-3 h-3 ml-0.5 text-violet-400" />
+                <Check className="w-3 h-3 ml-0.5 text-violet-400" aria-hidden="true" />
               )}
             </button>
           ))}
@@ -87,10 +90,10 @@ export default function SettingsView() {
 
       {/* TTS Speed (Phase 5) */}
       <section className="mb-8">
-        <h3 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
-          <Volume2 className="w-3.5 h-3.5" />
+        <h2 className="text-sm font-medium text-zinc-400 mb-1 flex items-center gap-2">
+          <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
           Read Aloud Speed
-        </h3>
+        </h2>
         <p className="text-[11px] text-zinc-600 mb-3">
           Controls how fast AI responses are read aloud
         </p>
@@ -116,6 +119,8 @@ export default function SettingsView() {
             <button
               key={v}
               onClick={() => setTtsRate(v)}
+              aria-pressed={Math.abs(ttsRate - v) < 0.05}
+              aria-label={`${v}배속`}
               className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
                 Math.abs(ttsRate - v) < 0.05
                   ? "text-violet-300 bg-violet-950/50"
@@ -130,9 +135,9 @@ export default function SettingsView() {
 
       {/* API Keys */}
       <section className="mb-8">
-        <h3 className="text-sm font-medium text-zinc-400 mb-3">
+        <h2 className="text-sm font-medium text-zinc-400 mb-3">
           {t("settings.apiKeys")}
-        </h3>
+        </h2>
         <div className="space-y-3">
           {PROVIDERS.map((provider) => (
             <ProviderKeyRow
@@ -153,14 +158,15 @@ export default function SettingsView() {
       {/* Personas */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-zinc-400">
+          <h2 className="text-sm font-medium text-zinc-400">
             {t("persona.select")}
-          </h3>
+          </h2>
           <button
             onClick={() => setEditorPersona("new")}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded transition-colors"
+            aria-label={t("persona.create")}
+            className="flex items-center gap-1 px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-3 h-3" aria-hidden="true" />
             {t("persona.create")}
           </button>
         </div>
@@ -173,6 +179,7 @@ export default function SettingsView() {
               <span
                 className="w-3 h-3 rounded-full shrink-0"
                 style={{ backgroundColor: persona.color }}
+                aria-hidden="true"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -194,7 +201,7 @@ export default function SettingsView() {
                       role="alert"
                       className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-950/50 border border-red-800/50"
                     >
-                      <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
+                      <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" aria-hidden="true" />
                       <span className="text-[10px] text-red-300">삭제?</span>
                       <button
                         onMouseDown={(e) => e.preventDefault()}
@@ -205,7 +212,7 @@ export default function SettingsView() {
                         className="p-0.5 rounded hover:bg-red-900/50 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
                         aria-label="페르소나 삭제 확인"
                       >
-                        <Check className="w-3 h-3" />
+                        <Check className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <button
                         onMouseDown={(e) => e.preventDefault()}
@@ -213,7 +220,7 @@ export default function SettingsView() {
                         className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
                         aria-label="삭제 취소"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3 h-3" aria-hidden="true" />
                       </button>
                     </div>
                   ) : (
@@ -223,14 +230,14 @@ export default function SettingsView() {
                         className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
                         aria-label={`${persona.name} 편집`}
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => setConfirmDeletePersonaId(persona.id)}
                         className="p-1.5 rounded hover:bg-zinc-800 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
                         aria-label={`${persona.name} 삭제`}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     </>
                   )}
@@ -249,10 +256,10 @@ export default function SettingsView() {
 
       {/* Keyboard Shortcuts */}
       <section className="mb-8">
-        <h3 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
-          <Keyboard className="w-4 h-4" />
+        <h2 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+          <Keyboard className="w-4 h-4" aria-hidden="true" />
           Shortcuts
-        </h3>
+        </h2>
         <div className="space-y-2">
           {[
             { keys: "Alt+Space", desc: "Open/close overlay window" },
@@ -377,9 +384,9 @@ function ProviderKeyRow({
             className="p-1 rounded hover:bg-zinc-700 text-emerald-400 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
           >
             {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Check className="w-4 h-4" />
+              <Check className="w-4 h-4" aria-hidden="true" />
             )}
           </button>
           <button
@@ -398,7 +405,7 @@ function ProviderKeyRow({
           role="alert"
           className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-red-950/50 border border-red-800/50"
         >
-          <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+          <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" aria-hidden="true" />
           <span className="text-[10px] text-red-300 whitespace-nowrap">키 삭제?</span>
           <button
             onMouseDown={(e) => e.preventDefault()}
@@ -410,7 +417,7 @@ function ProviderKeyRow({
             aria-label="API 키 삭제 확인"
             className="p-0.5 rounded hover:bg-red-900/50 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
           >
-            <Check className="w-3.5 h-3.5" />
+            <Check className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
           <button
             onMouseDown={(e) => e.preventDefault()}
@@ -418,7 +425,7 @@ function ProviderKeyRow({
             aria-label="삭제 취소"
             className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
       ) : (
@@ -429,9 +436,9 @@ function ProviderKeyRow({
             className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
           >
             {isSet ? (
-              <EyeOff className="w-4 h-4" />
+              <EyeOff className="w-4 h-4" aria-hidden="true" />
             ) : (
-              <Eye className="w-4 h-4" />
+              <Eye className="w-4 h-4" aria-hidden="true" />
             )}
           </button>
           {isSet && (
@@ -440,7 +447,7 @@ function ProviderKeyRow({
               aria-label={`${providerName} API 키 삭제`}
               className="p-1.5 rounded hover:bg-zinc-800 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -475,20 +482,21 @@ function LocalLlmSection() {
 
   return (
     <section className="mb-8">
-      <h3 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
-        <Cpu className="w-4 h-4" />
+      <h2 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+        <Cpu className="w-4 h-4" aria-hidden="true" />
         Local AI (Ollama / LM Studio)
-      </h3>
+      </h2>
       <div className="space-y-2">
         <button
           onClick={handleScan}
           disabled={scanning}
-          className="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+          aria-label={scanning ? "로컬 AI 스캔 중…" : "로컬 AI 스캔"}
+          className="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50"
         >
           {scanning ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
           ) : (
-            <Cpu className="w-3 h-3" />
+            <Cpu className="w-3 h-3" aria-hidden="true" />
           )}
           {scanning ? "Scanning..." : "Scan for Local AI"}
         </button>
@@ -552,16 +560,16 @@ function RoutingRulesSection() {
 
   return (
     <section className="mb-8">
-      <h3 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
-        <Zap className="w-4 h-4" />
+      <h2 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+        <Zap className="w-4 h-4" aria-hidden="true" />
         Smart Features
-      </h3>
+      </h2>
       <div className="space-y-3">
         {/* Toggle: Smart Routing */}
         <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800">
           <div>
             <div className="text-xs font-medium flex items-center gap-1.5">
-              <Zap className="w-3 h-3 text-amber-400" />
+              <Zap className="w-3 h-3 text-amber-400" aria-hidden="true" />
               Smart Routing
             </div>
             <p className="text-[10px] text-zinc-500 mt-0.5">
@@ -569,12 +577,16 @@ function RoutingRulesSection() {
             </p>
           </div>
           <button
+            role="switch"
+            aria-checked={routingMode}
+            aria-label="Smart Routing"
             onClick={() => setRoutingMode(!routingMode)}
-            className={`w-10 h-5 rounded-full transition-colors ${
+            className={`w-10 h-5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 ${
               routingMode ? "bg-amber-500" : "bg-zinc-700"
             }`}
           >
             <div
+              aria-hidden="true"
               className={`w-4 h-4 rounded-full bg-white transition-transform ${
                 routingMode ? "translate-x-5" : "translate-x-0.5"
               }`}
@@ -586,7 +598,7 @@ function RoutingRulesSection() {
         <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800">
           <div>
             <div className="text-xs font-medium flex items-center gap-1.5">
-              <Shield className="w-3 h-3 text-blue-400" />
+              <Shield className="w-3 h-3 text-blue-400" aria-hidden="true" />
               Privacy Mode
             </div>
             <p className="text-[10px] text-zinc-500 mt-0.5">
@@ -594,12 +606,16 @@ function RoutingRulesSection() {
             </p>
           </div>
           <button
+            role="switch"
+            aria-checked={privacyMode}
+            aria-label="Privacy Mode"
             onClick={() => setPrivacyMode(!privacyMode)}
-            className={`w-10 h-5 rounded-full transition-colors ${
+            className={`w-10 h-5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
               privacyMode ? "bg-blue-500" : "bg-zinc-700"
             }`}
           >
             <div
+              aria-hidden="true"
               className={`w-4 h-4 rounded-full bg-white transition-transform ${
                 privacyMode ? "translate-x-5" : "translate-x-0.5"
               }`}

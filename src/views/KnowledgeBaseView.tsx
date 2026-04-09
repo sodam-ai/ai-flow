@@ -233,29 +233,29 @@ export default function KnowledgeBaseView() {
       <aside className="w-56 border-r border-zinc-800/70 flex flex-col shrink-0">
         <div className="px-3 py-3 border-b border-zinc-800/70 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Database className="w-3.5 h-3.5 text-zinc-500" />
+            <Database className="w-3.5 h-3.5 text-zinc-500" aria-hidden="true" />
             <span className="text-xs font-semibold text-zinc-200">지식베이스</span>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 transition-colors"
-            title="새 지식베이스 만들기"
+            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50 rounded"
             aria-label="새 지식베이스 만들기"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-1.5 space-y-0.5" aria-label="지식베이스 목록">
           {loading ? (
-            <div className="space-y-1.5 p-1">
+            <div role="status" aria-live="polite" className="space-y-1.5 p-1">
+              <p className="sr-only">지식베이스 목록을 불러오는 중...</p>
               {[1,2,3].map(i => (
-                <div key={i} className="h-11 bg-zinc-800/40 rounded-lg animate-pulse" />
+                <div key={i} aria-hidden="true" className="h-11 bg-zinc-800/40 rounded-lg animate-pulse" />
               ))}
             </div>
           ) : kbs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-3 text-center">
-              <Database className="w-8 h-8 text-zinc-800 mb-2" />
+              <Database className="w-8 h-8 text-zinc-800 mb-2" aria-hidden="true" />
               <p className="text-xs text-zinc-500 mb-2">지식베이스 없음</p>
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -313,10 +313,9 @@ export default function KnowledgeBaseView() {
                     <button
                       onClick={(e) => { e.stopPropagation(); setPendingDeleteKbId(kb.id); }}
                       className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 rounded-lg hover:bg-zinc-700 text-zinc-600 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
-                      title={`${kb.name} 삭제`}
                       aria-label={`${kb.name} 삭제`}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3 h-3" aria-hidden="true" />
                     </button>
                   )
                 )}
@@ -355,12 +354,13 @@ export default function KnowledgeBaseView() {
               <button
                 onClick={handleAddFile}
                 disabled={isIndexing}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors disabled:opacity-40 border border-zinc-700/50"
+                aria-label={isIndexing ? "파일 인덱싱 중…" : "파일 추가"}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors disabled:opacity-40 border border-zinc-700/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50"
               >
                 {isIndexing ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
                 ) : (
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3" aria-hidden="true" />
                 )}
                 파일 추가
               </button>
@@ -375,13 +375,14 @@ export default function KnowledgeBaseView() {
                   aria-haspopup="menu"
                 >
                   {showFolderMenu ? (
-                    <FolderOpen className="w-3 h-3" />
+                    <FolderOpen className="w-3 h-3" aria-hidden="true" />
                   ) : (
-                    <Folder className="w-3 h-3" />
+                    <Folder className="w-3 h-3" aria-hidden="true" />
                   )}
                   폴더 인덱싱
                   <ChevronDown
                     className={`w-3 h-3 transition-transform duration-150 ${showFolderMenu ? "rotate-180" : ""}`}
+                    aria-hidden="true"
                   />
                 </button>
 
@@ -393,9 +394,9 @@ export default function KnowledgeBaseView() {
                     <button
                       role="menuitem"
                       onClick={() => handleAddFolder(false)}
-                      className="w-full px-3 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-start gap-2.5 transition-colors"
+                      className="w-full px-3 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-start gap-2.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50"
                     >
-                      <Folder className="w-3.5 h-3.5 text-zinc-500 mt-0.5 shrink-0" />
+                      <Folder className="w-3.5 h-3.5 text-zinc-500 mt-0.5 shrink-0" aria-hidden="true" />
                       <div>
                         <div className="font-medium">현재 폴더만</div>
                         <div className="text-[10px] text-zinc-600 mt-0.5">하위 폴더 제외</div>
@@ -404,9 +405,9 @@ export default function KnowledgeBaseView() {
                     <button
                       role="menuitem"
                       onClick={() => handleAddFolder(true)}
-                      className="w-full px-3 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-start gap-2.5 transition-colors"
+                      className="w-full px-3 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 text-left flex items-start gap-2.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50"
                     >
-                      <FolderOpen className="w-3.5 h-3.5 text-zinc-500 mt-0.5 shrink-0" />
+                      <FolderOpen className="w-3.5 h-3.5 text-zinc-500 mt-0.5 shrink-0" aria-hidden="true" />
                       <div>
                         <div className="font-medium">하위 폴더 포함</div>
                         <div className="text-[10px] text-zinc-600 mt-0.5">최대 200개 파일</div>
@@ -423,7 +424,7 @@ export default function KnowledgeBaseView() {
         {selectedKb && (
           <div className="px-5 py-2.5 border-b border-zinc-800/50 flex gap-2 shrink-0">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 pointer-events-none" aria-hidden="true" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -437,18 +438,18 @@ export default function KnowledgeBaseView() {
             <button
               onClick={handleSearch}
               disabled={isSearching || !searchQuery.trim()}
-              className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm transition-colors disabled:opacity-40 flex items-center gap-1.5"
+              aria-label={isSearching ? "검색 중…" : "검색"}
+              className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm transition-colors disabled:opacity-40 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50"
             >
-              {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Search className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>
             {searchResults.length > 0 && (
               <button
                 onClick={() => setSearchResults([])}
-                className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 hover:text-zinc-300 transition-colors"
-                title="검색 결과 닫기"
+                className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50"
                 aria-label="검색 결과 닫기"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -460,16 +461,17 @@ export default function KnowledgeBaseView() {
           {error && (
             <div
               role="alert"
+              aria-live="assertive"
               className="mx-5 mt-4 flex items-start gap-2 p-3 rounded-xl bg-red-950/30 border border-red-900/40 text-red-400 text-sm"
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
               <span className="flex-1 text-xs">{error}</span>
               <button
                 onClick={() => setError(null)}
-                className="shrink-0 hover:text-red-300 transition-colors"
+                className="shrink-0 hover:text-red-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500 rounded"
                 aria-label="오류 닫기"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </div>
           )}
@@ -509,13 +511,13 @@ export default function KnowledgeBaseView() {
           <div className="px-5 pt-4 pb-6">
             {!selectedKb ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
-                <Database className="w-10 h-10 text-zinc-800 mb-3" />
+                <Database className="w-10 h-10 text-zinc-800 mb-3" aria-hidden="true" />
                 <p className="text-zinc-500 text-sm">왼쪽에서 지식베이스를 선택하세요</p>
               </div>
             ) : documents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
-                  <Plus className="w-5 h-5 text-zinc-600" />
+                  <Plus className="w-5 h-5 text-zinc-600" aria-hidden="true" />
                 </div>
                 <p className="text-zinc-300 text-sm font-medium mb-1.5">문서가 없습니다</p>
                 <p className="text-zinc-600 text-xs mb-5 max-w-xs leading-relaxed">
@@ -523,9 +525,9 @@ export default function KnowledgeBaseView() {
                 </p>
                 <button
                   onClick={handleAddFile}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors border border-zinc-700/50"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors border border-zinc-700/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                   파일 추가하기
                 </button>
                 <p className="text-[10px] text-zinc-700 mt-4 leading-relaxed">
@@ -594,16 +596,20 @@ export default function KnowledgeBaseView() {
 
                         {/* Inline delete confirm */}
                         {isPending ? (
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div role="alert" className="flex items-center gap-1 shrink-0">
                             <button
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => handleConfirmDeleteDoc(doc.id)}
-                              className="text-[11px] px-2 py-1 rounded-lg bg-red-900/50 text-red-300 hover:bg-red-900 transition-colors"
+                              aria-label={`${doc.filename} 삭제 확인`}
+                              className="text-[11px] px-2 py-1 rounded-lg bg-red-900/50 text-red-300 hover:bg-red-900 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
                             >
                               삭제
                             </button>
                             <button
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => setPendingDeleteDocId(null)}
-                              className="text-[11px] px-2 py-1 rounded-lg hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                              aria-label="삭제 취소"
+                              className="text-[11px] px-2 py-1 rounded-lg hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
                             >
                               취소
                             </button>
@@ -612,10 +618,9 @@ export default function KnowledgeBaseView() {
                           <button
                             onClick={() => setPendingDeleteDocId(doc.id)}
                             className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 hover:text-red-400 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
-                            title={`${doc.filename} 삭제`}
                             aria-label={`${doc.filename} 삭제`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           </button>
                         )}
                       </div>
@@ -639,7 +644,7 @@ export default function KnowledgeBaseView() {
         >
           <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
             <div className="flex items-center gap-2 mb-5">
-              <Database className="w-4 h-4 text-violet-400" />
+              <Database className="w-4 h-4 text-violet-400" aria-hidden="true" />
               <h3 id="create-kb-title" className="text-sm font-semibold text-zinc-100">
                 새 지식베이스 만들기
               </h3>

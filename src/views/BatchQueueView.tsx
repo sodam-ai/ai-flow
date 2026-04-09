@@ -141,7 +141,7 @@ export default function BatchQueueView() {
       {/* Left: Job List */}
       <div className="w-72 border-r border-zinc-800 flex flex-col">
         <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
-          <span className="text-sm font-medium text-zinc-100">배치 작업</span>
+          <h1 className="text-sm font-medium text-zinc-100">배치 작업</h1>
           <button
             onClick={() => setShowCreate(true)}
             aria-label="새 배치 작업 만들기"
@@ -194,6 +194,7 @@ export default function BatchQueueView() {
                     className="h-1 rounded-full bg-zinc-800 overflow-hidden"
                   >
                     <div
+                      aria-hidden="true"
                       className={`h-full rounded-full transition-all ${
                         job.status === "completed" ? "bg-green-500" :
                         job.status === "failed" ? "bg-red-500" : "bg-violet-500"
@@ -280,7 +281,7 @@ export default function BatchQueueView() {
                       </div>
                     )}
                     {item.error_message && (
-                      <p role="alert" className="mt-2 text-xs text-red-400">{item.error_message}</p>
+                      <p role="alert" aria-live="assertive" className="mt-2 text-xs text-red-400">{item.error_message}</p>
                     )}
                   </li>
                 );
