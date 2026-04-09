@@ -175,8 +175,9 @@ function StepCard({
         {hasOutput && (
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="ml-1 p-0.5 text-zinc-600 hover:text-zinc-400 transition-colors flex-shrink-0 cursor-pointer"
+            className="ml-1 p-0.5 text-zinc-600 hover:text-zinc-400 transition-colors flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50 rounded"
             aria-label={expanded ? "결과 접기" : "결과 펼치기"}
+            aria-expanded={expanded}
           >
             {expanded ? (
               <ChevronDown className="w-3.5 h-3.5" />
@@ -199,7 +200,7 @@ function StepCard({
       {/* Approval gate */}
       {step.status === "awaiting_approval" && onApprove && onDeny && (
         <div className="px-3 pb-3">
-          <div className="rounded-md border border-amber-700/40 bg-amber-900/10 p-3">
+          <div role="alert" className="rounded-md border border-amber-700/40 bg-amber-900/10 p-3">
             <p className="text-xs text-amber-300 font-medium mb-1">승인이 필요합니다</p>
             <p className="text-xs text-zinc-400 mb-3 leading-relaxed">
               {step.approval_message || `"${step.title}" 단계를 실행하려면 승인이 필요합니다.`}
@@ -207,16 +208,18 @@ function StepCard({
             <div className="flex gap-2">
               <button
                 onClick={() => onApprove(step.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-700 hover:bg-green-600 text-white text-xs font-medium transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-700 hover:bg-green-600 text-white text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                aria-label={`"${step.title}" 단계 승인`}
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                 승인
               </button>
               <button
                 onClick={() => onDeny(step.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+                aria-label={`"${step.title}" 단계 건너뜀`}
               >
-                <SkipForward className="w-3.5 h-3.5" />
+                <SkipForward className="w-3.5 h-3.5" aria-hidden="true" />
                 건너뜀
               </button>
             </div>
@@ -379,7 +382,7 @@ export default function AgentView() {
         </div>
 
         {/* Run list */}
-        <nav className="flex-1 overflow-y-auto p-1.5 space-y-0.5 min-h-0">
+        <nav className="flex-1 overflow-y-auto p-1.5 space-y-0.5 min-h-0" aria-label="에이전트 실행 기록">
           {loading ? (
             <div className="space-y-1.5 p-1.5">
               {[1, 2, 3].map((i) => (
@@ -396,7 +399,9 @@ export default function AgentView() {
               <button
                 key={run.id}
                 onClick={() => setSelectedRun(run)}
-                className={`w-full text-left px-2.5 py-2 rounded-md transition-colors cursor-pointer ${
+                aria-current={selectedRun?.id === run.id ? "true" : undefined}
+                aria-label={`${run.goal.slice(0, 40)} — ${statusLabel(run.status)}`}
+                className={`w-full text-left px-2.5 py-2 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50 ${
                   selectedRun?.id === run.id
                     ? "bg-zinc-800 text-zinc-100"
                     : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
@@ -447,7 +452,7 @@ export default function AgentView() {
             <button
               onClick={handleStart}
               disabled={isStarting || !goal.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-sm font-medium transition-colors cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
               aria-label="에이전트 실행"
             >
               {isStarting ? (
@@ -477,7 +482,9 @@ export default function AgentView() {
             })}
             <button
               onClick={() => setShowToolsHelp((v) => !v)}
-              className="text-[10px] text-zinc-600 hover:text-zinc-400 underline cursor-pointer"
+              className="text-[10px] text-zinc-600 hover:text-zinc-400 underline cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50 rounded"
+              aria-expanded={showToolsHelp}
+              aria-label={showToolsHelp ? "도구 설명 숨기기" : "도구 설명 자세히 보기"}
             >
               {showToolsHelp ? "숨기기" : "자세히"}
             </button>
@@ -508,7 +515,11 @@ export default function AgentView() {
             <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-900/20 border border-red-800/50">
               <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
               <p className="text-xs text-red-400 flex-1">{error}</p>
-              <button onClick={() => setError(null)} className="text-xs text-red-500 hover:text-red-300 cursor-pointer">
+              <button
+                onClick={() => setError(null)}
+                className="text-xs text-red-500 hover:text-red-300 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/50 rounded px-0.5"
+                aria-label="오류 닫기"
+              >
                 ✕
               </button>
             </div>
@@ -538,7 +549,7 @@ export default function AgentView() {
                   <button
                     key={ex}
                     onClick={() => setGoal(ex)}
-                    className="text-xs px-2.5 py-1 rounded-full border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors cursor-pointer"
+                    className="text-xs px-2.5 py-1 rounded-full border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50"
                   >
                     {ex}
                   </button>
@@ -572,8 +583,8 @@ export default function AgentView() {
                 {isRunActive && (
                   <button
                     onClick={() => handleCancel(selectedRun.id)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-800/60 text-xs transition-colors cursor-pointer flex-shrink-0"
-                    title="에이전트 실행 취소"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-800/60 text-xs transition-colors cursor-pointer flex-shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/50"
+                    aria-label="에이전트 실행 취소"
                   >
                     <Square className="w-3 h-3" />
                     취소
@@ -586,6 +597,11 @@ export default function AgentView() {
                 <div className="space-y-1">
                   <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
                     <div
+                      role="progressbar"
+                      aria-valuenow={selectedRun.completed_steps}
+                      aria-valuemin={0}
+                      aria-valuemax={selectedRun.total_steps}
+                      aria-label="에이전트 진행률"
                       className={`h-full rounded-full transition-all duration-500 ${
                         selectedRun.status === "failed" ? "bg-red-500" :
                         selectedRun.status === "completed" ? "bg-green-500" : "bg-violet-500"
