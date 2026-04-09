@@ -403,8 +403,8 @@ ai-flow/
 │       ├── 017_agent_runs.sql      # Agent runs, steps, tools
 │       ├── 018_conversation_branches.sql  # Branching + workflow exports
 │       └── 019_conversation_kb.sql  # Per-conversation active KB IDs (Phase 10)
-├── README.md                 # This file (English)
-├── README.ko.md              # Korean
+├── README.en.md              # This file (English)
+├── README.md                 # Korean (default)
 ├── .resume.md                # Work continuation guide
 └── LICENSE                   # MIT License (SoDam AI Studio)
 ```
