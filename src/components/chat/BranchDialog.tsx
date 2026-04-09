@@ -42,11 +42,11 @@ export default function BranchDialog({ messageIndex, onConfirm, onCancel }: Prop
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
-          aria-label="브랜치 생성"
+          aria-labelledby="branch-dialog-title"
         >
           {/* Icon + title */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-violet-900/40 border border-violet-700/30 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-violet-900/40 border border-violet-700/30 flex items-center justify-center shrink-0" aria-hidden="true">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -62,7 +62,7 @@ export default function BranchDialog({ messageIndex, onConfirm, onCancel }: Prop
               </svg>
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-zinc-100">브랜치 생성</h2>
+              <h2 id="branch-dialog-title" className="text-sm font-semibold text-zinc-100">브랜치 생성</h2>
               <p className="text-xs text-zinc-500">메시지 #{messageIndex + 1} 시점에서 분기</p>
             </div>
           </div>
@@ -85,7 +85,11 @@ export default function BranchDialog({ messageIndex, onConfirm, onCancel }: Prop
                 className="w-full px-3 py-2 text-sm bg-zinc-800 border border-zinc-700 rounded-lg focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500/30 placeholder-zinc-600 text-zinc-200 transition-colors"
               />
               {label.length > 0 && (
-                <span className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] ${label.length >= 45 ? "text-amber-500" : "text-zinc-600"}`}>
+                <span
+                  aria-live="polite"
+                  aria-atomic="true"
+                  className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] ${label.length >= 45 ? "text-amber-500" : "text-zinc-600"}`}
+                >
                   {label.length}/50
                 </span>
               )}
@@ -99,13 +103,15 @@ export default function BranchDialog({ messageIndex, onConfirm, onCancel }: Prop
           <div className="flex gap-2 pt-1">
             <button
               onClick={onCancel}
-              className="flex-1 py-2 rounded-lg text-xs font-medium text-zinc-400 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 transition-all cursor-pointer"
+              aria-label="브랜치 생성 취소"
+              className="flex-1 py-2 rounded-lg text-xs font-medium text-zinc-400 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50"
             >
               취소
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 py-2 rounded-lg text-xs font-medium text-white bg-violet-600 hover:bg-violet-500 transition-all cursor-pointer"
+              aria-label="브랜치 생성 확인"
+              className="flex-1 py-2 rounded-lg text-xs font-medium text-white bg-violet-600 hover:bg-violet-500 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
             >
               브랜치 생성
             </button>

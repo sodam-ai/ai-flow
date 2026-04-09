@@ -33,6 +33,16 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
     if (isModalOpen) fetchPrompts();
   }, [isModalOpen, fetchPrompts]);
 
+  // Escape closes the modal (when no sub-dialog is open)
+  useEffect(() => {
+    if (!isModalOpen || showEditor || editingPrompt || fillPrompt) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); setModalOpen(false); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isModalOpen, showEditor, editingPrompt, fillPrompt, setModalOpen]);
+
   if (!isModalOpen) return null;
 
   const tags = getAllTags();
@@ -51,7 +61,10 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
 
   if (showEditor || editingPrompt) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        aria-label="프롬프트 편집기"
+      >
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-[520px] max-h-[80vh] overflow-hidden">
           <PromptEditor
             prompt={editingPrompt}
@@ -108,7 +121,7 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
               className="p-1 hover:bg-zinc-800 rounded transition-colors
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-600/50"
             >
-              <X className="w-4 h-4 text-zinc-400" />
+              <X className="w-4 h-4 text-zinc-400" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -205,9 +218,9 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
                                    focus-visible:ring-zinc-500/50"
                       >
                         {prompt.is_favorite ? (
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" aria-hidden="true" />
                         ) : (
-                          <StarOff className="w-3 h-3 text-zinc-500" />
+                          <StarOff className="w-3 h-3 text-zinc-500" aria-hidden="true" />
                         )}
                       </button>
                       {/* Edit */}
@@ -219,7 +232,7 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
                                    focus-visible:outline-none focus-visible:ring-1
                                    focus-visible:ring-zinc-500/50"
                       >
-                        <Pencil className="w-3 h-3" />
+                        <Pencil className="w-3 h-3" aria-hidden="true" />
                       </button>
                       {/* Delete — triggers inline confirm */}
                       <button
@@ -229,7 +242,7 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
                                    focus-visible:outline-none focus-visible:ring-1
                                    focus-visible:ring-red-500/50"
                       >
-                        <Trash2 className="w-3 h-3 text-red-400" />
+                        <Trash2 className="w-3 h-3 text-red-400" aria-hidden="true" />
                       </button>
                     </div>
                   )}
@@ -256,7 +269,7 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
                                    focus-visible:outline-none focus-visible:ring-1
                                    focus-visible:ring-zinc-500/50"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <button
                         onClick={(e) => {
@@ -270,7 +283,7 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
                                    focus-visible:outline-none focus-visible:ring-1
                                    focus-visible:ring-red-400/50"
                       >
-                        <Check className="w-3 h-3" />
+                        <Check className="w-3 h-3" aria-hidden="true" />
                       </button>
                     </div>
                   </div>

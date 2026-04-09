@@ -188,15 +188,14 @@ export default function PromptDiffModal({
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            aria-label="비교 닫기 (Esc)"
-            title="닫기 (Esc)"
+            aria-label="버전 비교 닫기 (Esc)"
             className="w-7 h-7 flex items-center justify-center rounded-lg
                        text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800
                        transition-colors duration-150
                        focus-visible:outline-none focus-visible:ring-2
                        focus-visible:ring-indigo-500/50"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
 
@@ -235,6 +234,7 @@ export default function PromptDiffModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
+              aria-label="비교 닫기"
               className="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200
                          transition-colors focus-visible:outline-none
                          focus-visible:ring-2 focus-visible:ring-zinc-600/50 rounded-md"
@@ -244,13 +244,14 @@ export default function PromptDiffModal({
             <button
               onClick={() => onRestore(version)}
               disabled={restoring}
+              aria-label={restoring ? "복원 중…" : `v${version.versionNumber}으로 복원`}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
                          bg-indigo-600 hover:bg-indigo-500 text-white rounded-md
                          disabled:opacity-40 transition-colors
                          focus-visible:outline-none focus-visible:ring-2
                          focus-visible:ring-indigo-500/50"
             >
-              <RotateCcw className="w-3 h-3" />
+              <RotateCcw className="w-3 h-3" aria-hidden="true" />
               {restoring ? "복원 중…" : `v${version.versionNumber} 복원`}
             </button>
           </div>

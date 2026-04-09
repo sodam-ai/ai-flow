@@ -155,14 +155,13 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: Props) {
             ref={closeButtonRef}
             onClick={onClose}
             aria-label="단축키 도움말 닫기 (Esc)"
-            title="닫기 (Esc)"
             className="w-7 h-7 flex items-center justify-center rounded-lg
                        text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800
                        transition-colors duration-150
                        focus-visible:outline-none focus-visible:ring-2
                        focus-visible:ring-violet-500/50"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
 
