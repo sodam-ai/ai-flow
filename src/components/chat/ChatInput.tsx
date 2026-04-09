@@ -414,7 +414,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
               <button
                 onClick={handleSubmit}
                 disabled={!canSend}
-                className="p-2.5 rounded-xl bg-zinc-100 text-zinc-900 hover:bg-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                className="p-2.5 rounded-xl bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0 shadow-sm shadow-violet-900/40"
                 aria-label="Send message"
               >
                 <Send className="w-4 h-4" aria-hidden="true" />

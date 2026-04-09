@@ -14,6 +14,8 @@ interface Props {
   messageIndex?: number;
   exchangeRate?: number;
   onBranch?: (messageId: string, messageIndex: number) => void;
+  /** Provider + model label shown above assistant messages (e.g. "gpt-4o") */
+  modelLabel?: string;
   /** Search highlight props (from Ctrl+F chat search) */
   isSearchMatch?: boolean;
   isCurrentMatch?: boolean;
@@ -80,6 +82,7 @@ export default function MessageBubble({
   messageIndex = 0,
   exchangeRate = 1380,
   onBranch,
+  modelLabel = "",
   isSearchMatch = false,
   isCurrentMatch = false,
   searchQuery = "",
@@ -208,7 +211,9 @@ export default function MessageBubble({
       </span>
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-2.5 transition-shadow duration-200 ${
-          isUser ? "bg-zinc-100 text-zinc-900" : "bg-zinc-800/50 text-zinc-100"
+          isUser
+            ? "bg-zinc-100 text-zinc-900"
+            : "bg-zinc-800/60 text-zinc-100 border-l-2 border-violet-600/20"
         } ${
           isCurrentMatch
             ? "ring-2 ring-violet-500/70 ring-offset-2 ring-offset-zinc-950"
@@ -217,6 +222,15 @@ export default function MessageBubble({
             : ""
         }`}
       >
+        {/* Model badge — assistant messages only */}
+        {!isUser && modelLabel && (
+          <p
+            className="text-[10px] text-violet-400/70 font-medium mb-1.5 select-none tracking-wide"
+            aria-hidden="true"
+          >
+            {modelLabel}
+          </p>
+        )}
         {isUser ? (
           <p className="text-sm whitespace-pre-wrap leading-relaxed">{displayContent}</p>
         ) : (
@@ -234,18 +248,20 @@ export default function MessageBubble({
 
         {/* ── Assistant message footer ───────────────────────────────── */}
         {!isUser && (
-          <div className="flex items-center gap-2 mt-2 pt-1.5 border-t border-zinc-700/50">
+          <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-zinc-700/40">
             {/* Cost info */}
             {message.costUsd != null && message.costUsd > 0 && (
               <>
-                <span className="text-[10px] text-zinc-500">
-                  {message.inputTokens ?? 0}+{message.outputTokens ?? 0}{" "}
+                <span className="text-[10px] text-zinc-500 font-mono tabular-nums">
+                  {((message.inputTokens ?? 0) + (message.outputTokens ?? 0)).toLocaleString()}{" "}
                   {t("chat.tokens")}
                 </span>
-                <span className="text-[10px] text-zinc-500">
+                <span className="text-[10px] text-zinc-700 select-none" aria-hidden="true">·</span>
+                <span className="text-[10px] text-zinc-500 font-mono tabular-nums">
                   ${message.costUsd.toFixed(4)}
                 </span>
-                <span className="text-[10px] text-zinc-500">
+                <span className="text-[10px] text-zinc-700 select-none" aria-hidden="true">·</span>
+                <span className="text-[10px] text-zinc-500 font-mono tabular-nums">
                   ₩{Math.round(message.costUsd * exchangeRate).toLocaleString()}
                 </span>
               </>
@@ -258,12 +274,12 @@ export default function MessageBubble({
                   <button
                     onClick={() => navigateVersion("prev")}
                     disabled={loadingVersions}
-                    className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
+                    className="p-1 rounded-md hover:bg-zinc-700/60 disabled:opacity-30 transition-colors"
                     aria-label="Previous version"
                   >
-                    <ChevronLeft className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                    <ChevronLeft className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
                   </button>
-                  <span className="text-[9px] text-zinc-600 min-w-[24px] text-center">
+                  <span className="text-[10px] text-zinc-500 min-w-[28px] text-center tabular-nums">
                     {viewingVersion
                       ? `${viewingVersion.versionNumber}/${message.versionCount}`
                       : `${message.versionCount}/${message.versionCount}`}
@@ -271,10 +287,10 @@ export default function MessageBubble({
                   <button
                     onClick={() => navigateVersion("next")}
                     disabled={loadingVersions || !viewingVersion}
-                    className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
+                    className="p-1 rounded-md hover:bg-zinc-700/60 disabled:opacity-30 transition-colors"
                     aria-label="Next version"
                   >
-                    <ChevronRight className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                    <ChevronRight className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
                   </button>
                 </div>
               )}
@@ -283,18 +299,18 @@ export default function MessageBubble({
               {ttsSupported && (
                 <button
                   onClick={handleTts}
-                  className={`p-0.5 rounded transition-colors ${
+                  className={`p-1 rounded-md transition-colors ${
                     isSpeaking
-                      ? "text-violet-400 hover:bg-zinc-700/50"
-                      : "hover:bg-zinc-700/50"
+                      ? "text-violet-400 bg-violet-950/30 hover:bg-violet-950/50"
+                      : "text-zinc-400 hover:bg-zinc-700/60"
                   }`}
                   title={isSpeaking ? "Stop reading" : "Read aloud"}
                   aria-label={isSpeaking ? "Stop reading" : "Read aloud"}
                 >
                   {isSpeaking ? (
-                    <VolumeX className="w-3 h-3 text-violet-400" aria-hidden="true" />
+                    <VolumeX className="w-3.5 h-3.5" aria-hidden="true" />
                   ) : (
-                    <Volume2 className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                    <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
                   )}
                 </button>
               )}
@@ -303,24 +319,24 @@ export default function MessageBubble({
               <button
                 onClick={handleRegenerate}
                 disabled={isStreaming}
-                className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
+                className="p-1 rounded-md hover:bg-zinc-700/60 disabled:opacity-30 transition-colors"
                 aria-label="Regenerate response"
               >
-                <RefreshCw className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                <RefreshCw className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
               </button>
 
               {/* Copy button with visual feedback */}
               <button
                 onClick={handleCopy}
-                className="p-0.5 rounded hover:bg-zinc-700/50 transition-colors
+                className="p-1 rounded-md hover:bg-zinc-700/60 transition-colors
                            focus-visible:outline-none focus-visible:ring-2
                            focus-visible:ring-violet-500/50"
                 aria-label={copied ? "메시지 복사 완료" : "Copy message"}
               >
                 {copied ? (
-                  <Check className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+                  <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
                 ) : (
-                  <Copy className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                  <Copy className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -333,7 +349,7 @@ export default function MessageBubble({
             {onBranch && (
               <button
                 onClick={() => onBranch(message.id, messageIndex)}
-                className="p-0.5 rounded hover:bg-zinc-200 opacity-0 group-hover/msg:opacity-100 transition-opacity"
+                className="p-1 rounded-md hover:bg-zinc-200 opacity-0 group-hover/msg:opacity-100 transition-opacity"
                 title="이 시점에서 대화 분기"
                 aria-label="이 시점에서 대화 분기"
               >
@@ -342,7 +358,7 @@ export default function MessageBubble({
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={2}
-                  className="w-3 h-3 text-zinc-400"
+                  className="w-3.5 h-3.5 text-zinc-400"
                 >
                   <path
                     strokeLinecap="round"
@@ -354,15 +370,15 @@ export default function MessageBubble({
             )}
             <button
               onClick={handleCopy}
-              className="p-0.5 rounded hover:bg-zinc-200 transition-colors
+              className="p-1 rounded-md hover:bg-zinc-200 transition-colors
                          focus-visible:outline-none focus-visible:ring-2
                          focus-visible:ring-violet-500/50"
               aria-label={copied ? "메시지 복사 완료" : "Copy message"}
             >
               {copied ? (
-                <Check className="w-3 h-3 text-emerald-600" aria-hidden="true" />
+                <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
               ) : (
-                <Copy className="w-3 h-3 text-zinc-400" aria-hidden="true" />
+                <Copy className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
               )}
             </button>
           </div>

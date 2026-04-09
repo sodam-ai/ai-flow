@@ -948,6 +948,7 @@ function MainApp() {
                     key={msg.id}
                     message={msg}
                     messageIndex={idx}
+                    modelLabel={activeConv?.modelId}
                     onBranch={handleBranchRequest}
                     isSearchMatch={isMatch}
                     isCurrentMatch={isCurrent}
@@ -955,7 +956,12 @@ function MainApp() {
                   />
                 );
               })}
-              {isStreaming && <StreamingBubble content={streamingContent} />}
+              {isStreaming && (
+                <StreamingBubble
+                  content={streamingContent}
+                  modelLabel={activeConv?.modelId}
+                />
+              )}
               <div ref={chatEndRef} />
             </div>
 
