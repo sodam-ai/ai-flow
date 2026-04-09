@@ -33,7 +33,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "PLACEHOLDER — run: npx tauri signer generate -w ~/.tauri/aiflow.key  then paste the public key here",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc3RUJDNDVENjBFM0YzN0QKUldSOTgrTmdYY1RyZHpvYWpwdmp4cCtrZ0lMbWw3RXZtTkV6SXhEdVZac2JSdituWFpFRXRQeFgK",
       "endpoints": [
         "https://github.com/sodam-ai/ai-flow/releases/latest/download/latest.json"
       ],
