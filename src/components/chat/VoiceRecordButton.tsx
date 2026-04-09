@@ -288,7 +288,7 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
     return (
       <div className="relative flex items-center justify-center">
         <button disabled className="p-2.5 rounded-xl text-violet-400 bg-violet-950/30 cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label="음성 변환 중…">
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
         </button>
         {errorTooltip}
       </div>
@@ -321,8 +321,8 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
           className={`relative flex items-center justify-center w-9 h-9 border ${color.btn} border-l-0 rounded-r-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400/70`}
           aria-label={`녹음 중지, ${secsLeft}초 남음`}
         >
-          <MicOff className="w-3.5 h-3.5" />
-          <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-mono font-bold px-1 rounded-full leading-4 text-white ${color.badge}`}>
+          <MicOff className="w-3.5 h-3.5" aria-hidden="true" />
+          <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-mono font-bold px-1 rounded-full leading-4 text-white ${color.badge}`} aria-hidden="true">
             {secsLeft}
           </span>
         </button>
@@ -348,7 +348,7 @@ export default function VoiceRecordButton({ onTranscript, disabled, language }: 
             : `음성 입력 시작${language && language !== "" ? ` (${language.toUpperCase()})` : ""}`
         }
       >
-        <Mic className="w-4 h-4" />
+        <Mic className="w-4 h-4" aria-hidden="true" />
       </button>
       {errorTooltip}
     </div>

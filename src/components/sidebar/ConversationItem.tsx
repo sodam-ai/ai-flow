@@ -165,10 +165,9 @@ export default function ConversationItem({
                          hover:bg-zinc-700 hover:text-zinc-300
                          focus-visible:outline-none focus-visible:ring-1
                          focus-visible:ring-zinc-500/50"
-              title="이름 변경 (더블클릭도 가능)"
               aria-label="대화 이름 변경"
             >
-              <Pencil className="w-3 h-3" />
+              <Pencil className="w-3 h-3" aria-hidden="true" />
             </button>
             {/* Pin */}
             <button
@@ -178,10 +177,9 @@ export default function ConversationItem({
                   ? "text-violet-400 hover:bg-zinc-700"
                   : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
               } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50`}
-              title={conversation.isPinned ? "핀 해제" : "상단 고정"}
               aria-label={conversation.isPinned ? "Unpin conversation" : "Pin conversation to top"}
             >
-              <Pin className="w-3 h-3" />
+              <Pin className="w-3 h-3" aria-hidden="true" />
             </button>
             {/* Delete */}
             <button
@@ -190,10 +188,9 @@ export default function ConversationItem({
                          hover:bg-zinc-700 hover:text-red-400
                          focus-visible:outline-none focus-visible:ring-1
                          focus-visible:ring-red-500/50"
-              title="대화 삭제"
               aria-label="Delete conversation"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -206,18 +203,16 @@ export default function ConversationItem({
               className="p-1 rounded transition-colors text-green-400 hover:bg-zinc-700
                          focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500/50"
               aria-label="이름 변경 확인"
-              title="저장 (Enter)"
             >
-              <Check className="w-3 h-3" />
+              <Check className="w-3 h-3" aria-hidden="true" />
             </button>
             <button
               onMouseDown={(e) => { e.preventDefault(); cancelRename(); }}
               className="p-1 rounded transition-colors text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300
                          focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50"
               aria-label="이름 변경 취소"
-              title="취소 (Esc)"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -228,7 +223,7 @@ export default function ConversationItem({
         <div className="flex items-center gap-2 mt-0.5">
           {conversation.messageCount > 0 && (
             <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
-              <MessageSquare className="w-2.5 h-2.5" />
+              <MessageSquare className="w-2.5 h-2.5" aria-hidden="true" />
               {conversation.messageCount}
             </span>
           )}
@@ -262,6 +257,7 @@ export default function ConversationItem({
                          rounded transition-colors
                          focus-visible:outline-none focus-visible:ring-1
                          focus-visible:ring-zinc-500/50"
+              aria-label="삭제 취소"
             >
               취소
             </button>
@@ -271,6 +267,7 @@ export default function ConversationItem({
                          bg-red-600 hover:bg-red-500 rounded transition-colors
                          focus-visible:outline-none focus-visible:ring-1
                          focus-visible:ring-red-400/50"
+              aria-label="대화 삭제 확인"
             >
               삭제
             </button>

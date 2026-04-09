@@ -81,7 +81,7 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
             aria-label="닫기"
             className="p-1.5 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -123,7 +123,7 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                           isSelected ? "border-zinc-400 bg-zinc-400" : "border-zinc-600"
                         }`}>
-                          {isSelected && <CheckCircle2 className="w-3 h-3 text-zinc-900" />}
+                          {isSelected && <CheckCircle2 className="w-3 h-3 text-zinc-900" aria-hidden="true" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-medium text-zinc-200 truncate">{model.name}</div>

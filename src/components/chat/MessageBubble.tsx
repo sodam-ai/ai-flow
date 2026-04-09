@@ -261,7 +261,7 @@ export default function MessageBubble({
                     className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
                     aria-label="Previous version"
                   >
-                    <ChevronLeft className="w-3 h-3 text-zinc-500" />
+                    <ChevronLeft className="w-3 h-3 text-zinc-500" aria-hidden="true" />
                   </button>
                   <span className="text-[9px] text-zinc-600 min-w-[24px] text-center">
                     {viewingVersion
@@ -274,7 +274,7 @@ export default function MessageBubble({
                     className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
                     aria-label="Next version"
                   >
-                    <ChevronRight className="w-3 h-3 text-zinc-500" />
+                    <ChevronRight className="w-3 h-3 text-zinc-500" aria-hidden="true" />
                   </button>
                 </div>
               )}
@@ -292,9 +292,9 @@ export default function MessageBubble({
                   aria-label={isSpeaking ? "Stop reading" : "Read aloud"}
                 >
                   {isSpeaking ? (
-                    <VolumeX className="w-3 h-3 text-violet-400" />
+                    <VolumeX className="w-3 h-3 text-violet-400" aria-hidden="true" />
                   ) : (
-                    <Volume2 className="w-3 h-3 text-zinc-500" />
+                    <Volume2 className="w-3 h-3 text-zinc-500" aria-hidden="true" />
                   )}
                 </button>
               )}
@@ -304,10 +304,9 @@ export default function MessageBubble({
                 onClick={handleRegenerate}
                 disabled={isStreaming}
                 className="p-0.5 rounded hover:bg-zinc-700/50 disabled:opacity-30"
-                title={t("chat.regenerate")}
                 aria-label="Regenerate response"
               >
-                <RefreshCw className="w-3 h-3 text-zinc-500" />
+                <RefreshCw className="w-3 h-3 text-zinc-500" aria-hidden="true" />
               </button>
 
               {/* Copy button with visual feedback */}
@@ -316,14 +315,12 @@ export default function MessageBubble({
                 className="p-0.5 rounded hover:bg-zinc-700/50 transition-colors
                            focus-visible:outline-none focus-visible:ring-2
                            focus-visible:ring-violet-500/50"
-                title={copied ? "복사됨" : t("chat.copy")}
                 aria-label={copied ? "메시지 복사 완료" : "Copy message"}
-                aria-live="polite"
               >
                 {copied ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-emerald-400" aria-hidden="true" />
                 ) : (
-                  <Copy className="w-3 h-3 text-zinc-500" />
+                  <Copy className="w-3 h-3 text-zinc-500" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -360,14 +357,12 @@ export default function MessageBubble({
               className="p-0.5 rounded hover:bg-zinc-200 transition-colors
                          focus-visible:outline-none focus-visible:ring-2
                          focus-visible:ring-violet-500/50"
-              title={copied ? "복사됨" : t("chat.copy")}
               aria-label={copied ? "메시지 복사 완료" : "Copy message"}
-              aria-live="polite"
             >
               {copied ? (
-                <Check className="w-3 h-3 text-emerald-600" />
+                <Check className="w-3 h-3 text-emerald-600" aria-hidden="true" />
               ) : (
-                <Copy className="w-3 h-3 text-zinc-400" />
+                <Copy className="w-3 h-3 text-zinc-400" aria-hidden="true" />
               )}
             </button>
           </div>

@@ -263,18 +263,16 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
           <div className="flex items-center gap-2 max-w-3xl mx-auto mb-1.5 min-h-[20px]">
             <button
               onClick={() => setRoutingMode(!routingMode)}
+              role="switch"
+              aria-checked={routingMode}
+              aria-label={routingMode ? "Smart Routing: ON — AI auto-selected by complexity" : "Smart Routing: OFF"}
               className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded border transition-colors ${
                 routingMode
                   ? "text-amber-400 bg-amber-950/40 border-amber-800/50"
                   : "text-zinc-500 bg-zinc-900 border-zinc-800 hover:border-zinc-700"
               }`}
-              title={
-                routingMode
-                  ? "Smart Routing: ON — AI auto-selected by complexity"
-                  : "Smart Routing: OFF"
-              }
             >
-              <Zap className="w-2.5 h-2.5" />
+              <Zap className="w-2.5 h-2.5" aria-hidden="true" />
               {routingMode ? "Auto" : "Manual"}
             </button>
             {routingMode && input.length >= 5 && (
@@ -299,10 +297,9 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                 <button
                   onClick={() => setPendingImage(null)}
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-800 border border-zinc-600 flex items-center justify-center hover:bg-zinc-700 transition-colors"
-                  title="Remove screenshot"
                   aria-label="Remove screenshot"
                 >
-                  <X className="w-3 h-3 text-zinc-300" />
+                  <X className="w-3 h-3 text-zinc-300" aria-hidden="true" />
                 </button>
                 <span className="absolute bottom-1 left-1.5 text-[9px] text-zinc-300 bg-zinc-900/80 px-1 rounded leading-4">
                   Vision
@@ -317,10 +314,9 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
             <button
               onClick={() => setModalOpen(true)}
               className="p-2.5 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors flex-shrink-0"
-              title={t("prompt.title")}
               aria-label="Open prompt library"
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-4 h-4" aria-hidden="true" />
             </button>
 
             {/* Voice input */}
@@ -339,13 +335,12 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                   ? "text-green-400 bg-green-950/30"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
               }`}
-              title="Inject clipboard as context (Alt+Shift+A)"
               aria-label="Inject clipboard content as context"
             >
               {clipboardAdded ? (
-                <CheckCheck className="w-4 h-4" />
+                <CheckCheck className="w-4 h-4" aria-hidden="true" />
               ) : (
-                <Clipboard className="w-4 h-4" />
+                <Clipboard className="w-4 h-4" aria-hidden="true" />
               )}
             </button>
 
@@ -358,13 +353,12 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                   ? "text-violet-400 bg-violet-950/30"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
               }`}
-              title="Capture screen for Vision AI (Ctrl+Shift+S)"
               aria-label="Capture screenshot for Vision AI"
             >
               {screenshotLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               ) : (
-                <Camera className="w-4 h-4" />
+                <Camera className="w-4 h-4" aria-hidden="true" />
               )}
             </button>
 
@@ -412,20 +406,18 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
               <button
                 onClick={onCancel}
                 className="p-2.5 rounded-xl bg-red-900/50 text-red-400 hover:bg-red-900/80 transition-colors flex-shrink-0"
-                title={t("chat.stop")}
                 aria-label="Stop generation"
               >
-                <Square className="w-4 h-4" />
+                <Square className="w-4 h-4" aria-hidden="true" />
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
                 disabled={!canSend}
                 className="p-2.5 rounded-xl bg-zinc-100 text-zinc-900 hover:bg-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-                title={t("chat.send")}
                 aria-label="Send message"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4" aria-hidden="true" />
               </button>
             )}
           </div>
