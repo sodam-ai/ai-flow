@@ -11,9 +11,9 @@ export default function StreamingBubble({ content }: Props) {
         {content ? (
           <MarkdownContent content={content} />
         ) : (
-          <p className="text-sm text-zinc-400">Thinking...</p>
+          <p className="text-sm text-zinc-400" role="status" aria-label="AI 응답 생성 중">Thinking...</p>
         )}
-        <span className="inline-block w-1.5 h-4 bg-zinc-400 animate-pulse ml-0.5 align-text-bottom" />
+        <span className="inline-block w-1.5 h-4 bg-zinc-400 animate-pulse ml-0.5 align-text-bottom" aria-hidden="true" />
       </div>
     </div>
   );
