@@ -8,7 +8,7 @@ import PersonaEditor from "@/components/chat/PersonaEditor";
 import type { Persona, LocalLlmDetectionResult } from "@/types";
 import { detectLocalLlms, getRoutingRules } from "@/lib/ipc/invoke";
 import type { RoutingRule } from "@/types";
-import { Eye, EyeOff, Trash2, Check, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic, Volume2 } from "lucide-react";
+import { Eye, EyeOff, Trash2, Check, X, AlertTriangle, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic, Volume2 } from "lucide-react";
 
 export default function SettingsView() {
   const { t, i18n } = useTranslation();
@@ -16,6 +16,7 @@ export default function SettingsView() {
     useSettingsStore();
   const { personas, fetchPersonas, deletePersona } = usePersonaStore();
   const [editorPersona, setEditorPersona] = useState<Persona | null | "new">(null);
+  const [confirmDeletePersonaId, setConfirmDeletePersonaId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAllKeyStatuses();
@@ -188,18 +189,51 @@ export default function SettingsView() {
               </div>
               {!persona.is_builtin && (
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setEditorPersona(persona)}
-                    className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => deletePersona(persona.id)}
-                    className="p-1.5 rounded hover:bg-zinc-800 text-red-400"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {confirmDeletePersonaId === persona.id ? (
+                    <div
+                      role="alert"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-950/50 border border-red-800/50"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
+                      <span className="text-[10px] text-red-300">삭제?</span>
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          deletePersona(persona.id);
+                          setConfirmDeletePersonaId(null);
+                        }}
+                        className="p-0.5 rounded hover:bg-red-900/50 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
+                        aria-label="페르소나 삭제 확인"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setConfirmDeletePersonaId(null)}
+                        className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
+                        aria-label="삭제 취소"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setEditorPersona(persona)}
+                        className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
+                        aria-label={`${persona.name} 편집`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeletePersonaId(persona.id)}
+                        className="p-1.5 rounded hover:bg-zinc-800 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
+                        aria-label={`${persona.name} 삭제`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -223,10 +257,14 @@ export default function SettingsView() {
           {[
             { keys: "Alt+Space", desc: "Open/close overlay window" },
             { keys: "Alt+Shift+A", desc: "Send clipboard to AI" },
+            { keys: "Alt+Shift+V", desc: "Toggle voice input" },
             { keys: "Ctrl+K", desc: "Command palette" },
+            { keys: "Ctrl+F", desc: "Search conversations" },
+            { keys: "Ctrl+Shift+S", desc: "Export conversation" },
             { keys: "Enter", desc: "Send message" },
             { keys: "Shift+Enter", desc: "New line" },
             { keys: "Escape", desc: "Close modal / overlay" },
+            { keys: "? / Ctrl+/", desc: "Show keyboard shortcuts" },
           ].map(({ keys, desc }) => (
             <div
               key={keys}
@@ -274,6 +312,7 @@ function ProviderKeyRow({
   const [inputKey, setInputKey] = useState("");
   const [showInput, setShowInput] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const isSet = status?.isSet ?? false;
 
   const handleSave = async () => {
@@ -326,13 +365,16 @@ function ProviderKeyRow({
             onChange={(e) => setInputKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
             placeholder={t("settings.enterKey")}
-            className="w-48 px-2 py-1 text-xs bg-zinc-800 border border-zinc-700 rounded focus:border-zinc-500 focus:outline-none"
+            maxLength={200}
+            aria-label={`${providerName} API 키 입력`}
+            className="w-48 px-2 py-1 text-xs bg-zinc-800 border border-zinc-700 rounded focus:border-zinc-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400"
             autoFocus
           />
           <button
             onClick={handleSave}
             disabled={saving || !inputKey.trim()}
-            className="p-1 rounded hover:bg-zinc-700 text-emerald-400 disabled:opacity-30"
+            aria-label="API 키 저장"
+            className="p-1 rounded hover:bg-zinc-700 text-emerald-400 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -345,17 +387,46 @@ function ProviderKeyRow({
               setShowInput(false);
               setInputKey("");
             }}
-            className="text-xs text-zinc-500 hover:text-zinc-300"
+            aria-label="입력 취소"
+            className="text-xs text-zinc-500 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500 rounded px-1"
           >
             Cancel
+          </button>
+        </div>
+      ) : confirmDelete ? (
+        <div
+          role="alert"
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-red-950/50 border border-red-800/50"
+        >
+          <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+          <span className="text-[10px] text-red-300 whitespace-nowrap">키 삭제?</span>
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={async () => {
+              await onDelete();
+              setConfirmDelete(false);
+              useToastStore.getState().addToast("success", `${providerName} API key removed`);
+            }}
+            aria-label="API 키 삭제 확인"
+            className="p-0.5 rounded hover:bg-red-900/50 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
+          >
+            <Check className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setConfirmDelete(false)}
+            aria-label="삭제 취소"
+            className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
+          >
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       ) : (
         <div className="flex items-center gap-1">
           <button
             onClick={() => setShowInput(true)}
-            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400"
-            title={isSet ? "Change key" : "Add key"}
+            aria-label={isSet ? `${providerName} 키 변경` : `${providerName} 키 추가`}
+            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500"
           >
             {isSet ? (
               <EyeOff className="w-4 h-4" />
@@ -365,9 +436,9 @@ function ProviderKeyRow({
           </button>
           {isSet && (
             <button
-              onClick={onDelete}
-              className="p-1.5 rounded hover:bg-zinc-800 text-red-400"
-              title="Delete key"
+              onClick={() => setConfirmDelete(true)}
+              aria-label={`${providerName} API 키 삭제`}
+              className="p-1.5 rounded hover:bg-zinc-800 text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
             >
               <Trash2 className="w-4 h-4" />
             </button>
