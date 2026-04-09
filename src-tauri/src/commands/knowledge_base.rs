@@ -64,6 +64,10 @@ pub async fn index_folder(
     if !path.is_absolute() {
         return Err("폴더 경로는 절대 경로여야 합니다.".into());
     }
+    // Canonicalize resolves symlinks and `../` traversal before directory check
+    let canonical = std::fs::canonicalize(path)
+        .map_err(|_| "폴더 경로를 확인할 수 없습니다.".to_string())?;
+    let path = canonical.as_path(); // reborrow as &Path so downstream code stays unchanged
     if !path.is_dir() {
         return Err("유효한 폴더 경로가 아닙니다.".into());
     }

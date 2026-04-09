@@ -26,6 +26,7 @@ export default function OverlayChat() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.stopPropagation();
         closeOverlay();
       }
     };
