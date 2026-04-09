@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { X, GitCompare, RotateCcw } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { PromptVersionEntry } from "@/lib/ipc/invoke";
 
 /**
@@ -96,6 +97,7 @@ export default function PromptDiffModal({
 }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef);
 
   // Focus management
   useEffect(() => {

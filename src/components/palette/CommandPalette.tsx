@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useTranslation } from "react-i18next";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
 import { Search } from "lucide-react";
@@ -18,6 +19,8 @@ export default function CommandPalette() {
   } = useCommandPaletteStore();
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus input when opened
@@ -76,6 +79,7 @@ export default function CommandPalette() {
       onClick={close}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={t("commandPalette.title", "명령 팔레트")}

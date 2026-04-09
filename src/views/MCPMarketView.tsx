@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   Plug, Trash2, ToggleLeft, ToggleRight, FolderOpen,
   AlertCircle, Check, X, Loader2,
@@ -17,6 +18,8 @@ export default function MCPMarketView() {
   const [servers, setServers] = useState<MCPServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [pathModalId, setPathModalId] = useState<number | null>(null);
+  const pathModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(pathModalRef, pathModalId !== null);
   const [pathInput, setPathInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   // Inline confirm replaces window.confirm() — OWASP ASVS 5.1.1
@@ -230,6 +233,7 @@ export default function MCPMarketView() {
         {/* Path Configuration Modal */}
         {pathModalId !== null && (
           <div
+            ref={pathModalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="path-modal-title"

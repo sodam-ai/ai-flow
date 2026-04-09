@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useTranslation } from "react-i18next";
 import { usePersonaStore } from "@/stores/personaStore";
 import type { Persona } from "@/types";
@@ -41,6 +42,8 @@ export default function PersonaEditor({ persona, onClose }: Props) {
   const [color, setColor] = useState(persona?.color ?? "#6366f1");
   const [saving, setSaving] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef);
 
   const canSave = name.trim().length > 0 && systemPrompt.trim().length > 0;
 
@@ -85,6 +88,7 @@ export default function PersonaEditor({ persona, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="persona-editor-title"

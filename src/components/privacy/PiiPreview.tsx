@@ -1,4 +1,5 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { PiiMatch } from "@/lib/privacy/pii-detector";
 import { maskPii, piiTypeLabel } from "@/lib/privacy/pii-detector";
 
@@ -30,6 +31,9 @@ export default function PiiPreview({
     return Object.entries(groups);
   }, [matches]);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef);
+
   // Escape to cancel
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -42,6 +46,7 @@ export default function PiiPreview({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="pii-preview-title"

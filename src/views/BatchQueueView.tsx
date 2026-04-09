@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { ListTodo, Play, X, Plus, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import type { BatchJob, BatchItem, BatchProgressEvent } from "@/types";
@@ -23,6 +24,8 @@ export default function BatchQueueView() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [liveProgress, setLiveProgress] = useState<Record<number, BatchProgressEvent>>({});
+  const createDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(createDialogRef, showCreate);
 
   // 새 배치 폼 상태
   const [newJobName, setNewJobName] = useState("");
@@ -302,6 +305,7 @@ export default function BatchQueueView() {
       {/* Create Modal */}
       {showCreate && (
         <div
+          ref={createDialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-batch-title"
@@ -311,7 +315,7 @@ export default function BatchQueueView() {
           }}
         >
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg space-y-4">
-            <h3 id="create-batch-title" className="font-semibold text-zinc-100">새 배치 작업</h3>
+            <h2 id="create-batch-title" className="font-semibold text-zinc-100">새 배치 작업</h2>
 
             {error && (
               <p role="alert" aria-live="assertive" className="text-sm text-red-400">{error}</p>

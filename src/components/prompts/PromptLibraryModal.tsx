@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useTranslation } from "react-i18next";
 import { usePromptStore } from "@/stores/promptStore";
 import type { PromptTemplate } from "@/types";
@@ -28,6 +29,8 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   // Inline delete confirm — id of prompt pending confirmation, null = none
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, isModalOpen);
 
   useEffect(() => {
     if (isModalOpen) fetchPrompts();
@@ -96,6 +99,7 @@ export default function PromptLibraryModal({ onUsePrompt }: Props) {
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="prompt-lib-title"

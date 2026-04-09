@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   Plus, Trash2, Search, Database,
@@ -78,6 +79,8 @@ export default function KnowledgeBaseView() {
   const [isIndexing, setIsIndexing] = useState(false);
   const [folderIndexResult, setFolderIndexResult] = useState<{ indexed: number; failed: number } | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const kbModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(kbModalRef, showCreateModal);
   const [newKbName, setNewKbName] = useState("");
   const [newKbDesc, setNewKbDesc] = useState("");
   const [loading, setLoading] = useState(true);
@@ -636,6 +639,7 @@ export default function KnowledgeBaseView() {
       {/* ── Create KB modal ── */}
       {showCreateModal && (
         <div
+          ref={kbModalRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-kb-title"
@@ -645,9 +649,9 @@ export default function KnowledgeBaseView() {
           <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
             <div className="flex items-center gap-2 mb-5">
               <Database className="w-4 h-4 text-violet-400" aria-hidden="true" />
-              <h3 id="create-kb-title" className="text-sm font-semibold text-zinc-100">
+              <h2 id="create-kb-title" className="text-sm font-semibold text-zinc-100">
                 새 지식베이스 만들기
-              </h3>
+              </h2>
             </div>
 
             <div className="space-y-3">

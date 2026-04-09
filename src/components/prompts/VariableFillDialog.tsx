@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { usePromptStore } from "@/stores/promptStore";
 import type { PromptTemplate } from "@/types";
 
@@ -33,6 +34,9 @@ export default function VariableFillDialog({ prompt, onApply, onCancel }: Props)
 
   const allFilled = prompt.variables.every((v) => values[v]?.trim());
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef);
+
   // Escape closes the dialog
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -53,6 +57,7 @@ export default function VariableFillDialog({ prompt, onApply, onCancel }: Props)
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="var-fill-title"

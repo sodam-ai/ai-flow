@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { GitBranch, ArrowRight, X } from "lucide-react";
 import { listConversationBranches } from "@/lib/ipc/invoke";
 import type { ConversationBranch } from "@/types";
@@ -24,6 +25,8 @@ export default function BranchPanel({ conversationId, onNavigate, isOpen, onClos
   const [branches, setBranches] = useState<ConversationBranch[]>([]);
   const [loading, setLoading] = useState(false);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, isOpen);
 
   const loadBranches = useCallback(async () => {
     if (!conversationId) return;
@@ -77,6 +80,7 @@ export default function BranchPanel({ conversationId, onNavigate, isOpen, onClos
 
       {/* Panel */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-label="대화 브랜치 목록"
         aria-modal="true"

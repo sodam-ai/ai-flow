@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { X, Keyboard } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 /**
  * KeyboardShortcutsModal — global help overlay listing all keyboard shortcuts.
@@ -79,6 +80,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 export default function KeyboardShortcutsModal({ isOpen, onClose }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   // Focus management — move focus to close button on open
   useEffect(() => {
