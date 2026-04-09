@@ -31,6 +31,18 @@
       "iconAsTemplate": false
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc3RUJDNDVENjBFM0YzN0QKUldSOTgrTmdYY1RyZHpvYWpwdmp4cCtrZ0lMbWw3RXZtTkV6SXhEdVZac2JSdituWFpFRXRQeFgK",
+      "endpoints": [
+        "https://github.com/sodam-ai/ai-flow/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "windows": {
+        "installer_args": ["/quiet"]
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["msi"],

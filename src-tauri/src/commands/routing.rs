@@ -103,6 +103,7 @@ pub async fn stream_routed_message(
         &crate::services::keychain::get_key_internal(&providers_to_try[0].0)?,
         &messages,
         system_prompt.as_deref(),
+        None,
         &channel,
         cancel_rx,
     ).await;
@@ -184,7 +185,7 @@ pub async fn stream_routed_message(
                 let (_, cancel_rx_fb) = tokio::sync::oneshot::channel::<()>();
                 let fb_result = crate::services::ai_client::stream_chat(
                     fb_provider, fb_model, &api_key, &messages,
-                    system_prompt.as_deref(), &channel, cancel_rx_fb,
+                    system_prompt.as_deref(), None, &channel, cancel_rx_fb,
                 ).await;
 
                 if let Ok((content, usage)) = fb_result {

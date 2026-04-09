@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { CheckCircle2, X } from "lucide-react";
 import type { ModelInfo, StreamTarget } from "@/types";
 import { getModelCatalog } from "@/lib/ipc/invoke";
@@ -22,6 +24,10 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
   const { keyStatuses } = useSettingsStore();
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef);
+  useFocusReturn();
 
   useEffect(() => {
     getModelCatalog().then(setModels).catch(() => setModels([]));
@@ -62,6 +68,7 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
@@ -71,7 +78,7 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
         {/* Header */}
         <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-100">AI 모델 비교</h3>
+            <h2 className="text-sm font-semibold text-zinc-100">AI 모델 비교</h2>
             <p className="text-[10px] text-zinc-500 mt-0.5">
               2~3개 모델을 선택하면 동시에 응답을 비교합니다 · {selected.size}/3 선택됨
             </p>
@@ -81,7 +88,7 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
             aria-label="닫기"
             className="p-1.5 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -123,7 +130,7 @@ export default function ModelPicker({ onConfirm, onCancel }: ModelPickerProps) {
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                           isSelected ? "border-zinc-400 bg-zinc-400" : "border-zinc-600"
                         }`}>
-                          {isSelected && <CheckCircle2 className="w-3 h-3 text-zinc-900" />}
+                          {isSelected && <CheckCircle2 className="w-3 h-3 text-zinc-900" aria-hidden="true" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-medium text-zinc-200 truncate">{model.name}</div>

@@ -25,21 +25,28 @@ export default function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+    <div
+      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"
+      aria-label="알림"
+    >
       {toasts.map((toast) => {
         const Icon = ICON_MAP[toast.type];
         return (
           <div
             key={toast.id}
+            role={toast.type === "error" ? "alert" : "status"}
+            aria-live={toast.type === "error" ? "assertive" : "polite"}
+            aria-atomic="true"
             className={`flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg border backdrop-blur-sm shadow-lg animate-in slide-in-from-right ${COLOR_MAP[toast.type]}`}
           >
-            <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${ICON_COLOR_MAP[toast.type]}`} />
+            <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${ICON_COLOR_MAP[toast.type]}`} aria-hidden="true" />
             <p className="text-xs leading-relaxed flex-1">{toast.message}</p>
             <button
               onClick={() => removeToast(toast.id)}
-              className="p-0.5 rounded hover:bg-white/10 shrink-0"
+              aria-label="알림 닫기"
+              className="p-0.5 rounded hover:bg-white/10 shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
         );

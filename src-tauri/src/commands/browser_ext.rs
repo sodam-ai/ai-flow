@@ -168,10 +168,27 @@ pub fn list_browser_contexts(state: State<'_, AppState>) -> Result<Vec<serde_jso
 
 // ─── Windows Registry Helpers ─────────────────────────────────────────────
 
+/// Validates a registry key path against an allowlist of safe characters.
+/// Prevents argument injection into reg.exe — only alphanumeric, backslash,
+/// dot, underscore, and hyphen are allowed. All callers are internal but
+/// defensive validation is enforced regardless.
+#[cfg(target_os = "windows")]
+fn validate_registry_path(key_path: &str) -> Result<(), String> {
+    let valid = !key_path.is_empty()
+        && key_path
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '\\' | '.' | '_' | '-'));
+    if !valid {
+        return Err("레지스트리 경로에 허용되지 않은 문자가 포함되어 있습니다.".into());
+    }
+    Ok(())
+}
+
 #[cfg(target_os = "windows")]
 fn check_registry_key(key_path: &str) -> bool {
-    // winreg crate이 없으면 false 반환 (optional dependency)
-    // 실제 구현: Cargo.toml에 winreg = "0.52" 추가 필요
+    if validate_registry_path(key_path).is_err() {
+        return false;
+    }
     std::process::Command::new("reg")
         .args(["query", &format!("HKCU\\{key_path}")])
         .output()
@@ -181,6 +198,7 @@ fn check_registry_key(key_path: &str) -> bool {
 
 #[cfg(target_os = "windows")]
 fn write_registry_key(key_path: &str, value: &str) -> Result<(), String> {
+    validate_registry_path(key_path)?;
     let status = std::process::Command::new("reg")
         .args([
             "add",
@@ -202,6 +220,7 @@ fn write_registry_key(key_path: &str, value: &str) -> Result<(), String> {
 
 #[cfg(target_os = "windows")]
 fn delete_registry_key(key_path: &str) -> Result<(), String> {
+    validate_registry_path(key_path)?;
     let status = std::process::Command::new("reg")
         .args(["delete", &format!("HKCU\\{key_path}"), "/f"])
         .status()

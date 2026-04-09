@@ -26,6 +26,7 @@ export default function OverlayChat() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.stopPropagation();
         closeOverlay();
       }
     };
@@ -121,27 +122,29 @@ export default function OverlayChat() {
           AIFlow
         </span>
         <div className="flex items-center gap-1">
-          <span className="text-[9px] text-zinc-700">
+          <span className="text-[9px] text-zinc-700" aria-hidden="true">
             {t("overlay.close")}
           </span>
           <button
             onClick={() => closeOverlay()}
-            className="p-0.5 hover:bg-zinc-800 rounded"
+            aria-label="오버레이 닫기 (Esc)"
+            className="p-0.5 hover:bg-zinc-800 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-600/50"
           >
-            <X className="w-3 h-3 text-zinc-500" />
+            <X className="w-3 h-3 text-zinc-500" aria-hidden="true" />
           </button>
         </div>
       </div>
 
-      {/* Response area */}
-      {response && (
-        <div
-          ref={responseRef}
-          className="flex-1 overflow-y-auto px-4 py-3 min-h-0"
-        >
-          <MarkdownContent content={response} />
-        </div>
-      )}
+      {/* Response area — role="log" announces new streaming tokens to AT */}
+      <div
+        ref={responseRef}
+        role="log"
+        aria-live="polite"
+        aria-label="AI 응답"
+        className="flex-1 overflow-y-auto px-4 py-3 min-h-0"
+      >
+        {response && <MarkdownContent content={response} />}
+      </div>
 
       {/* Input */}
       <div className="border-t border-zinc-800/50 p-3">
@@ -154,23 +157,26 @@ export default function OverlayChat() {
             placeholder={t("overlay.placeholder")}
             disabled={isStreaming}
             rows={1}
-            className="flex-1 resize-none bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50"
+            aria-label="메시지 입력"
+            className="flex-1 resize-none bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-violet-500/40"
             data-testid="overlay-input"
           />
           {isStreaming ? (
             <button
               onClick={handleCancel}
-              className="p-2 rounded-lg bg-red-900/30 hover:bg-red-900/50 transition-colors"
+              aria-label="AI 응답 중단"
+              className="p-2 rounded-lg bg-red-900/30 hover:bg-red-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
             >
-              <Square className="w-4 h-4 text-red-400" />
+              <Square className="w-4 h-4 text-red-400" aria-hidden="true" />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={!input.trim()}
-              className="p-2 rounded-lg bg-zinc-100 hover:bg-zinc-200 disabled:opacity-30 transition-colors"
+              aria-label="메시지 전송"
+              className="p-2 rounded-lg bg-zinc-100 hover:bg-zinc-200 disabled:opacity-30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50"
             >
-              <Send className="w-4 h-4 text-zinc-900" />
+              <Send className="w-4 h-4 text-zinc-900" aria-hidden="true" />
             </button>
           )}
         </div>

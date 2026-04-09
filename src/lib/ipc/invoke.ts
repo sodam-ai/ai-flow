@@ -141,6 +141,7 @@ export function streamAiMessage(
   personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
   kbIds?: number[], // Smart Context Injection
+  imageData?: string | null, // Phase 6: base64 PNG for Vision AI
 ): { promise: Promise<void>; channel: Channel<StreamChunk> } {
   // Validate before creating channel
   validate(streamAiMessageSchema, { conversationId, content, providerId, modelId, streamId });
@@ -156,10 +157,17 @@ export function streamAiMessage(
     streamId,
     personaId,
     kbIds: kbIds && kbIds.length > 0 ? kbIds : null,
+    imageData: imageData ?? null,
     channel,
   });
 
   return { promise, channel };
+}
+
+// ─── Screenshot / Vision AI ───
+
+export async function captureScreen(): Promise<string> {
+  return invoke<string>("capture_screen");
 }
 
 export async function cancelStream(streamId: string): Promise<void> {
@@ -212,6 +220,47 @@ export async function exportConversation(
   format: "markdown" | "json",
 ): Promise<string> {
   return invoke("export_conversation", { conversationId, format });
+}
+
+// ─── Per-conversation active KB persistence (Phase 10) ───
+
+/**
+ * Load active KB IDs for a conversation.
+ * Backend returns `[]` on missing/corrupt data — never throws on normal operation.
+ */
+export async function getConversationKbIds(
+  conversationId: string,
+): Promise<number[]> {
+  if (typeof conversationId !== "string" || conversationId.length === 0) {
+    throw new Error("Invalid conversationId");
+  }
+  return invoke("get_conversation_kb_ids", { conversationId });
+}
+
+/**
+ * Persist active KB IDs for a conversation.
+ * Defense in depth: frontend validates array shape and bounds
+ * (max 20, positive integers) BEFORE the IPC call — Rust side re-validates.
+ */
+export async function saveConversationKbIds(
+  conversationId: string,
+  kbIds: number[],
+): Promise<void> {
+  if (typeof conversationId !== "string" || conversationId.length === 0) {
+    throw new Error("Invalid conversationId");
+  }
+  if (!Array.isArray(kbIds)) {
+    throw new Error("kbIds must be an array");
+  }
+  if (kbIds.length > 20) {
+    throw new Error("Too many KB IDs (max 20)");
+  }
+  for (const id of kbIds) {
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error(`Invalid KB id: ${id}`);
+    }
+  }
+  return invoke("save_conversation_kb_ids", { conversationId, kbIds });
 }
 
 // ─── Personas (Phase 1b) ───
@@ -694,4 +743,42 @@ export async function exportWorkflow(workflowId: number): Promise<string> {
 
 export async function importWorkflow(jsonStr: string): Promise<import("@/types").Workflow> {
   return invoke("import_workflow", { jsonStr });
+}
+
+// ─── Voice / STT (Phase 5) ───────────────────────────────────────────────
+
+/**
+ * Transcribe audio via OpenAI Whisper API (server-side call).
+ * @param audioBase64 - base64-encoded audio file (WebM/WAV/MP4/OGG/MP3)
+ * @param language    - optional ISO 639-1 hint ("ko", "en", "ja", …)
+ * @param audioMime   - MIME type; defaults to "audio/webm"
+ */
+export async function transcribeAudio(
+  audioBase64: string,
+  language?: string,
+  audioMime?: string,
+): Promise<string> {
+  return invoke("transcribe_audio", {
+    audioBase64,
+    language: language ?? null,
+    audioMime: audioMime ?? "audio/webm",
+  });
+}
+
+// ─── Auto Updater (Phase 6) ───
+
+export interface UpdateInfo {
+  available: boolean;
+  version: string | null;
+  notes: string | null;
+  date: string | null;
+  current_version: string;
+}
+
+export async function checkForUpdates(): Promise<UpdateInfo> {
+  return invoke("check_for_updates");
+}
+
+export async function installUpdate(): Promise<void> {
+  return invoke("install_update");
 }

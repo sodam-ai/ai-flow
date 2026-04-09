@@ -68,6 +68,7 @@ interface SendOptions {
   hasFile?: boolean;
   hasCode?: boolean;
   kbIds?: number[]; // Smart Context Injection: active knowledge base IDs
+  imageData?: string | null; // Phase 6: base64 PNG for Vision AI
 }
 
 interface RoutingInfo {
@@ -242,6 +243,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           activePersonaId,
           handleChunk,
           options?.kbIds,
+          options?.imageData,
         );
         await promise;
       }

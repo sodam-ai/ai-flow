@@ -36,6 +36,14 @@ pub fn run() {
                                 // Clipboard → AI: emit event for frontend to handle
                                 let _ = app.emit("aiflow://clipboard-to-ai", ());
                             }
+                            "Alt+Shift+V" => {
+                                // Voice recording: emit event for frontend to handle
+                                let _ = app.emit("aiflow://voice-start", ());
+                            }
+                            "Ctrl+Shift+S" => {
+                                // Screenshot → Vision AI: emit event for frontend to handle
+                                let _ = app.emit("aiflow://screenshot-to-ai", ());
+                            }
                             _ => {}
                         }
                     }
@@ -47,6 +55,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_handle = app.handle().clone();
 
@@ -68,13 +77,19 @@ pub fn run() {
             };
             app.manage(state);
 
-            // Register global shortcuts (Alt+Space = overlay, Alt+Shift+A = clipboard)
+            // Register global shortcuts (Alt+Space = overlay, Alt+Shift+A = clipboard, Alt+Shift+V = voice)
             use tauri_plugin_global_shortcut::GlobalShortcutExt;
             if let Err(e) = app.global_shortcut().register("Alt+Space") {
                 log::warn!("Failed to register Alt+Space: {}. Another app may have claimed it.", e);
             }
             if let Err(e) = app.global_shortcut().register("Alt+Shift+A") {
                 log::warn!("Failed to register Alt+Shift+A: {}", e);
+            }
+            if let Err(e) = app.global_shortcut().register("Alt+Shift+V") {
+                log::warn!("Failed to register Alt+Shift+V: {}", e);
+            }
+            if let Err(e) = app.global_shortcut().register("Ctrl+Shift+S") {
+                log::warn!("Failed to register Ctrl+Shift+S: {}", e);
             }
 
             // System tray menu
@@ -140,7 +155,7 @@ pub fn run() {
                 });
             }
 
-            log::info!("AIFlow initialized successfully (Phase 3: RAG + Agent + Branching + Workflow Export)");
+            log::info!("AIFlow initialized successfully (Phase 6: Screenshot Vision AI)");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -159,6 +174,8 @@ pub fn run() {
             commands::chat::get_message_versions,
             commands::chat::search_messages,
             commands::chat::export_conversation,
+            commands::chat::get_conversation_kb_ids,
+            commands::chat::save_conversation_kb_ids,
             // AI streaming
             commands::ai::stream_ai_message,
             commands::ai::regenerate_ai_message,
@@ -265,6 +282,13 @@ pub fn run() {
             // Workflow Export/Import (Phase 3)
             commands::agent::export_workflow,
             commands::agent::import_workflow,
+            // Voice / STT (Phase 5)
+            commands::voice::transcribe_audio,
+            // Screenshot / Vision AI (Phase 6)
+            commands::screenshot::capture_screen,
+            // Auto Updater (Phase 6)
+            commands::updater::check_for_updates,
+            commands::updater::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -20,3 +20,4 @@ pub mod provider_trait;
 pub mod providers;
 pub mod routing;
 pub mod stream_registry;
+pub mod voice;

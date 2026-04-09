@@ -85,17 +85,18 @@ export default function FileDropZone({
               className="flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300"
             >
               {file.info.is_image ? (
-                <Image className="w-3 h-3 text-zinc-500" />
+                <Image className="w-3 h-3 text-zinc-500" aria-hidden="true" />
               ) : (
-                <File className="w-3 h-3 text-zinc-500" />
+                <File className="w-3 h-3 text-zinc-500" aria-hidden="true" />
               )}
               <span className="max-w-[120px] truncate">{file.info.name}</span>
-              <span className="text-zinc-600">{formatSize(file.info.size)}</span>
+              <span className="text-zinc-600" aria-hidden="true">{formatSize(file.info.size)}</span>
               <button
                 onClick={() => removeFile(i)}
-                className="ml-0.5 hover:text-red-400"
+                aria-label={`${file.info.name} 제거`}
+                className="ml-0.5 hover:text-red-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/50 rounded"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
           ))}

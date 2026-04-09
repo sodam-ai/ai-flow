@@ -31,12 +31,79 @@ pub fn get_http_client() -> Client {
 ///
 /// Reads SSE chunks, parses per-provider format, and sends tokens
 /// through the Tauri ipc::Channel for real-time UI updates.
+/// Inject a base64 PNG image into the last user message of an already-built
+/// request body.  Each AI provider uses a different multimodal content schema:
+///
+/// - OpenAI / compatible: `content` → `[{type:"text",...},{type:"image_url",...}]`
+/// - Anthropic:           `content` → `[{type:"image", source:{type:"base64",...}}, {type:"text",...}]`
+/// - Google Gemini:       appends `{inline_data:{mime_type,data}}` to the last user `parts`
+/// - Others:              no-op (vision not supported)
+fn inject_image_into_last_user_message(
+    body: &mut serde_json::Value,
+    provider_id: &str,
+    image_b64: &str,
+) {
+    match provider_id {
+        "openai" | "openai_compatible" | "azure_openai" | "groq" | "xai"
+        | "mistral" | "deepseek" | "cohere" => {
+            if let Some(msgs) = body.get_mut("messages").and_then(|m| m.as_array_mut()) {
+                if let Some(last_user) = msgs.iter_mut().rev().find(|m| {
+                    m.get("role").and_then(|r| r.as_str()) == Some("user")
+                }) {
+                    let text = last_user["content"].as_str().unwrap_or("").to_string();
+                    last_user["content"] = serde_json::json!([
+                        { "type": "text", "text": text },
+                        { "type": "image_url", "image_url": {
+                            "url": format!("data:image/png;base64,{image_b64}")
+                        }}
+                    ]);
+                }
+            }
+        }
+        "anthropic" => {
+            if let Some(msgs) = body.get_mut("messages").and_then(|m| m.as_array_mut()) {
+                if let Some(last_user) = msgs.iter_mut().rev().find(|m| {
+                    m.get("role").and_then(|r| r.as_str()) == Some("user")
+                }) {
+                    let text = last_user["content"].as_str().unwrap_or("").to_string();
+                    last_user["content"] = serde_json::json!([
+                        { "type": "image", "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": image_b64
+                        }},
+                        { "type": "text", "text": text }
+                    ]);
+                }
+            }
+        }
+        "google" => {
+            if let Some(contents) = body.get_mut("contents").and_then(|c| c.as_array_mut()) {
+                if let Some(last_user) = contents.iter_mut().rev().find(|m| {
+                    m.get("role").and_then(|r| r.as_str()) == Some("user")
+                }) {
+                    if let Some(parts) = last_user.get_mut("parts").and_then(|p| p.as_array_mut()) {
+                        parts.push(serde_json::json!({
+                            "inline_data": {
+                                "mime_type": "image/png",
+                                "data": image_b64
+                            }
+                        }));
+                    }
+                }
+            }
+        }
+        _ => {} // Ollama — vision support varies by model, skip
+    }
+}
+
 pub async fn stream_chat(
     provider_id: &str,
     model_id: &str,
     api_key: &str,
     messages: &[Message],
     system_prompt: Option<&str>,
+    image_data: Option<&str>,
     channel: &tauri::ipc::Channel<serde_json::Value>,
     cancel_rx: oneshot::Receiver<()>,
 ) -> Result<(String, UsageStats), String> {
@@ -44,7 +111,13 @@ pub async fn stream_chat(
 
     // Build request
     let mut endpoint = provider.chat_endpoint(model_id);
-    let body = provider.build_request_body(messages, model_id, system_prompt);
+    let mut body = provider.build_request_body(messages, model_id, system_prompt);
+
+    // Vision: inject screenshot into last user message
+    if let Some(img_b64) = image_data {
+        inject_image_into_last_user_message(&mut body, provider_id, img_b64);
+    }
+
     let auth_headers = provider.auth_headers(api_key);
 
     // Google: append API key as query param
