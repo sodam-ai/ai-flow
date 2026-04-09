@@ -50,21 +50,23 @@ function getToolMeta(step: AgentStep) {
 
 // ─── Step status icon ──────────────────────────────────────────────────────
 
+const STEP_STATUS_META: Record<string, { icon: React.ReactNode; label: string }> = {
+  completed:         { icon: <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" aria-hidden="true" />, label: "완료" },
+  running:           { icon: <Loader2 className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" aria-hidden="true" />, label: "실행 중" },
+  awaiting_approval: { icon: <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" aria-hidden="true" />, label: "승인 대기" },
+  failed:            { icon: <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" aria-hidden="true" />, label: "실패" },
+  skipped:           { icon: <SkipForward className="w-4 h-4 text-zinc-500 flex-shrink-0" aria-hidden="true" />, label: "건너뜀" },
+};
+const defaultStepStatus = { icon: <Circle className="w-4 h-4 text-zinc-600 flex-shrink-0" aria-hidden="true" />, label: "대기" };
+
 function StepStatusIcon({ status }: { status: AgentStep["status"] }) {
-  switch (status) {
-    case "completed":
-      return <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />;
-    case "running":
-      return <Loader2 className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />;
-    case "awaiting_approval":
-      return <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />;
-    case "failed":
-      return <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />;
-    case "skipped":
-      return <SkipForward className="w-4 h-4 text-zinc-500 flex-shrink-0" />;
-    default:
-      return <Circle className="w-4 h-4 text-zinc-600 flex-shrink-0" />;
-  }
+  const meta = STEP_STATUS_META[status] ?? defaultStepStatus;
+  return (
+    <>
+      {meta.icon}
+      <span className="sr-only">{meta.label}</span>
+    </>
+  );
 }
 
 // ─── Step tool metadata badge ──────────────────────────────────────────────
@@ -73,9 +75,10 @@ function ToolBadge({ step }: { step: AgentStep }) {
   const meta = getToolMeta(step);
   return (
     <span
+      aria-label={meta.label}
       className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border ${meta.bg} ${meta.border} ${meta.color}`}
     >
-      <meta.Icon className="w-2.5 h-2.5" />
+      <meta.Icon className="w-2.5 h-2.5" aria-hidden="true" />
       {meta.label}
     </span>
   );
@@ -90,7 +93,7 @@ function ToolArgsPreview({ step }: { step: AgentStep }) {
     if (step.step_type === "search_web" && args.query) {
       return (
         <div className="flex items-center gap-1 mt-1">
-          <Globe className="w-3 h-3 text-sky-500 flex-shrink-0" />
+          <Globe className="w-3 h-3 text-sky-500 flex-shrink-0" aria-hidden="true" />
           <span className="text-xs text-sky-400 truncate">"{args.query}"</span>
         </div>
       );
@@ -98,7 +101,7 @@ function ToolArgsPreview({ step }: { step: AgentStep }) {
     if (step.step_type === "read_url" && args.url) {
       return (
         <div className="flex items-center gap-1 mt-1 min-w-0">
-          <Link className="w-3 h-3 text-cyan-500 flex-shrink-0" />
+          <Link className="w-3 h-3 text-cyan-500 flex-shrink-0" aria-hidden="true" />
           <span className="text-xs text-cyan-400 truncate">{args.url}</span>
         </div>
       );
@@ -106,7 +109,7 @@ function ToolArgsPreview({ step }: { step: AgentStep }) {
     if (step.step_type === "write_file" && args.path) {
       return (
         <div className="flex items-center gap-1 mt-1">
-          <FileText className="w-3 h-3 text-amber-500 flex-shrink-0" />
+          <FileText className="w-3 h-3 text-amber-500 flex-shrink-0" aria-hidden="true" />
           <span className="text-xs text-amber-400 truncate font-mono">{args.path}</span>
         </div>
       );
@@ -114,7 +117,7 @@ function ToolArgsPreview({ step }: { step: AgentStep }) {
     if (step.step_type === "search_kb" && args.query) {
       return (
         <div className="flex items-center gap-1 mt-1">
-          <Database className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+          <Database className="w-3 h-3 text-emerald-500 flex-shrink-0" aria-hidden="true" />
           <span className="text-xs text-emerald-400 truncate">"{args.query}"</span>
         </div>
       );
@@ -142,6 +145,7 @@ function StepCard({
 
   return (
     <div
+      role="listitem"
       className={`rounded-lg border transition-colors ${
         isActive
           ? "border-zinc-600 bg-zinc-800/60"
@@ -180,9 +184,9 @@ function StepCard({
             aria-expanded={expanded}
           >
             {expanded ? (
-              <ChevronDown className="w-3.5 h-3.5" />
+              <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
             )}
           </button>
         )}
@@ -377,21 +381,27 @@ export default function AgentView() {
       <aside className="w-56 border-r border-zinc-800 flex flex-col flex-shrink-0">
         {/* Header */}
         <div className="h-10 px-3 border-b border-zinc-800 flex items-center gap-2">
-          <Bot className="w-3.5 h-3.5 text-violet-400" />
+          <Bot className="w-3.5 h-3.5 text-violet-400" aria-hidden="true" />
           <span className="text-xs font-semibold text-zinc-200">AI 에이전트</span>
         </div>
 
         {/* Run list */}
         <nav className="flex-1 overflow-y-auto p-1.5 space-y-0.5 min-h-0" aria-label="에이전트 실행 기록">
           {loading ? (
-            <div className="space-y-1.5 p-1.5">
+            <div
+              role="status"
+              aria-live="polite"
+              aria-label="에이전트 기록 로딩 중"
+              className="space-y-1.5 p-1.5"
+            >
+              <p className="sr-only">에이전트 실행 기록을 불러오는 중입니다...</p>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-14 rounded-md bg-zinc-800/60 animate-pulse" />
+                <div key={i} aria-hidden="true" className="h-14 rounded-md bg-zinc-800/60 animate-pulse" />
               ))}
             </div>
           ) : runs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 px-3 text-center">
-              <Bot className="w-8 h-8 text-zinc-700 mb-2" />
+            <div role="status" className="flex flex-col items-center justify-center py-10 px-3 text-center">
+              <Bot className="w-8 h-8 text-zinc-700 mb-2" aria-hidden="true" />
               <p className="text-xs text-zinc-600">실행 기록 없음</p>
             </div>
           ) : (
@@ -408,7 +418,7 @@ export default function AgentView() {
                 }`}
               >
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDot(run.status)}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDot(run.status)}`} aria-hidden="true" />
                   <span className="text-[11px] font-medium text-zinc-300 truncate flex-1">
                     {run.goal.length > 28 ? run.goal.slice(0, 28) + "…" : run.goal}
                   </span>
@@ -434,17 +444,26 @@ export default function AgentView() {
         <div className="px-4 py-3 border-b border-zinc-800 space-y-2">
           <div className="flex gap-2">
             <div className="flex-1 relative">
+              <label htmlFor="agent-goal-input" className="sr-only">
+                에이전트 목표 입력
+              </label>
               <input
+                id="agent-goal-input"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleStart()}
                 placeholder="에이전트에게 목표를 설명하세요… (예: 최신 AI 뉴스 검색해서 요약해줘)"
                 disabled={isStarting}
                 maxLength={2000}
+                aria-describedby={goal.length > 1800 ? "goal-char-count" : undefined}
                 className="w-full px-3 py-2 text-sm bg-zinc-900 border border-zinc-700 rounded-lg focus:border-violet-600 focus:ring-1 focus:ring-violet-600/30 focus:outline-none placeholder-zinc-600 disabled:opacity-50 pr-12 transition-colors"
               />
               {goal.length > 1800 && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-amber-500">
+                <span
+                  id="goal-char-count"
+                  aria-live="polite"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-amber-500"
+                >
                   {goal.length}/2000
                 </span>
               )}
@@ -456,9 +475,9 @@ export default function AgentView() {
               aria-label="에이전트 실행"
             >
               {isStarting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
               ) : (
-                <Play className="w-3.5 h-3.5" />
+                <Play className="w-3.5 h-3.5" aria-hidden="true" />
               )}
               {isStarting ? "계획 중…" : "실행"}
             </button>
@@ -472,10 +491,10 @@ export default function AgentView() {
               return (
                 <span
                   key={tool.type}
-                  title={tool.desc}
+                  aria-label={`${tool.label}: ${tool.desc}`}
                   className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border cursor-default ${meta.bg} ${meta.border} ${meta.color}`}
                 >
-                  <tool.Icon className="w-2.5 h-2.5" />
+                  <tool.Icon className="w-2.5 h-2.5" aria-hidden="true" />
                   {tool.label}
                 </span>
               );
@@ -496,7 +515,7 @@ export default function AgentView() {
                 const meta = TOOL_META[tool.type] ?? defaultTool;
                 return (
                   <div key={tool.type} className="flex items-start gap-2">
-                    <tool.Icon className={`w-3 h-3 mt-0.5 flex-shrink-0 ${meta.color}`} />
+                    <tool.Icon className={`w-3 h-3 mt-0.5 flex-shrink-0 ${meta.color}`} aria-hidden="true" />
                     <div>
                       <span className={`text-[11px] font-medium ${meta.color}`}>{tool.label}</span>
                       <span className="text-[11px] text-zinc-600"> — {tool.desc}</span>
@@ -512,8 +531,12 @@ export default function AgentView() {
           )}
 
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-900/20 border border-red-800/50">
-              <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-900/20 border border-red-800/50"
+            >
+              <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" aria-hidden="true" />
               <p className="text-xs text-red-400 flex-1">{error}</p>
               <button
                 onClick={() => setError(null)}
@@ -531,7 +554,7 @@ export default function AgentView() {
           {!selectedRun ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-3">
               <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center">
-                <Bot className="w-7 h-7 text-zinc-600" />
+                <Bot className="w-7 h-7 text-zinc-600" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm font-medium text-zinc-400">에이전트를 시작해 보세요</p>
@@ -565,7 +588,7 @@ export default function AgentView() {
                   <h2 className="text-sm font-semibold text-zinc-100 leading-snug">{selectedRun.goal}</h2>
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${statusDot(selectedRun.status)}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusDot(selectedRun.status)}`} aria-hidden="true" />
                       <span className={`text-xs font-medium ${statusColor(selectedRun.status)}`}>
                         {statusLabel(selectedRun.status)}
                       </span>
@@ -586,7 +609,7 @@ export default function AgentView() {
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-800/60 text-xs transition-colors cursor-pointer flex-shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/50"
                     aria-label="에이전트 실행 취소"
                   >
-                    <Square className="w-3 h-3" />
+                    <Square className="w-3 h-3" aria-hidden="true" />
                     취소
                   </button>
                 )}
@@ -595,13 +618,16 @@ export default function AgentView() {
               {/* Progress bar */}
               {selectedRun.total_steps > 0 && (
                 <div className="space-y-1">
-                  <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    role="progressbar"
+                    aria-valuenow={selectedRun.completed_steps}
+                    aria-valuemin={0}
+                    aria-valuemax={selectedRun.total_steps}
+                    aria-label="에이전트 진행률"
+                    className="h-1 bg-zinc-800 rounded-full overflow-hidden"
+                  >
                     <div
-                      role="progressbar"
-                      aria-valuenow={selectedRun.completed_steps}
-                      aria-valuemin={0}
-                      aria-valuemax={selectedRun.total_steps}
-                      aria-label="에이전트 진행률"
+                      aria-hidden="true"
                       className={`h-full rounded-full transition-all duration-500 ${
                         selectedRun.status === "failed" ? "bg-red-500" :
                         selectedRun.status === "completed" ? "bg-green-500" : "bg-violet-500"
@@ -617,7 +643,7 @@ export default function AgentView() {
               )}
 
               {/* Steps */}
-              <div className="space-y-1.5">
+              <div role="list" aria-label="에이전트 실행 단계" className="space-y-1.5">
                 {selectedRun.steps.map((step) => (
                   <StepCard
                     key={step.id}
@@ -638,7 +664,7 @@ export default function AgentView() {
 
               {/* Final output */}
               {selectedRun.status === "completed" && selectedRun.final_output && (
-                <div className="rounded-lg border border-zinc-700/60 bg-zinc-800/30 p-4">
+                <div role="region" aria-label="최종 결과" className="rounded-lg border border-zinc-700/60 bg-zinc-800/30 p-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
                     최종 결과
                   </p>
@@ -650,8 +676,12 @@ export default function AgentView() {
 
               {/* Error */}
               {selectedRun.status === "failed" && selectedRun.error_msg && (
-                <div className="flex items-start gap-2.5 rounded-lg border border-red-800/50 bg-red-900/10 p-3">
-                  <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="flex items-start gap-2.5 rounded-lg border border-red-800/50 bg-red-900/10 p-3"
+                >
+                  <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <p className="text-sm text-red-300 leading-relaxed">{selectedRun.error_msg}</p>
                 </div>
               )}
