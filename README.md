@@ -1,563 +1,611 @@
 # AIFlow
 
-**One hotkey to rule all AIs.** A local desktop AI hub that lets you chat with GPT, Claude, Gemini, and local LLMs from any app — with knowledge bases, multi-step agents, and workflow automation.
+**단축키 하나로 모든 AI를.** 어느 앱에서든 GPT, Claude, Gemini, 로컬 LLM과 대화할 수 있는 로컬 데스크톱 AI 허브 — 지식베이스, 멀티스텝 에이전트, 워크플로우 자동화까지.
 
-[Korean](README.ko.md)
-
----
-
-## What is AIFlow?
-
-AIFlow is a **Windows desktop application** that brings all your AI providers into one place. Press `Alt+Space` from any app to summon AIFlow, ask your question, and get a streaming response — all with real-time cost tracking, encrypted local storage, and zero cloud dependency.
-
-**No cloud account. No data collection. Everything stays on your machine.**
+[English](README.en.md)
 
 ---
 
-## Key Features
+## AIFlow란?
 
-### Core Chat
-| Feature | Description |
-|---------|-------------|
-| **Global Hotkey** (`Alt+Space`) | Summon AIFlow from any app (Word, Chrome, games, anything) |
-| **Multi-Provider** | GPT-4o, Claude Sonnet, Gemini Flash + 8 more providers (11 total) |
-| **API Key Validation** | Keys validated against the provider API before saving |
-| **Real-Time Cost** | Token count + USD + KRW dual-currency cost display per message |
-| **OS Keychain Security** | API keys stored in Windows Credential Manager (never in files) |
-| **Encrypted Database** | SQLCipher AES-256 encryption for all conversations |
-| **AI Personas** | 6 built-in roles (Developer, Writer, Translator, Analyst, Legal, Summarizer) |
-| **Prompt Library** | Save, tag, and search prompts with `{{variable}}` slots |
-| **Command Palette** (`Ctrl+K`) | Natural-language access to all app features |
-| **File Drag & Drop** | Drop PDF, TXT, MD, code, or images directly into AI chat |
-| **Clipboard → AI** (`Alt+Shift+A`) | Send clipboard content to AI instantly from any app |
-| **Screenshot → AI** (`Ctrl+Shift+S`) | Send a screenshot to Vision AI |
-| **System Tray** | Runs in background with quick-access tray menu |
+AIFlow는 여러 AI 프로바이더를 하나로 모은 **Windows 데스크톱 앱**입니다. 어떤 앱에서든 `Alt+Space`를 누르면 AIFlow가 나타나고, 질문하면 실시간 스트리밍 응답과 함께 비용이 표시됩니다. 완전 로컬, 완전 암호화.
 
-### Phase 2 — Power Features
-| Feature | Description |
-|---------|-------------|
-| **Multi-AI Compare** | Stream 2~3 models side-by-side, pick the best response |
-| **Smart Routing** | Auto-selects best AI based on prompt complexity (0–100 score) |
-| **Privacy Mode** | Local PII scanner (SSN, phone, email) with mask-before-send |
-| **Local LLM** | Auto-detects Ollama / LM Studio, uses local models for free |
-| **Cost Dashboard** | Per-model cost breakdown, daily charts, USD + KRW |
-| **Monthly Budget** | Set spending limit, get alerts at 80% threshold |
-| **Prompt Versions** | Auto-saved edit history, compare and restore any version |
-| **Completion Alerts** | OS notification when AI response finishes (if minimized) |
-| **Workflow Builder** | Multi-step AI automation pipelines with 15 built-in templates |
-| **Batch Queue** | Process hundreds of items automatically |
-| **MCP Market** | File, Git, Browser AI tools via MCP protocol |
-| **Browser Extension** | Send current page to AIFlow with one click |
+**클라우드 계정 불필요. 데이터 수집 없음. 모든 것이 내 PC에 저장됩니다.**
 
-### Phase 3 — Intelligence Features
-| Feature | Description |
-|---------|-------------|
-| **Knowledge Base (RAG)** | Index your documents and search them with full-text AI queries |
-| **AI Agent** | Multi-step autonomous task execution with approval gate for sensitive actions |
-| **Conversation Branching** | Fork any conversation at any message, explore different paths |
-| **Workflow Export/Import** | Share workflows as JSON files between machines |
-| **Conditional Workflows** | Improved branching and condition support in workflow steps |
+---
 
-### Phase 5 — Voice I/O ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Voice Input** (`Alt+Shift+V`) | Whisper API STT — press once from anywhere to start recording |
-| **Live Waveform** | Real-time frequency bars during recording (8-channel) |
-| **Silence Auto-Stop** | Auto-stops after 2.5s of silence + 60s hard timeout |
-| **TTS Playback** | Read AI responses aloud via Web Speech API, speed adjustable |
-| **Multilingual** | Whisper language hint (auto-detect or ISO 639-1) |
+## 주요 기능
 
-### Phase 6 — Vision AI & Auto Updater ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Screenshot Vision AI** (`Ctrl+Shift+S`) | Capture full screen → send to GPT-4o / Claude / Gemini Vision |
-| **Multi-Provider Vision** | Auto-formats for OpenAI `image_url`, Anthropic `base64 source`, Google `inline_data` |
-| **Screenshot Preview** | Thumbnail in ChatInput with "Vision" badge and X remove button |
-| **Auto Updater** | GitHub Releases-based updater with Ed25519 signature verification (ASVS 10.3.1-3) |
-| **Update Banner** | Non-intrusive top banner — progress bar + restart prompt |
-| **Sidebar Date Grouping** | Conversations bucketed: Pinned / Today / Yesterday / This Week / Older |
+### 코어 채팅
+| 기능 | 설명 |
+|------|------|
+| **글로벌 단축키** (`Alt+Space`) | 어떤 앱에서든 AIFlow 소환 (Word, Chrome, 게임 등) |
+| **멀티 프로바이더** | GPT-4o, Claude Sonnet, Gemini Flash + 8개 이상 (총 11개) |
+| **API 키 검증** | 저장 전 프로바이더 API로 키 유효성 자동 검증 |
+| **실시간 비용 표시** | 메시지마다 토큰 수 + USD + KRW 이중 비용 표시 |
+| **OS 키체인 보안** | API 키를 Windows 자격 증명 관리자에 저장 (파일에 절대 없음) |
+| **암호화 DB** | SQLCipher AES-256으로 모든 대화 암호화 |
+| **AI 페르소나** | 6종 내장 (개발자, 카피라이터, 번역가, 분석가, 법무, 요약) |
+| **프롬프트 저장고** | 저장, 태그, 검색 + `{{변수}}` 슬롯 지원 |
+| **명령 팔레트** (`Ctrl+K`) | 자연어로 앱 기능에 접근 |
+| **파일 드래그앤드롭** | PDF, TXT, MD, 코드, 이미지를 AI 채팅에 바로 전달 |
+| **클립보드 → AI** (`Alt+Shift+A`) | 어떤 앱에서든 클립보드 내용을 AI에 즉시 전송 |
+| **스크린샷 → AI** (`Ctrl+Shift+S`) | 스크린샷을 Vision AI에 전송 |
+| **시스템 트레이** | 백그라운드 실행 + 빠른 접근 트레이 메뉴 |
 
-### Phase 7 — GitHub Actions CI/CD ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Release Workflow** | `v*.*.*` tag push → MSI build + Ed25519 signing + GitHub Release upload |
-| **PR Check Gate** | TypeScript type-check + `cargo check` + `cargo clippy` on every PR and push |
-| **Auto `latest.json`** | Auto Updater endpoint — version metadata attached to each GitHub Release |
-| **Least-Privilege** | Release: `contents: write` only; PR check: `contents: read` only |
-| **Rust Cache** | `swatinem/rust-cache` — dramatically reduces Windows CI build time |
+### Phase 2 — 파워 기능
+| 기능 | 설명 |
+|------|------|
+| **멀티 AI 비교** | 2~3개 모델 동시 스트리밍, 최적 응답 선택 |
+| **스마트 라우팅** | 프롬프트 복잡도(0~100)에 따라 최적 AI 자동 선택 |
+| **프라이버시 모드** | 로컬 개인정보 스캐너 (주민번호, 전화, 이메일) — 전송 전 마스킹 |
+| **로컬 LLM** | Ollama / LM Studio 자동 감지, 로컬 모델 무료 사용 |
+| **비용 대시보드** | 모델별 비용 분석, 일간 차트, USD + KRW |
+| **월 예산** | 지출 한도 설정, 80% 도달 시 알림 |
+| **프롬프트 버전** | 자동 저장 편집 이력, 버전 비교 및 복원 |
+| **완료 알림** | AI 응답 완료 시 OS 알림 (최소화 시) |
+| **워크플로우 빌더** | 15개 내장 템플릿, 멀티스텝 AI 자동화 파이프라인 |
+| **배치 큐** | 수백 개 항목 자동 일괄 처리 |
+| **MCP 마켓** | 파일, Git, 브라우저 AI 도구 (MCP 프로토콜) |
+| **브라우저 확장** | 현재 페이지를 AIFlow로 원클릭 전송 |
 
-### Phase 8 — Knowledge Base UI Security & UX Upgrade ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **XSS Fix** | Removed `dangerouslySetInnerHTML` → `SnippetHighlight` component safely parses only FTS5 `<mark>` tags (ASVS 5.3.3) |
-| **File Type Color Badges** | 11 extension types color-coded: `.md`, `.rs`, `.py`, `.ts`, `.tsx`, `.js`, `.json`, `.toml`, `.yaml`, `.csv` |
-| **Inline Delete Confirm** | Removed `window.confirm()` → two-step inline confirmation button (WCAG 2.1 + security) |
-| **Full Accessibility** | `role=dialog/list/menu/menuitem/alert`, `aria-expanded`, `aria-modal`, `aria-labelledby` applied throughout |
-| **KB Context Bar Upgrade** | Chip bar above chat input — atomic `clearAll` callback, doc count badge, violet active state |
-| **Click-Toggle Dropdown** | CSS `:hover` dropdown → click-toggle + `mousedown` outside-click handler (touch-safe, keyboard-accessible) |
+### Phase 3 — 인텔리전스 기능
+| 기능 | 설명 |
+|------|------|
+| **지식베이스 (RAG)** | 문서를 인덱싱하고 전체 텍스트 AI 쿼리로 검색 |
+| **AI 에이전트** | 민감한 작업에 승인 게이트가 있는 멀티스텝 자율 작업 실행 |
+| **대화 브랜칭** | 어떤 메시지에서든 대화를 포크, 다양한 경로 탐색 |
+| **워크플로우 내보내기/가져오기** | 워크플로우를 JSON 파일로 기기 간 공유 |
+| **조건부 워크플로우** | 워크플로우 단계에서 개선된 분기 및 조건 지원 |
 
-### Phase 9 — Chat Full-Text Search (`Ctrl+F`) ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **In-Conversation Search** | `Ctrl+F` → slide-down search bar, real-time filtering of current conversation messages |
-| **Result Counter + Navigation** | "X / Y results" display, prev (▲·Shift+Enter) / next (▼·Enter) navigation, wraps around |
-| **Auto-Scroll** | Smooth scroll to current focused result, violet ring-2 highlight on active match |
-| **Search Excerpt** | Matched message shows 45-char context snippet with violet-highlighted match text |
-| **Esc to Close** | Escape closes search bar with priority over other modal handlers (`capture:true`) |
-| **Security** | Client-side filter (zero IPC calls), ASVS 5.1.1 (maxLength=500), ASVS 5.3.3 (XSS-safe), `CSS.escape()` defense |
+### Phase 5 — 음성 I/O ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **음성 입력** (`Alt+Shift+V`) | Whisper API 기반 STT — 어디서든 단축키 한 번으로 녹음 시작 |
+| **실시간 파형 시각화** | 녹음 중 주파수 스펙트럼 바 표시 (8채널) |
+| **무음 자동 정지** | 2.5초 무음 감지 시 자동 정지 + 60초 하드 타임아웃 |
+| **TTS 읽기** | Web Speech API로 AI 응답 음성 읽기, 속도 설정 저장 |
+| **다국어 음성** | Whisper 언어 힌트 (auto-detect 또는 ISO 639-1) |
 
-### Phase 10 — Per-Conversation Active KB Persistence ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Session-Persistent KB Context** | KbContextBar chip state is now saved per conversation — survives app restart & conversation switching |
-| **Migration 019** | `conversations.active_kb_ids TEXT DEFAULT '[]'` — JSON array, zero-friction for existing rows |
-| **Atomic Replacement** | toggle/clearAll replaces the whole array in a single UPDATE — no partial-update inconsistency |
-| **Race Condition Defense** | `activeKbConvIdRef` ref guards against stale writes during conversation switches |
-| **Input Validation** | Rust: max 20, positive int, dedup, `rows_affected` check / TS: mirrored checks (defense in depth) |
-| **Data Integrity** | `serde_json::to_string()` serialization — no string interpolation, eliminates SQL injection at the storage layer |
+### Phase 6 — Vision AI & 자동 업데이트 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **스크린샷 Vision AI** (`Ctrl+Shift+S`) | 전체 화면 캡처 → GPT-4o / Claude / Gemini Vision에 전송 |
+| **멀티프로바이더 Vision** | OpenAI `image_url`, Anthropic `base64 source`, Google `inline_data` 자동 포맷 |
+| **스크린샷 미리보기** | ChatInput에 썸네일 + "Vision" 뱃지, X 버튼으로 제거 |
+| **자동 업데이트** | GitHub Releases 기반 업데이터, Ed25519 서명 검증 (ASVS 10.3.1-3) |
+| **업데이트 배너** | 앱 상단 비침습 알림 — 진행률 바 + 재시작 유도 |
+| **사이드바 날짜 그룹핑** | 고정됨 / 오늘 / 어제 / 이번 주 / 이전으로 대화 자동 분류 |
 
-### Phase 21 — AgentView Full Accessibility ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Approval Gate Accessibility** | `role="alert"` — screen reader announces approval request the moment it appears (WCAG 4.1.3) |
-| **Approve/Deny Buttons** | `focus-visible:ring-2`, `aria-label` with step title — full keyboard control of security flow |
-| **Progress Bar** | `role="progressbar"`, `aria-valuenow/min/max`, `aria-label` (WCAG 4.1.2) |
-| **Run History Sidebar** | `<nav aria-label>`, selected item `aria-current`, each button `aria-label` with goal + status |
-| **All Buttons Complete** | Start/Cancel/Tools toggle/Error dismiss/Example chips/Expand toggle — focus rings + labels throughout |
-| **Security** | Zero new IPC, no `innerHTML` |
+### Phase 7 — GitHub Actions CI/CD ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **릴리스 워크플로우** | `v*.*.*` 태그 push → MSI 자동 빌드 + Ed25519 서명 + GitHub Release 업로드 |
+| **PR 체크 게이트** | PR·push 시 TypeScript 타입 검사 + `cargo check` + `cargo clippy` 자동 실행 |
+| **latest.json 자동 생성** | Auto Updater 엔드포인트 — GitHub Release에 버전 메타데이터 자동 첨부 |
+| **최소 권한 원칙** | 릴리스 워크플로우는 `contents: write`만, PR 체크는 `contents: read`만 |
+| **Rust 캐시** | `swatinem/rust-cache` — Windows CI 빌드 시간 대폭 단축 |
 
-### Phase 20 — PrivacyToggle + UpdateBanner + ModelSelector Accessibility ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **PrivacyToggle** | `role="switch"` + `aria-checked` — announces toggle state to screen readers (WCAG 4.1.2) |
-| | `aria-label` with state description, SVG `aria-hidden`, `focus-visible:ring-2 ring-blue-500/50` |
-| **UpdateBanner** | Install/Restart/Dismiss buttons: `focus-visible:ring-2` + `aria-label` |
-| **ModelSelector** | Trigger: `aria-label="AI 모델 선택"` + `focus-visible:ring-2` |
-| | Cloud/Local option buttons: `focus-visible:ring-1 ring-inset`; rescan button: `focus-visible:ring-1` |
+### Phase 8 — 지식베이스 UI 보안/UX 업그레이드 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **XSS 취약점 수정** | `dangerouslySetInnerHTML` 제거 → `SnippetHighlight` 컴포넌트로 FTS5 `<mark>` 태그만 안전하게 파싱 (ASVS 5.3.3) |
+| **파일 타입 컬러 뱃지** | `.md`, `.rs`, `.py`, `.ts`, `.tsx`, `.js`, `.json`, `.toml`, `.yaml`, `.csv` — 11가지 확장자 색상 구분 |
+| **인라인 삭제 확인 UI** | `window.confirm()` 제거 → 인라인 2단계 확인 버튼 (WCAG 2.1 + 보안 강화) |
+| **접근성 완성** | `role=dialog/list/menu/menuitem/alert`, `aria-expanded`, `aria-modal`, `aria-labelledby` 전면 적용 |
+| **KB 컨텍스트 바 업그레이드** | 채팅 입력창 위 KB 칩 바 — onClearAll 원자적 초기화, doc count 뱃지, 보라색 활성 상태 표시 |
+| **클릭 토글 드롭다운** | CSS `:hover` 드롭다운 → 클릭 토글 + mousedown outside-click 핸들러 (touch 호환, 키보드 접근 가능) |
 
-### Phase 19 — Chat Header + WelcomeView Full UX Upgrade ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Suggested Prompt Chips** | 4 clickable example prompt chips in WelcomeView — eliminates blank-slate anxiety |
-| **Feature Card Semantics** | `role="list/listitem"`, emoji `aria-hidden`, removed misleading hover affordance on non-interactive cards |
-| **Shortcut Semantics** | `<p>` list → `<dl>/<dt>/<dd>` structure (HTML5 definition list standard) |
-| **CTA Button** | `focus-visible:ring-2 ring-violet-400 ring-offset-2`, SVG `aria-hidden` |
-| **Compare Button** | `aria-label`, `focus-visible:ring-2`, SVG `aria-hidden` |
-| **Branch Button** | `focus-visible:ring-2`, `aria-pressed={showBranchPanel}`, fixed toggle behavior |
+### Phase 9 — 채팅 전체 검색 (`Ctrl+F`) ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **인-대화 메시지 검색** | `Ctrl+F` → 슬라이드 다운 검색 바, 현재 대화 내 메시지 실시간 필터링 |
+| **결과 카운터 + 네비게이션** | "X / Y 결과" 표시, 이전(▲·Shift+Enter) / 다음(▼·Enter) 버튼으로 순환 |
+| **자동 스크롤** | 현재 포커스 결과로 smooth scroll, violet ring-2 강조 |
+| **검색 일치 발췌** | 일치 메시지 하단에 주변 문맥 45자 + 매칭 텍스트 violet 하이라이트 스니펫 표시 |
+| **Esc 닫기** | Escape로 검색 닫기 — 다른 모달보다 우선 처리 (capture:true) |
+| **보안** | 클라이언트 사이드 필터링(IPC 없음), ASVS 5.1.1(maxLength=500), ASVS 5.3.3(XSS-safe), CSS.escape() 방어 |
 
-### Phase 18 — KnowledgeBaseView + App.tsx Accessibility ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Hover-Only Delete Buttons Fixed** | `opacity-0 group-hover:opacity-100` → `group-focus-within:opacity-100` added (WCAG 2.1.1) + `focus-visible:ring-1` |
-| **KB Search maxLength** | `maxLength={500}` (ASVS 5.1.1) |
-| **Sidebar Nav Buttons** | All 9 view buttons get `aria-current="page"` when active (WCAG 4.1.2) |
+### Phase 10 — 대화별 활성 KB 저장 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **세션 간 KB 컨텍스트 유지** | KbContextBar에서 활성화한 KB가 대화별로 DB에 저장 — 앱 재시작·대화 전환 후에도 복원 |
+| **마이그레이션 019** | `conversations.active_kb_ids TEXT DEFAULT '[]'` (JSON 배열, 기존 데이터 마찰 없음) |
+| **원자적 교체** | toggle/clearAll 시 전체 배열을 한 번에 UPDATE — 부분 업데이트로 인한 불일치 없음 |
+| **경쟁 조건 방어** | `activeKbConvIdRef` ref로 대화 전환 중 stale 저장 방지 (다른 대화에 덮어쓰기 불가) |
+| **입력 검증** | Rust: 최대 20개, 양수, 중복 제거, rows_affected 체크 / TS: 동일 검증 (defense in depth) |
+| **무결성** | `serde_json::to_string()` — 문자열 보간 없이 직렬화, SQL 인젝션 원천 차단 |
 
-### Phase 17 — SettingsView Security & Accessibility ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **API Key Delete Inline Confirm** | Trash → `confirmDelete` state → red warning box — 2-step confirm before irreversible OS keychain deletion |
-| **Delete Success Toast** | `addToast("success")` feedback (no more silent success) |
-| **Persona Delete Inline Confirm** | `confirmDeletePersonaId` state + inline red confirm, `role="alert"` (WCAG 4.1.3) |
-| **maxLength=200** | API key input length bounded (ASVS 5.1.1) |
-| **aria-labels + focus rings** | All buttons: `aria-label` + `focus-visible:ring` throughout |
-| **Shortcuts List Complete** | 6 → 10 shortcuts — Alt+Shift+V, Ctrl+F, Ctrl+Shift+S, ?/Ctrl+/ added |
+### Phase 21 — AI 에이전트 접근성 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **승인 게이트 접근성** | `role="alert"` 추가 — AI가 승인을 요청하는 즉시 스크린 리더 자동 알림 (WCAG 4.1.3) |
+| **Approve/Deny 버튼** | `focus-visible:ring-2`, 스텝 제목 포함 `aria-label` — 키보드로 보안 흐름 완전 제어 |
+| **진행률 바** | `role="progressbar"`, `aria-valuenow/min/max`, `aria-label` 추가 (WCAG 4.1.2) |
+| **실행 기록 사이드바** | `<nav aria-label>`, 선택 항목 `aria-current`, 각 항목 `aria-label` (목표+상태 포함) |
+| **전체 버튼 완성** | 실행/취소/도구도움말/오류닫기/예시칩/expand 토글 — focus-visible ring + aria-label 전면 |
+| **보안** | 새 IPC 없음, innerHTML 없음 |
 
-### Phase 16 — ChatInput Completion (Image Paste + Char Count + Error Feedback) ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Image Paste** | Ctrl+V with image → auto-attached as Vision AI input (FileReader base64, image/* filter only) |
-| **Character Counter** | Shows char count at bottom-right of textarea when ≥2,000 chars — normal/warn(2K+)/danger(6K+) colors |
-| **Screenshot Error Toast** | Removes `console.warn` → `addToast("error", ...)` — user immediately notified (silent failure eliminated) |
-| **Image Paste Feedback** | 2-second "이미지 첨부됨" badge with ImagePlus icon after paste |
-| **ARIA Improvements** | `aria-label` on textarea, conditional `aria-describedby` for char counter, `aria-live="polite"` |
-| **Security** | Zero new IPC, FileReader image/* filter, safe base64 extraction, client-side only |
+### Phase 20 — PrivacyToggle + UpdateBanner + ModelSelector 접근성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **PrivacyToggle** | `role="switch"` + `aria-checked` — 토글 상태를 스크린 리더에 명시 (WCAG 4.1.2) |
+| | `aria-label` (상태 설명 포함), SVG `aria-hidden`, `focus-visible:ring-2 ring-blue-500/50` |
+| **UpdateBanner** | Install/Restart/Dismiss 버튼 `focus-visible:ring-2` + `aria-label` 추가 |
+| **ModelSelector** | Trigger `aria-label="AI 모델 선택"` + `focus-visible:ring-2` |
+| | Cloud/Local 옵션 버튼 `focus-visible:ring-1 ring-inset`, 재스캔 버튼 `focus-visible:ring-1` |
 
-### Phase 15 — PersonaSelector + PromptLibraryModal Accessibility & Security ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Instant Delete Removed (2 places)** | Trash buttons in PersonaSelector and PromptLibraryModal → inline red confirmation (X/Check) |
-| **Keyboard Accessibility Fix (2 places)** | `group-hover:flex` → `group-focus-within:flex` added — keyboard users can reach all action buttons |
-| **Full ARIA** | PersonaSelector: `role=listbox/option`, `aria-selected`, `aria-expanded`, `aria-haspopup` |
+### Phase 19 — 채팅 헤더 + WelcomeView UX 전면 업그레이드 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **제안 프롬프트 칩** | WelcomeView에 4개 클릭 가능 예시 프롬프트 칩 추가 (blank-slate anxiety 해소) |
+| **Feature 카드 시맨틱** | `role="list/listitem"`, emoji `aria-hidden`, 오해 유발 hover 어포던스 제거 |
+| **단축키 시맨틱** | `<p>` 나열 → `<dl>/<dt>/<dd>` 구조 (HTML5 정의 목록 표준) |
+| **CTA 버튼** | `focus-visible:ring-2 ring-violet-400 ring-offset-2`, SVG `aria-hidden` |
+| **Compare 버튼** | `aria-label`, `focus-visible:ring-2`, SVG `aria-hidden` 추가 |
+| **Branch 버튼** | `focus-visible:ring-2`, `aria-pressed={showBranchPanel}`, 토글 동작 수정 |
+
+### Phase 18 — KnowledgeBaseView + App.tsx 접근성 보완 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **hover-only 삭제 버튼 수정** | `opacity-0 group-hover:opacity-100` → `group-focus-within:opacity-100` 추가 (WCAG 2.1.1) + `focus-visible:ring-1` |
+| **KB 검색 maxLength** | `maxLength={500}` 추가 (ASVS 5.1.1) |
+| **사이드바 nav** | 9개 뷰 전환 버튼 모두 `aria-current="page"` 조건부 추가 (WCAG 4.1.2) |
+
+### Phase 17 — SettingsView 보안/접근성 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **API 키 삭제 inline confirm** | Trash → `confirmDelete` state → red 경고 박스 — OS 키체인 영구 삭제 전 2단계 확인 |
+| **삭제 성공 토스트** | `addToast("success")` 피드백 (silent success 제거) |
+| **페르소나 삭제 inline confirm** | `confirmDeletePersonaId` state + inline red confirm, `role="alert"` (WCAG 4.1.3) |
+| **maxLength=200** | API 키 입력 길이 제한 (ASVS 5.1.1) |
+| **aria-labels + focus rings** | 모든 버튼 `aria-label` + `focus-visible:ring` 전면 적용 |
+| **단축키 목록 완성** | 6개 → 10개 — Alt+Shift+V, Ctrl+F, Ctrl+Shift+S, ?/Ctrl+/ 추가 |
+
+### Phase 16 — ChatInput 완성 (이미지 붙여넣기 + 글자 수 + 오류 피드백) ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **이미지 붙여넣기** | Ctrl+V로 이미지 붙여넣기 → Vision AI 자동 첨부 (FileReader base64, image/* 전용 필터) |
+| **글자 수 표시** | 2,000자 이상 시 textarea 우하단에 카운터 표시 — 정상/경고(2K+)/위험(6K+) 색상 |
+| **스크린샷 오류 toast** | console.warn 제거 → addToast("error") — 사용자에게 즉시 알림 (silent failure 완전 제거) |
+| **이미지 붙여넣기 피드백** | 2초간 "이미지 첨부됨" 배지 표시 (ImagePlus 아이콘) |
+| **ARIA 보완** | textarea `aria-label`, `aria-describedby` 글자 수 연결, `aria-live="polite"` |
+| **보안** | 새 IPC 없음, FileReader image/* 필터, base64 안전 추출, 클라이언트 사이드 처리 |
+
+### Phase 15 — PersonaSelector + PromptLibraryModal 접근성/보안 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **즉시 삭제 제거 (2곳)** | PersonaSelector·PromptLibraryModal의 Trash 버튼 → inline red confirm (X/Check) |
+| **키보드 접근성 수정 (2곳)** | `group-hover:flex` → `group-focus-within:flex` 추가 — 키보드 사용자도 버튼 접근 가능 |
+| **ARIA 완성** | PersonaSelector: `role=listbox/option`, `aria-selected`, `aria-expanded`, `aria-haspopup` |
 | | PromptLibraryModal: `role=dialog/list/listitem/group`, `aria-modal`, `aria-labelledby`, `aria-pressed` |
-| **Pencil Icon Consistency** | PromptLibraryModal "Edit" text button → Pencil icon (matches ConversationItem) |
-| **Sidebar Search Hardening** | `maxLength=200` (ASVS 5.1.1) + `aria-label="대화 목록 검색"` added |
-| **Security** | Zero new IPC, all inputs bounded, no `innerHTML` |
+| **Pencil 아이콘 통일** | PromptLibraryModal "Edit" 텍스트 버튼 → Pencil 아이콘 (ConversationItem과 일관성) |
+| **사이드바 검색 보완** | `maxLength=200` (ASVS 5.1.1) + `aria-label="대화 목록 검색"` 추가 |
+| **보안** | 새 IPC 없음, 모든 입력 bounded, innerHTML 없음 |
 
-### Phase 14 — Conversation Management Completion ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Inline Rename** | Double-click title or pencil button → inline input → Enter saves, Esc cancels |
-| **Inline Delete Confirm** | Immediate delete replaced with red warning box + cancel/delete buttons |
-| **Keyboard Accessibility Fix** | CSS `hover-only` buttons → `group-focus-within:flex` added so keyboard users can reach Pin/Rename/Delete |
-| **role="alert"** | Delete confirmation box announces to screen readers on appearance (WCAG 4.1.3) |
-| **Input Validation** | `maxLength=100` + trim + non-empty check (ASVS 5.1.1) |
-| **Pencil Button** | Visible rename button on hover (NNGroup: Recognition over Recall) |
-| **Security** | Zero new IPC, no `innerHTML`, bounded input length |
+### Phase 14 — 대화 관리 완성 (inline rename + inline confirm) ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **대화 이름 변경** | 더블클릭 또는 연필 버튼 → 인라인 입력 편집 → Enter 저장, Esc 취소 |
+| **삭제 확인 UI** | 즉시 삭제 제거 → red 경고 박스 + 취소/삭제 버튼 (복구 불가 명시) |
+| **키보드 접근성 수정** | CSS `hover-only` 버튼 → `group-focus-within:flex` 추가로 키보드 사용자도 버튼 접근 가능 |
+| **role="alert"** | 삭제 확인 박스 등장 시 스크린 리더 즉시 알림 (WCAG 4.1.3) |
+| **입력 검증** | maxLength=100 + trim + non-empty 체크 (ASVS 5.1.1) |
+| **Pencil 버튼** | hover 시 이름 변경 버튼 명시적 노출 (NNGroup: Recognition over Recall) |
+| **보안** | 새 IPC 없음, innerHTML 없음, maxLength 제한 |
 
-### Phase 13 — Prompt Version Diff View ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Version Diff Modal** | Line-by-line comparison between a saved version and the current editor content — removed lines in red (-), added lines in green (+) |
-| **Pure TS LCS Algorithm** | Zero external diff libraries — Myers-style LCS in pure TypeScript (zero supply chain risk) |
-| **+N / -N Stats** | Added/removed line counts shown in the modal header at a glance |
-| **Restore from Diff** | "Restore v{N}" button directly inside the diff modal |
-| **Inline Confirm** | `window.confirm()` replaced by inline amber confirmation box (WCAG compliant) |
-| **Toast Feedback** | `alert()` replaced by toastStore success/error notifications |
-| **Full Accessibility** | `role=dialog`, `aria-modal`, `aria-labelledby`, focus-on-open, Escape close, backdrop dismiss |
-| **Security** | Zero new IPC calls, no `innerHTML`, all text rendered as React nodes — zero XSS surface |
+### Phase 13 — 프롬프트 버전 비교 diff 뷰 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **버전 diff 모달** | 저장된 버전과 현재 편집 내용을 줄 단위로 비교 — 제거(-) 빨강 / 추가(+) 초록 |
+| **LCS 순수 TS 구현** | 외부 라이브러리 0개 — 순수 TypeScript LCS 알고리즘으로 diff 계산 (supply chain 리스크 없음) |
+| **+N / -N 통계** | 헤더에 추가/삭제 줄 수 즉시 표시 |
+| **복원 통합** | diff 모달 안에서 바로 "v{N} 복원" 버튼 클릭 가능 |
+| **inline confirm** | window.confirm() 제거 → amber 경고 박스 inline confirm (WCAG 준수) |
+| **토스트 피드백** | 복원 성공/실패 시 alert() 대신 toastStore 알림 |
+| **접근성 완전** | role=dialog, aria-modal, aria-labelledby, focus-on-open, Escape 닫기, 백드롭 클릭 해제 |
+| **보안** | 새 IPC 0개, innerHTML 없음, 모든 텍스트 React text node — XSS 표면 0 |
 
-### Phase 12 — Keyboard Shortcuts Help Modal (`?` / `Ctrl+/`) ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **`?` Shortcut** | Press `?` outside inputs → instantly opens full shortcut modal (GitHub/Gmail standard) |
-| **`Ctrl+/` Shortcut** | Works everywhere, including in input fields (VS Code standard) |
-| **Categorized Groups** | Global / Chat / Search Bar / Help — 4 groups, 13+ shortcuts organized |
-| **Full Accessibility** | `role=dialog`, `aria-modal`, `aria-labelledby`, focus-on-open, backdrop dismiss, Escape close (WCAG 2.1 AA) |
-| **Command Palette Integration** | Ctrl+K → search "Keyboard Shortcuts" → Enter to open |
-| **Chat Header `?` Button** | Discoverable hint button at the right of the chat header (NNGroup: Recognition over Recall) |
-| **Security** | Static constants only, zero IPC, zero XSS surface |
+### Phase 12 — 키보드 단축키 도움말 (`?` / `Ctrl+/`) ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **`?` 단축키** | 입력창 외부에서 `?` 키 → 전체 단축키 모달 즉시 열기 (GitHub/Gmail 표준) |
+| **`Ctrl+/` 단축키** | 어디서든 동작 — 입력창 내에서도 사용 가능 (VS Code 표준) |
+| **카테고리별 그룹핑** | 글로벌 / 채팅 / 검색 바 / 도움말 — 4개 그룹, 13+ 단축키 정리 |
+| **접근성 완전** | role=dialog, aria-modal, aria-labelledby, focus-on-open, 백드롭 클릭 해제, Escape 닫기 (WCAG 2.1 AA) |
+| **명령 팔레트 통합** | Ctrl+K → "키보드 단축키" 검색 → Enter로 열기 |
+| **헤더 `?` 버튼** | 채팅 헤더 오른쪽에 발견 가능한 힌트 버튼 (NNGroup: Recognition over Recall) |
+| **보안** | 정적 상수만 사용, 새 IPC 없음, XSS 표면 0 |
 
-### Phase 11 — Copy / Export UX Completion ✅ Complete
-| Feature | Description |
-|---------|-------------|
-| **Copy Button Visual Feedback** | Icon swaps Copy → Check (emerald) for 1.5s on click + toast "Copied to clipboard" |
-| **Copy Error Handling** | Clipboard permission denial surfaces via error toast (no silent failure) |
-| **Timer Cleanup** | `useRef` + `useEffect` cleanup prevents memory leaks on component unmount |
-| **aria-live Announce** | Screen readers hear copy completion in real-time (WCAG 4.1.3) |
-| **Export Menu Accessibility** | CSS `:hover` → click-toggle + `mousedown` outside-click + Escape key dismissal |
-| **Full ARIA** | `role=menu/menuitem`, `aria-haspopup`, `aria-expanded`, `aria-label` applied throughout |
-| **Rich Menu Items** | Each option has icon + title + description with color coding (sky / amber) |
-| **Lucide Icon Consistency** | Download, FileText, FileCode, ChevronDown replace all inline SVGs |
-| **Export Success Feedback** | Toast confirms file was exported successfully |
+### Phase 11 — 복사/내보내기 UX 완성 ✅ 완료
+| 기능 | 설명 |
+|------|------|
+| **복사 버튼 시각 피드백** | 클릭 시 Copy → Check 아이콘 1.5초 전환(emerald), 토스트 알림 "클립보드에 복사됨" |
+| **복사 에러 처리** | 클립보드 권한 거부 시 에러 토스트로 사용자에게 즉시 알림 |
+| **언마운트 타이머 정리** | useRef + useEffect cleanup으로 메모리 릭 방지 |
+| **aria-live 안내** | 스크린 리더에게 복사 완료 실시간 전달 (WCAG 4.1.3) |
+| **내보내기 메뉴 접근성 개선** | CSS `:hover` → 클릭 토글 + mousedown outside-click + Escape 키 닫기 |
+| **전면 ARIA 속성** | `role=menu/menuitem`, `aria-haspopup`, `aria-expanded`, `aria-label` 전면 적용 |
+| **리치 메뉴 아이템** | Markdown/JSON 각각에 아이콘 + 제목 + 설명 + 색상 구분 (sky/amber) |
+| **Lucide 아이콘 일관성** | Download, FileText, FileCode, ChevronDown — inline SVG 전면 교체 |
+| **내보내기 성공 피드백** | 파일 다운로드 후 성공 토스트로 결과 확인 가능 |
 
-### Phase 4 — Security Hardening & UX Completion
-| Feature | Description |
-|---------|-------------|
-| **Agent Web Search** | AI Agent searches DuckDuckGo in real time (`search_web` tool) |
-| **Agent URL Fetch** | AI Agent reads web page content (`read_url` tool, SSRF defense included) |
-| **Prompt Version Restore** | Version history accordion UI — restore any previous version in one click |
-| **Local LLM Model Picker** | Select Ollama/LM Studio models directly from dropdown, 30s TTL cache |
-| **Privacy & Audit Dashboard** | PII detection stats by type + masking rate + immutable audit log viewer |
-| **Multi-AI Compare (upgraded)** | Column accent colors, markdown export, API-key filtering, adopt feature |
+### Phase 4 — 보안 강화 & UX 완성
+| 기능 | 설명 |
+|------|------|
+| **에이전트 웹 검색** | AI 에이전트가 DuckDuckGo로 실시간 웹 검색 (`search_web` 도구) |
+| **에이전트 URL 읽기** | AI 에이전트가 웹 페이지 내용 fetch (`read_url` 도구, SSRF 방어 포함) |
+| **프롬프트 버전 복원** | 편집 이력 아코디언 UI — 클릭 한 번으로 이전 버전 복원 |
+| **로컬 LLM 모델 선택** | Ollama/LM Studio 모델을 드롭다운에서 직접 선택, 30초 TTL 캐시 |
+| **개인정보 & 감사 대시보드** | PII 감지 유형별 통계 + 마스킹률 + 불변 감사 로그 뷰 |
+| **멀티 AI 비교 완성** | 컬럼 색상 구분, 마크다운 내보내기, API 키 필터링, 채택 기능 |
 
 ---
 
-## Tech Stack
+## 기술 스택
 
-| Layer | Technology |
-|-------|-----------|
-| Desktop | Tauri 2 (Rust backend) |
-| Frontend | React 19 + TypeScript + Tailwind CSS v4 |
-| Database | SQLite + SQLCipher (AES-256, PBKDF2-SHA512 256k iterations) |
-| Full-Text Search | SQLite FTS5 (Knowledge Base RAG) |
-| API Keys | Windows Credential Manager via OS keychain |
-| State | Zustand |
-| Streaming | Tauri ipc::Channel |
-| AI Calls | Rust reqwest (no CORS, keys never reach frontend) |
-| Voice STT | Whisper API (OpenAI) — webm/opus, 25 MB limit |
-| TTS | Web Speech API (browser-native) |
-| Screen Capture | `screenshots` crate (0.8) + `image` crate (0.24) |
-| Auto Updater | tauri-plugin-updater v2 (Ed25519 signature verification) |
+| 레이어 | 기술 |
+|--------|------|
+| 데스크톱 | Tauri 2 (Rust 백엔드) |
+| 프론트엔드 | React 19 + TypeScript + Tailwind CSS v4 |
+| 데이터베이스 | SQLite + SQLCipher (AES-256, PBKDF2-SHA512 256k 반복) |
+| 전체 텍스트 검색 | SQLite FTS5 (지식베이스 RAG) |
+| API 키 | Windows 자격 증명 관리자 (OS 키체인) |
+| 상태 | Zustand |
+| 스트리밍 | Tauri ipc::Channel |
+| AI 호출 | Rust reqwest (CORS 없음, 키 프론트엔드 미노출) |
+| 음성 STT | Whisper API (OpenAI) — webm/opus, 25MB 제한 |
+| TTS | Web Speech API (브라우저 내장) |
+| 화면 캡처 | `screenshots` crate (0.8) + `image` crate (0.24) |
+| 자동 업데이트 | tauri-plugin-updater v2 (Ed25519 서명 검증) |
 | i18n | react-i18next |
 
 ---
 
-## Getting Started
+## 시작하기
 
-### Prerequisites
+### 사전 요구사항
 
-- **Windows 10 21H2+** or **Windows 11**
-- At least one AI API key (OpenAI, Anthropic, or Google)
+- **Windows 10 21H2+** 또는 **Windows 11**
+- AI API 키 1개 이상 (OpenAI, Anthropic, Google)
 
-### Install from Release
+### 릴리스에서 설치
 
-1. Download the latest `.msi` from [GitHub Releases](https://github.com/sodam-ai/ai-flow/releases)
-2. Run the installer
-3. AIFlow appears in your system tray
-4. Press `Alt+Space` to open the overlay
-5. Go to **Settings** and add your API key
+1. [GitHub Releases](https://github.com/sodam-ai/ai-flow/releases)에서 최신 `.msi` 다운로드
+2. 설치 실행
+3. 시스템 트레이에 AIFlow 아이콘 표시
+4. `Alt+Space`를 눌러 오버레이 열기
+5. **설정**에서 API 키 추가
 
-### Build from Source
+### 소스에서 빌드
 
-#### Requirements
+#### 요구사항
 
-- Rust toolchain (MSVC target): `rustup default stable`
-- Visual Studio Build Tools (C++ workload)
-- Strawberry Perl: `choco install strawberryperl -y` (required for SQLCipher)
+- Rust 툴체인 (MSVC 타겟): `rustup default stable`
+- Visual Studio Build Tools (C++ 워크로드)
+- Strawberry Perl: `choco install strawberryperl -y` (SQLCipher 필수)
 - Node.js 20+: `choco install nodejs-lts -y`
 
-#### Steps
+#### 단계
 
 ```bash
-# Clone the repository
+# 저장소 클론
 git clone https://github.com/sodam-ai/ai-flow.git
 cd ai-flow
 
-# Install frontend dependencies
+# 프론트엔드 의존성 설치
 npm install
 
-# Run in development mode
+# 개발 모드 실행
 npm run tauri:dev
 
-# Build for production (.msi installer)
+# 프로덕션 빌드 (.msi 설치 파일)
 npm run tauri:build
 ```
 
 ---
 
-## How to Use Key Features
+## 주요 기능 사용법
 
-### Knowledge Base (RAG)
+### 지식베이스 (RAG)
 
-1. Click the **Knowledge Base** icon (database icon) in the sidebar
-2. Click **New Knowledge Base** to create one, then open it
-3. Drop or select files to index (`.txt`, `.md`, `.py`, `.ts`, `.rs`, `.json`, `.toml`, `.yaml`, `.csv`, etc.)
-4. Use the search box to query documents — results show color-coded file type badges and highlighted matching text
-5. To delete a document, click the trash icon and confirm inline (no popup dialogs)
-6. **Smart Context Injection**: Above the chat input, click any KB chip to activate it — every AI message will automatically include matching KB context from that knowledge base
-7. The AI Agent can also automatically search your knowledge bases during task execution
+1. 사이드바의 **지식베이스** (데이터베이스 아이콘) 클릭
+2. **새 지식베이스** 버튼으로 지식베이스 생성 후 클릭해서 열기
+3. 인덱싱할 파일 선택 또는 드롭 (`.txt`, `.md`, `.py`, `.ts`, `.rs`, `.json`, `.toml`, `.yaml`, `.csv` 등)
+4. 검색창으로 문서 쿼리 — 결과에 파일 타입 컬러 뱃지 + 일치 텍스트 하이라이팅
+5. 문서 삭제 시 휴지통 아이콘 클릭 → 인라인 2단계 확인 (팝업 없음)
+6. **스마트 컨텍스트 주입**: 채팅 입력창 위의 KB 칩을 클릭하면 활성화 — 활성화된 KB의 검색 결과가 모든 AI 메시지에 자동 주입됨
+7. AI 에이전트는 작업 실행 중 자동으로 지식베이스를 검색 가능
 
-### Chat Search (`Ctrl+F`) — Phase 9
+### AI 에이전트
 
-1. While in any conversation, press `Ctrl+F` — a search bar slides down below the chat header
-2. Type your search term → messages matching the query are filtered in real time
-3. Matching messages show a violet border + excerpt snippet (context + highlighted match text)
-4. `Enter` (or ▼ button) → next result, `Shift+Enter` (or ▲ button) → previous result
-5. Counter shows "X / Y results" at all times
-6. `Esc` or X button to close and clear the search
+1. 사이드바의 **AI 에이전트** (비커 아이콘) 클릭
+2. 입력창에 목표 입력 (예: "지식베이스의 모든 문서 요약해줘")
+3. 에이전트가 단계를 계획한 후 하나씩 실행
+4. 파일 쓰기 또는 워크플로우 실행이 필요한 단계는 **승인 게이트** 표시 — 진행 전 검토
+5. 언제든지 에이전트 취소 가능
 
-### AI Agent
+### 대화 브랜칭
 
-1. Click **AI 에이전트** (beaker icon) in the sidebar
-2. Type your goal in the input box (e.g., "Summarize all documents in my knowledge base")
-3. The agent plans steps, then executes them one by one
-4. Steps that require file write or workflow execution show an **approval gate** — review before proceeding
-5. You can cancel the agent at any time
+1. 대화에서 메시지에 마우스 오버
+2. **포크** 버튼을 클릭하여 해당 지점에서 분기
+3. 그 지점까지의 모든 메시지가 복사된 새 대화 생성
+4. 원본 스레드를 잃지 않고 다양한 AI 응답 탐색
 
-### Conversation Branching
+### 워크플로우 내보내기/가져오기
 
-1. In any conversation, hover over a message
-2. Click the **Fork** button to branch from that point
-3. A new conversation is created with all messages up to that point copied
-4. Explore different AI responses without losing your original thread
+1. **워크플로우 빌더**를 열고 워크플로우 선택
+2. **내보내기**를 클릭하여 `.json` 파일 다운로드
+3. 다른 기기에서 **가져오기**를 클릭하여 파일 선택
+4. 모든 단계가 포함된 워크플로우 재생성
 
-### Workflow Export/Import
+### 에이전트 웹 검색 & URL 읽기 (Phase 4)
 
-1. Open **워크플로우 빌더** and select a workflow
-2. Click **내보내기** to download a `.json` file
-3. On another machine, click **가져오기** and select the file
-4. The workflow is recreated with all steps intact
+1. 사이드바의 **AI 에이전트** 클릭
+2. 목표에 "최신 정보"가 필요한 작업 입력 (예: "AI 최신 뉴스 요약해줘")
+3. 에이전트가 자동으로 `search_web` 또는 `read_url` 도구 호출
+4. 각 도구 호출 결과가 StepCard에 펼쳐짐
+5. 보안: `read_url`은 사설 IP(localhost, 192.168.x.x 등) 차단
+
+### 개인정보 & 감사 로그 (Phase 4)
+
+1. 사이드바 하단의 **개인정보 & 감사** (방패 아이콘) 클릭
+2. **PII 감지 탭**: 전체 마스킹률 + 유형별 통계 (전화번호, 이메일 등) 확인
+3. **감사 로그 탭**: 앱 이벤트 타임라인 (INFO/WARN/ERROR 색상 구분)
+4. 감사 로그는 변경 불가 — DB 수준 트리거로 삭제/수정 차단
+
+### 로컬 LLM (Ollama) 선택 (Phase 4)
+
+1. 채팅 화면 상단의 **모델 선택기** (프로바이더 이름 버튼) 클릭
+2. **로컬 AI** 섹션에 Ollama가 실행 중이면 모델 목록 자동 표시
+3. 원하는 모델 클릭 → 즉시 전환 (무료, API 키 불필요)
+4. 새로고침 버튼으로 수동 재스캔 가능
+
+### 멀티 AI 비교 (Phase 4 업그레이드)
+
+1. 채팅 헤더의 **비교** 버튼 또는 `Ctrl+K` → "AI 비교" 선택
+2. API 키가 설정된 모델만 표시 — 2~3개 선택
+3. 질문 입력 후 Enter → 모든 모델이 동시에 스트리밍
+4. **채택** 버튼으로 최적 응답 표시
+5. **내보내기** 버튼으로 마크다운 파일로 저장
+
+### 채팅 전체 검색 (Phase 9)
+
+1. 채팅 화면에서 `Ctrl+F` — 채팅 헤더 아래 검색 바 슬라이드 다운
+2. 검색어 입력 → 현재 대화의 메시지가 실시간으로 필터링
+3. 일치하는 메시지에 보라색 테두리 + 발췌 스니펫(주변 문맥 + 하이라이팅) 표시
+4. `Enter`(또는 ▼ 버튼) → 다음 결과, `Shift+Enter`(또는 ▲ 버튼) → 이전 결과
+5. 상단 카운터로 "X / Y 결과" 확인
+6. `Esc` 또는 X 버튼으로 검색 닫기
+
+### 음성 입력 (Phase 5)
+
+1. 채팅 입력창 우측의 **마이크 버튼** 클릭 또는 `Alt+Shift+V`
+2. 마이크 권한 허용 → 파형이 표시되며 녹음 시작
+3. 말하기 — 2.5초 무음 시 자동 정지 (또는 버튼 다시 클릭으로 수동 정지)
+4. Whisper가 텍스트로 변환 → 입력창에 자동 삽입
+5. 설정 → **음성 입력 언어**: 한국어, 영어, 자동 감지 선택 가능
+
+### TTS 읽기 (Phase 5)
+
+1. AI 응답 말풍선 하단의 **스피커 버튼** 클릭
+2. 마크다운 문법 제거 후 자연스러운 음성으로 읽기 시작
+3. 다시 클릭하면 즉시 정지
+4. 설정 → **TTS 읽기 속도**: 0.5×~2.0× 조절 가능
+
+### 스크린샷 Vision AI (Phase 6)
+
+1. `Ctrl+Shift+S` — 어떤 앱에서든 전체 화면 캡처
+2. AIFlow ChatInput에 썸네일 미리보기 표시 + "Vision" 뱃지
+3. 질문 입력 후 전송 → GPT-4o / Claude / Gemini Vision이 화면을 분석
+4. X 버튼으로 스크린샷 제거 가능 (텍스트만 전송)
+5. 지원 프로바이더: OpenAI(GPT-4o), Anthropic(Claude 3.5 Sonnet+), Google(Gemini 1.5+)
 
 ---
 
-## Environment Variables
+## 환경 변수
 
-AIFlow does **not** require a `.env` file. All secrets are stored in the OS keychain.
+AIFlow는 `.env` 파일이 **필요하지 않습니다**. 모든 비밀은 OS 키체인에 저장됩니다.
 
-| Variable | Purpose | Where set |
-|----------|---------|-----------|
-| AI API Keys | Provider authentication | OS Keychain (Settings UI) |
-| DB Master Key | Database encryption | OS Keychain (auto-generated on first run) |
-| Device ID | License verification | OS Keychain (random UUID) |
+| 변수 | 용도 | 저장 위치 |
+|------|------|-----------|
+| AI API 키 | 프로바이더 인증 | OS 키체인 (설정 UI) |
+| DB 마스터 키 | 데이터베이스 암호화 | OS 키체인 (최초 실행 시 자동 생성) |
+| 기기 ID | 라이선스 검증 | OS 키체인 (랜덤 UUID) |
 
 ---
 
-## Project Structure
+## 프로젝트 구조
 
 ```
 ai-flow/
-├── .PRD/                     # Product Requirements Documents
+├── .PRD/                     # 제품 요구사항 문서
 ├── .github/
 │   └── workflows/
-│       ├── release.yml       # v*.*.* tag push → MSI build + Ed25519 signing + GitHub Release
-│       └── check.yml         # PR/push gate: TypeScript tsc + cargo check + cargo clippy
-├── src/                      # React frontend
-│   ├── components/           # UI components (chat, overlay, prompts, palette)
-│   │   └── chat/             # Chat-specific components
-│   │       ├── ChatSearchBar.tsx   # Ctrl+F in-conversation search bar (Phase 9)
-│   ├── stores/               # Zustand state management
-│   ├── lib/                  # Utilities, IPC, schemas, providers
-│   ├── views/                # Page-level views
-│   │   ├── KnowledgeBaseView.tsx  # RAG document management + search
-│   │   ├── AgentView.tsx          # AI Agent run management
+│       ├── release.yml       # v*.*.* 태그 push → MSI 빌드 + Ed25519 서명 + GitHub Release
+│       └── check.yml         # PR·push 게이트: TypeScript tsc + cargo check + cargo clippy
+├── src/                      # React 프론트엔드
+│   ├── components/           # UI 컴포넌트
+│   │   ├── chat/             # 채팅 전용 컴포넌트
+│   │   │   ├── ChatSearchBar.tsx   # Ctrl+F 인-대화 검색 바 (Phase 9)
+│   │   └── updater/          # UpdateBanner (자동 업데이트 알림)
+│   ├── stores/               # Zustand 상태 관리
+│   ├── lib/                  # 유틸리티, IPC, 스키마, 프로바이더
+│   ├── views/                # 페이지 레벨 뷰
+│   │   ├── KnowledgeBaseView.tsx   # RAG 문서 관리 + 검색
+│   │   ├── AgentView.tsx           # AI 에이전트 실행 관리
+│   │   ├── PrivacyAuditView.tsx    # PII 통계 + 감사 로그 대시보드
 │   │   ├── WorkflowBuilderView.tsx
 │   │   ├── BatchQueueView.tsx
 │   │   ├── CostReportView.tsx
 │   │   └── SettingsView.tsx
-│   └── types/                # TypeScript types
-├── src-tauri/                # Rust backend
+│   └── types/                # TypeScript 타입
+├── src-tauri/                # Rust 백엔드
 │   ├── src/
-│   │   ├── commands/         # Tauri IPC commands (thin adapters)
-│   │   │   ├── knowledge_base.rs  # KB/RAG commands
-│   │   │   └── agent.rs           # Agent + branching + export/import
-│   │   ├── services/         # Business logic
-│   │   │   ├── knowledge_base.rs  # FTS5 indexing + search
-│   │   │   ├── agent.rs           # Multi-step agent execution engine
-│   │   │   ├── workflow.rs        # Workflow + export/import
-│   │   │   ├── mcp.rs             # MCP + path security
-│   │   │   └── providers/         # AI provider implementations
-│   │   ├── models/           # Serde data structs
-│   │   └── db/               # SQLCipher + migrations runner
-│   └── migrations/           # SQL migrations (001~018)
-│       ├── 016_knowledge_base.sql  # Knowledge bases, documents, FTS5
-│       ├── 017_agent_runs.sql      # Agent runs, steps, tools
-│       ├── 018_conversation_branches.sql  # Branching + workflow exports
-│       └── 019_conversation_kb.sql  # Per-conversation active KB IDs (Phase 10)
-├── README.md                 # This file (English)
-├── README.ko.md              # Korean
-├── .resume.md                # Work continuation guide
-└── LICENSE                   # MIT License (SoDam AI Studio)
+│   │   ├── commands/         # Tauri IPC 명령 (얇은 어댑터)
+│   │   │   ├── knowledge_base.rs  # KB/RAG 명령
+│   │   │   ├── agent.rs           # 에이전트 + 브랜칭 + 내보내기/가져오기
+│   │   │   ├── voice.rs           # Whisper STT (Phase 5)
+│   │   │   ├── screenshot.rs      # 화면 캡처 → base64 (Phase 6)
+│   │   │   └── updater.rs         # 업데이트 확인/설치 (Phase 6)
+│   │   ├── services/         # 비즈니스 로직
+│   │   │   ├── knowledge_base.rs  # FTS5 인덱싱 + 검색
+│   │   │   ├── agent.rs           # 멀티스텝 에이전트 (search_web, read_url 포함)
+│   │   │   ├── audit.rs           # 불변 감사 로그 읽기/쓰기
+│   │   │   ├── privacy.rs         # PII 스캐너 + 글로벌 통계
+│   │   │   ├── workflow.rs        # 워크플로우 + 내보내기/가져오기
+│   │   │   ├── mcp.rs             # MCP + 경로 보안
+│   │   │   └── providers/         # AI 프로바이더 구현체
+│   │   ├── models/           # Serde 데이터 구조체
+│   │   └── db/               # SQLCipher + 마이그레이션 러너
+│   └── migrations/           # SQL 마이그레이션 (001~018)
+│       ├── 016_knowledge_base.sql  # 지식베이스, 문서, FTS5
+│       ├── 017_agent_runs.sql      # 에이전트 실행, 단계, 도구
+│       ├── 018_conversation_branches.sql  # 브랜칭 + 워크플로우 내보내기
+│       └── 019_conversation_kb.sql  # 대화별 활성 KB ID (Phase 10)
+├── README.md                 # 영어 (기본)
+├── README.ko.md              # 한국어 (이 파일)
+├── .resume.md                # 작업 재개 가이드
+└── LICENSE                   # MIT 라이선스 (SoDam AI Studio)
 ```
 
 ---
 
-## Architecture
+## 아키텍처
 
 ```
-┌─ Main Window (React) ──────────────────────────────┐
-│  Chat (streaming, multi-compare, branching)         │
-│  KnowledgeBaseView (RAG, FTS5 search)               │
-│  AgentView (multi-step execution, approval gate)    │
-│  WorkflowBuilderView (pipelines, export/import)     │
-│  CostReportView (budget, per-model breakdown)       │
-│  Zustand + Zod + i18n                               │
-└──────────────────────────┬──────────────────────────┘
+┌─ 메인 창 (React) ──────────────────────────────┐
+│  채팅 (스트리밍, 멀티비교, 브랜칭)               │
+│  KnowledgeBaseView (RAG, FTS5 검색)             │
+│  AgentView (멀티스텝 실행, 승인 게이트)          │
+│  WorkflowBuilderView (파이프라인, 내보내기/가져오기) │
+│  CostReportView (예산, 모델별 분석)              │
+│  Zustand + Zod + i18n                           │
+└──────────────────────────┬──────────────────────┘
                            │ Tauri IPC
-┌──────────────────────────▼──────────────────────────┐
-│  Rust Backend                                        │
-│  commands/   → IPC entry points (validation only)   │
-│  services/   → Business logic                        │
-│    ├─ knowledge_base.rs  (FTS5 RAG)                  │
-│    ├─ agent.rs           (re-entrant step engine)    │
-│    ├─ workflow.rs        (pipeline + export/import)  │
-│    ├─ routing.rs         (smart AI selection)        │
-│    ├─ privacy.rs         (local PII scanner)         │
-│    ├─ cost.rs + cost_report.rs                       │
+┌──────────────────────────▼──────────────────────┐
+│  Rust 백엔드                                     │
+│  commands/   → IPC 진입점 (검증만)               │
+│  services/   → 비즈니스 로직                     │
+│    ├─ knowledge_base.rs  (FTS5 RAG)              │
+│    ├─ agent.rs           (재진입 스텝 엔진)       │
+│    ├─ workflow.rs        (파이프라인 + 내보내기)  │
+│    ├─ routing.rs         (스마트 AI 선택)         │
+│    ├─ privacy.rs         (로컬 PII 스캐너)        │
+│    ├─ cost.rs + cost_report.rs                   │
 │    └─ providers/         (OpenAI, Anthropic, Google) │
-│  db/         → SQLCipher (AES-256) + backups         │
-└───────────┬──────────────┬──────────────────────────┘
+│  db/         → SQLCipher (AES-256) + 백업        │
+└───────────┬──────────────┬─────────────────────-┘
             │              │
-    OS Keychain       SQLCipher DB          AI Provider APIs
-    (API keys)        (encrypted)           (SSE streaming)
+    OS 키체인          SQLCipher DB          AI 프로바이더 API
+    (API 키)           (암호화)              (SSE 스트리밍)
 ```
 
-**4-Layer Architecture:**
-1. `commands/` — IPC entry points (input validation only, no business logic)
-2. `services/` — Pure business logic (Provider Trait abstraction)
-3. `models/` — Serde structs (no logic)
-4. `db/` — SQL execution only
+**4-레이어 아키텍처:**
+1. `commands/` — IPC 진입점 (입력 검증만, 비즈니스 로직 없음)
+2. `services/` — 순수 비즈니스 로직 (Provider Trait 추상화)
+3. `models/` — Serde 구조체 (로직 없음)
+4. `db/` — SQL 실행만
 
 ---
 
-## Security
+## 보안
 
-| Area | Implementation |
-|------|----------------|
-| API Key Storage | OS Keychain only — never in code, files, or DB |
-| API Key Validation | Live API call validation before saving |
-| Database | SQLCipher AES-256 + PBKDF2-SHA512 (256,000 iterations) |
-| DB Master Key | Auto-generated random 32-byte key, stored in OS Keychain |
-| IPC Parameters | Zod validation on frontend + Rust type system on backend |
-| Streaming | Tauri ipc::Channel (not EventSystem), with cancellation |
-| CSP | `default-src 'self'` (no unsafe-eval) |
-| Audit Log | Immutable INSERT-only — DB triggers block UPDATE/DELETE |
-| Privacy Mode | 100% local PII scanner — data never leaves machine |
-| SSRF Defense | Agent URL fetch blocks localhost/private IPs/metadata endpoints (CWE-918) |
-| Redirect Recheck | Final URL re-validated after HTTP redirects (bypass prevention) |
-| Control Char Strip | OWASP ASVS 5.2.3 — control chars removed from web search results |
-| HTML Stripping | script/style/tags removed from URL content, 50KB cap |
-| Template Injection | `{{input}}` values sanitized before AI substitution |
-| FTS5 Injection | Search queries wrapped in double-quotes, special chars stripped |
-| Path Security | `canonicalize()` on all MCP file paths (symlink traversal prevention) |
-| Input Limits | All text inputs have max length validation (goal: 2KB, query: 500 chars) |
-| File Access | Absolute path check + extension allowlist + 5MB size limit for KB |
-| Voice Security | Audio bytes never written to disk (memory-only base64 over IPC), 25 MB / 60s hard limits |
-| Vision Security | Screenshot 10 MB cap, bytes never written to disk (memory base64 only) |
-| Update Signing | Ed25519 asymmetric key — only public key bundled in app, `minVersion` downgrade prevention |
-| XSS Defense (KB) | No `dangerouslySetInnerHTML` for FTS5 `snippet()` output — only `<mark>` tags parsed safely in React (ASVS 5.3.3) |
-| Delete Confirm UI | `window.confirm()` removed — inline two-step confirmation (focus flow protection, WCAG 2.1) |
-
----
-
-## Roadmap
-
-| Phase | Focus | Status |
-|-------|-------|--------|
-| **1a** | Core MVP (chat, cost, security, i18n) | ✅ Complete |
-| **1b** | Hotkey, overlay, personas, prompts, tray, file drop | ✅ Complete |
-| **2** | Multi-AI compare, smart routing, privacy, cost dashboard, budget, workflows | ✅ Complete |
-| **3** | RAG knowledge base, AI agent, conversation branching, workflow export/import | ✅ Complete |
-| **4** | Agent web search/URL fetch, prompt version restore, local LLM picker, audit dashboard | ✅ Complete |
-| **5** | Voice STT (Whisper API) + TTS + global `Alt+Shift+V` shortcut | ✅ Complete |
-| **6** | Screenshot Vision AI (`Ctrl+Shift+S`) + Auto Updater (Ed25519) + UI/UX improvements | ✅ Complete |
-| **7** | GitHub Actions CI/CD — release workflow + PR check gate (TypeScript + Rust) | ✅ Complete |
-| **8** | Knowledge Base UI full upgrade — XSS fix (ASVS 5.3.3), file type badges, full accessibility | ✅ Complete |
-| **9** | Chat full-text search (`Ctrl+F`) — in-conversation real-time search, highlight, auto-scroll | ✅ Complete |
-| **10** | Per-conversation active KB persistence — restore KB context across restart/switch (migration 019) | ✅ Complete |
-| **11** | Copy / Export UX completion — visual feedback, accessible menu, Lucide icon consistency | ✅ Complete |
-| **12** | Keyboard shortcuts help modal (`?` / `Ctrl+/`) — categorized shortcut catalog, command palette integration | ✅ Complete |
-| **13** | Prompt version diff view — line-level LCS diff, inline confirm, toast feedback, WCAG accessibility | ✅ Complete |
-| **14** | Conversation management — inline rename (double-click/Pencil), inline confirm delete, keyboard accessibility fix | ✅ Complete |
-| **15** | PersonaSelector + PromptLibraryModal — inline confirm delete, full ARIA, focus-within keyboard a11y | ✅ Complete |
-| **16** | ChatInput completion — image paste (Vision AI), char counter, screenshot error toast | ✅ Complete |
-| **17** | Agent tool expansion (file write, shell exec — approval gate required), local Whisper STT | Planned |
+| 영역 | 구현 |
+|------|------|
+| API 키 저장 | OS 키체인만 — 코드, 파일, DB에 절대 없음 |
+| API 키 검증 | 저장 전 실제 API 호출로 검증 |
+| 데이터베이스 | SQLCipher AES-256 + PBKDF2-SHA512 (256,000 반복) |
+| DB 마스터 키 | 자동 생성 랜덤 32바이트 키, OS 키체인 저장 |
+| IPC 파라미터 | 프론트엔드 Zod 검증 + 백엔드 Rust 타입 시스템 |
+| 스트리밍 | Tauri ipc::Channel (EventSystem 아님), 취소 지원 |
+| CSP | `default-src 'self'` (unsafe-eval 없음) |
+| 감사 로그 | 불변 INSERT 전용 로그 — DB 트리거로 UPDATE/DELETE 차단 |
+| 프라이버시 모드 | 100% 로컬 PII 스캐너 — 데이터 기기 외 미전송 |
+| SSRF 방어 | 에이전트 URL fetch 시 localhost/사설IP/메타데이터 엔드포인트 차단 |
+| 리디렉션 체크 | HTTP 리디렉션 후에도 최종 URL 재검증 (사설망 우회 방지) |
+| 제어 문자 제거 | 웹 검색 결과에서 OWASP ASVS 5.2.3 기준 제어 문자 제거 |
+| HTML 스트리핑 | 외부 URL 콘텐츠에서 script/style/태그 제거 (50KB 상한) |
+| 템플릿 인젝션 | `{{input}}` 값, AI 치환 전 새니타이징 |
+| FTS5 인젝션 | 검색어를 큰따옴표로 감싸고 특수문자 제거 |
+| 경로 보안 | 모든 MCP 파일 경로에 `canonicalize()` 적용 (심볼릭 링크 순회 방지) |
+| 입력 제한 | 모든 텍스트 입력 최대 길이 검증 (목표: 2KB, 쿼리: 500자) |
+| 파일 접근 | 절대 경로 확인 + 확장자 허용 목록 + 5MB 크기 제한 (KB) |
+| 음성 보안 | 오디오 바이트 디스크 미기록 (IPC 중 메모리 base64만), 25MB / 60초 하드 리밋 |
+| Vision 보안 | 스크린샷 10MB 캡, 바이트 디스크 미기록 (base64 메모리 전용) |
+| 업데이트 서명 | Ed25519 비대칭 키 — 앱에 공개키만 번들, 다운그레이드 방지 minVersion |
+| XSS 방어 (KB) | FTS5 `snippet()` 출력에 `dangerouslySetInnerHTML` 미사용 — `<mark>` 태그만 React 안전 파싱 (ASVS 5.3.3) |
+| 삭제 확인 UI | `window.confirm()` 제거 — 인라인 2단계 확인 (포커스 흐름 보호, WCAG 2.1) |
 
 ---
 
-## For Non-Developers (Vibe Coding Guide)
+## 로드맵
 
-> **You don't need to know how to code to use or modify AIFlow.**
-> This guide is for anyone who wants to customize the app using only natural language.
-
-### How to Change or Add Features (No Coding Required)
-
-1. **Open this project** in [Cursor](https://cursor.sh), [Windsurf](https://codeium.com/windsurf), or any AI-enabled editor
-2. **Describe what you want** in plain language:
-   - *"Add a dark blue theme option to the settings"*
-   - *"Make the AI response text larger"*
-   - *"Add support for the Mistral AI provider"*
-3. **The AI generates the code** — you review and press Accept
-4. **Test it**: type `npm run tauri:dev` in the terminal — the app opens with your changes
-5. **Done!** No programming knowledge needed.
-
-### Golden Rule
-> **Never put API keys directly in any code file.**
-> Always enter them through the AIFlow Settings UI — they are stored safely in Windows Credential Manager.
-
-### Common Requests in Plain Language
-
-| What you want | What to say to the AI |
-|---|---|
-| Add a new AI provider | "Add support for [Provider Name] in `src-tauri/src/services/providers/`" |
-| Change a UI color | "Change the sidebar color to navy blue using Tailwind classes" |
-| Add a new language | "Add Spanish translations to `src/i18n/` following the existing Korean pattern" |
-| Add a new knowledge base file type | "Allow `.docx` files in `src-tauri/src/services/knowledge_base.rs`" |
-| Change the global hotkey | "Change the overlay hotkey from Alt+Space to Ctrl+Alt+A in `src-tauri/src/lib.rs`" |
-| Fix a bug | Describe the bug: "When I search in the knowledge base, it crashes if the query has special characters" |
+| Phase | 목표 | 상태 |
+|-------|------|------|
+| **1a** | 코어 MVP (채팅, 비용, 보안, i18n) | ✅ 완료 |
+| **1b** | 단축키, 오버레이, 페르소나, 프롬프트, 트레이, 파일 드롭 | ✅ 완료 |
+| **2** | 멀티 AI 비교, 스마트 라우팅, 프라이버시, 비용 대시보드, 예산, 워크플로우 | ✅ 완료 |
+| **3** | RAG 지식베이스, AI 에이전트, 대화 브랜칭, 워크플로우 내보내기/가져오기 | ✅ 완료 |
+| **4** | 에이전트 웹검색/URL읽기, 프롬프트 버전 복원, 로컬 LLM 선택, 감사 대시보드 | ✅ 완료 |
+| **5** | 음성 STT (Whisper API) + TTS + 글로벌 단축키 `Alt+Shift+V` | ✅ 완료 |
+| **6** | Screenshot Vision AI (`Ctrl+Shift+S`) + Auto Updater (Ed25519) + UI/UX 개선 | ✅ 완료 |
+| **7** | GitHub Actions CI/CD — 릴리스 워크플로우 + PR 체크 게이트 (TypeScript + Rust) | ✅ 완료 |
+| **8** | 지식베이스 UI 전면 업그레이드 — XSS 수정(ASVS 5.3.3), 파일 타입 뱃지, 접근성 완성 | ✅ 완료 |
+| **9** | 채팅 전체 검색 (`Ctrl+F`) — 인-대화 실시간 검색, 결과 하이라이트, 자동 스크롤 | ✅ 완료 |
+| **10** | 대화별 활성 KB 저장 — 세션/재시작 간 KB 컨텍스트 자동 복원 (마이그레이션 019) | ✅ 완료 |
+| **11** | 복사/내보내기 UX 완성 — 시각 피드백, 접근성 있는 메뉴, Lucide 아이콘 일관성 | ✅ 완료 |
+| **12** | 키보드 단축키 도움말 모달 (`?` / `Ctrl+/`) — 전체 단축키 카테고리별 정리, 명령 팔레트 통합 | ✅ 완료 |
+| **13** | 프롬프트 버전 비교 diff 뷰 — 줄 단위 LCS diff, inline confirm, 토스트 피드백, WCAG 접근성 | ✅ 완료 |
+| **14** | 대화 관리 완성 — inline rename (더블클릭/Pencil), inline confirm delete, 키보드 접근성 수정 | ✅ 완료 |
+| **15** | PersonaSelector·PromptLibraryModal 접근성/보안 완성 — inline confirm, ARIA, focus-within | ✅ 완료 |
+| **16** | ChatInput 완성 — 이미지 붙여넣기(Vision AI), 글자 수 표시, 스크린샷 오류 toast | ✅ 완료 |
+| **17** | 에이전트 도구 확장 (파일 쓰기, 셸 실행 — 승인 게이트 필수), 로컬 Whisper STT | 예정 |
 
 ---
 
-## Operational Notes
+## 비개발자를 위한 안내 (바이브코딩 가이드)
 
-- **Database location**: `%APPDATA%\ai-flow\aiflow.db` (SQLCipher encrypted)
-- **DB Backups**: Automatically saved to `%APPDATA%\ai-flow\backups\` before each migration (last 5 kept)
-- **API keys**: Stored in Windows Credential Manager under the `aiflow` service name
-- **Knowledge Base**: Indexed documents are stored as text chunks in the encrypted DB (original files not copied)
-- **Agent runs**: Stored in DB — you can review all past runs in the Agent view
-- **Logs**: Tauri dev console or `%APPDATA%\ai-flow\logs\`
-- **Dev server port**: 1420 (configured in `package.json`)
-- **SQLCipher build**: Requires Strawberry Perl on Windows for the C compiler
+> **코딩을 몰라도 AIFlow를 사용하거나 수정할 수 있습니다.**
+> 자연어만으로 앱을 커스터마이징하고 싶은 분을 위한 가이드입니다.
+
+### 기능 변경/추가 방법 (코딩 불필요)
+
+1. [Cursor](https://cursor.sh), [Windsurf](https://codeium.com/windsurf) 등 AI 에디터에서 프로젝트 열기
+2. 원하는 것을 자연어로 설명:
+   - *"설정에 다크 블루 테마 옵션 추가해줘"*
+   - *"AI 응답 텍스트 크게 해줘"*
+   - *"Mistral AI 프로바이더 지원 추가해줘"*
+3. **AI가 코드 생성** — 검토 후 Accept 클릭
+4. **테스트**: 터미널에 `npm run tauri:dev` 입력 — 변경사항이 적용된 앱 실행
+5. **완료!** 프로그래밍 지식 불필요.
+
+### 황금 규칙
+> **API 키를 코드 파일에 직접 입력하지 마세요.**
+> 항상 AIFlow 설정 UI에서 입력하세요 — Windows 자격 증명 관리자에 안전하게 저장됩니다.
 
 ---
 
-## Links
+## 운영 참고사항
 
-- [PRD Documents](.PRD/README.md) — Product requirements and design decisions
+- **데이터베이스 위치**: `%APPDATA%\ai-flow\aiflow.db` (SQLCipher 암호화)
+- **DB 백업**: 각 마이그레이션 전 `%APPDATA%\ai-flow\backups\`에 자동 저장 (최근 5개 유지)
+- **API 키**: `aiflow` 서비스명으로 Windows 자격 증명 관리자에 저장
+- **지식베이스**: 인덱싱된 문서는 텍스트 청크로 암호화 DB에 저장 (원본 파일 복사 안함)
+- **에이전트 실행**: DB에 저장 — 에이전트 뷰에서 모든 과거 실행 내역 확인 가능
+- **로그**: Tauri 개발 콘솔 또는 `%APPDATA%\ai-flow\logs\`
+- **개발 서버 포트**: 1420
+
+---
+
+## 링크
+
+- [PRD 문서](.PRD/README.md) — 제품 요구사항 및 설계 결정사항
 - [GitHub Issues](https://github.com/sodam-ai/ai-flow/issues)
 - [GitHub Releases](https://github.com/sodam-ai/ai-flow/releases)
 
 ---
 
-## License
+## 라이선스
 
 [MIT License](LICENSE) — Copyright © 2026 SoDam AI Studio
