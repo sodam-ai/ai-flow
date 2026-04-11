@@ -36,6 +36,8 @@ impl AiProvider for OllamaProvider {
         messages: &[Message],
         model_id: &str,
         system_prompt: Option<&str>,
+        temperature: Option<f64>,
+        max_tokens: Option<u32>,
     ) -> serde_json::Value {
         let mut msgs = Vec::new();
 
@@ -50,11 +52,20 @@ impl AiProvider for OllamaProvider {
             }));
         }
 
-        serde_json::json!({
+        let mut body = serde_json::json!({
             "model": model_id,
             "messages": msgs,
             "stream": true,
-        })
+        });
+
+        if let Some(t) = temperature {
+            body["temperature"] = serde_json::json!(t.clamp(0.0, 2.0));
+        }
+        if let Some(mt) = max_tokens {
+            body["max_tokens"] = serde_json::json!(mt);
+        }
+
+        body
     }
 
     fn parse_sse_line(&self, line: &str) -> SseParseResult {

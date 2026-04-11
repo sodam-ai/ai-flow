@@ -8,7 +8,9 @@ import type { Workflow, WorkflowTemplate, WorkflowRun } from "@/types";
 import {
   listWorkflows, listWorkflowTemplates, createWorkflow,
   deleteWorkflow, runWorkflow, listWorkflowRuns,
+  isTauri,
 } from "@/lib/ipc/invoke";
+import DesktopOnly from "@/components/shared/DesktopOnly";
 
 const CATEGORY_LABELS: Record<string, string> = {
   writing:     "✍️ 글쓰기",
@@ -34,6 +36,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function WorkflowBuilderView() {
+  if (!isTauri) return <DesktopOnly label="워크플로우는 데스크톱 앱에서만 사용할 수 있습니다" />;
   const [tab, setTab]                         = useState<"mine" | "templates">("mine");
   const [workflows, setWorkflows]             = useState<Workflow[]>([]);
   const [templates, setTemplates]             = useState<WorkflowTemplate[]>([]);

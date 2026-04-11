@@ -30,6 +30,8 @@ impl AiProvider for GoogleProvider {
         messages: &[Message],
         _model_id: &str,
         system_prompt: Option<&str>,
+        temperature: Option<f64>,
+        max_tokens: Option<u32>,
     ) -> serde_json::Value {
         let contents: Vec<serde_json::Value> = messages
             .iter()
@@ -54,6 +56,18 @@ impl AiProvider for GoogleProvider {
             body["systemInstruction"] = serde_json::json!({
                 "parts": [{ "text": sys }],
             });
+        }
+
+        // Google uses generationConfig for temperature and token limits
+        let mut gen_config = serde_json::json!({});
+        if let Some(t) = temperature {
+            gen_config["temperature"] = serde_json::json!(t.clamp(0.0, 2.0));
+        }
+        if let Some(mt) = max_tokens {
+            gen_config["maxOutputTokens"] = serde_json::json!(mt);
+        }
+        if temperature.is_some() || max_tokens.is_some() {
+            body["generationConfig"] = gen_config;
         }
 
         body

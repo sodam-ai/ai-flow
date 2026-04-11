@@ -12,6 +12,7 @@ import { usePromptStore } from "@/stores/promptStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useChatStore } from "@/stores/chatStore";
 import { useToastStore } from "@/stores/toastStore";
+import { toUserMessage } from "@/lib/errors";
 import { detectPii, type PiiMatch } from "@/lib/privacy/pii-detector";
 import { logPiiDetection, readClipboardContent, captureScreen } from "@/lib/ipc/invoke";
 import type { FileContent } from "@/types";
@@ -48,6 +49,8 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
   const setRoutingMode = useSettingsStore((s) => s.setRoutingMode);
   const privacyMode = useSettingsStore((s) => s.privacyMode);
   const voiceLang = useSettingsStore((s) => s.voiceLang);
+  const temperature = useSettingsStore((s) => s.temperature);
+  const setTemperature = useSettingsStore((s) => s.setTemperature);
   const lastRoutingInfo = useChatStore((s) => s.lastRoutingInfo);
   const activeConversationId = useChatStore((s) => s.activeConversationId);
 
@@ -158,7 +161,12 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
     try {
       const text = await readClipboardContent();
       if (!text?.trim()) return;
-      const block = `[Clipboard context]\n${text.trim()}\n\n`;
+      // M-4: ASVS 5.1.3 — 클립보드 크기 상한 20,000자 (메모리 소진 방지)
+      const MAX_CLIPBOARD = 20_000;
+      const trimmed = text.trim();
+      const clipped = trimmed.length > MAX_CLIPBOARD;
+      const safeText = clipped ? trimmed.slice(0, MAX_CLIPBOARD) : trimmed;
+      const block = `[클립보드 컨텍스트]\n${safeText}${clipped ? "\n…(잘림)" : ""}\n\n`;
       setInput((prev) => block + prev);
       setClipboardAdded(true);
       if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
@@ -178,8 +186,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
       setPendingImage(base64);
       textareaRef.current?.focus();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      addToast("error", `스크린샷 실패: ${msg}`);
+      addToast("error", `스크린샷 실패: ${toUserMessage(e)}`);
     } finally {
       setScreenshotLoading(false);
     }
@@ -280,9 +287,31 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
             )}
             {lastRoutingInfo && lastRoutingInfo.potentialSavings > 0.0001 && (
               <span className="text-[10px] text-green-400">
-                Saved ${lastRoutingInfo.potentialSavings.toFixed(4)} via routing
+                라우팅 절약 ${lastRoutingInfo.potentialSavings.toFixed(4)}
               </span>
             )}
+            <div className="ml-auto flex items-center gap-1">
+              {([
+                { label: "P", value: 0.3, title: "Precise (0.3)" },
+                { label: "B", value: 0.7, title: "Balanced (0.7)" },
+                { label: "C", value: 1.2, title: "Creative (1.2)" },
+              ] as const).map(({ label, value, title }) => (
+                <button
+                  key={label}
+                  onClick={() => setTemperature(value)}
+                  title={title}
+                  aria-pressed={Math.abs(temperature - value) < 0.05}
+                  aria-label={`Response style: ${title}`}
+                  className={`w-5 h-5 rounded text-[9px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50 ${
+                    Math.abs(temperature - value) < 0.05
+                      ? "bg-violet-900/60 text-violet-300 border border-violet-700/50"
+                      : "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Screenshot preview */}
@@ -297,7 +326,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                 <button
                   onClick={() => setPendingImage(null)}
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-800 border border-zinc-600 flex items-center justify-center hover:bg-zinc-700 transition-colors"
-                  aria-label="Remove screenshot"
+                  aria-label="스크린샷 제거"
                 >
                   <X className="w-3 h-3 text-zinc-300" aria-hidden="true" />
                 </button>
@@ -314,7 +343,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
             <button
               onClick={() => setModalOpen(true)}
               className="p-2.5 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors flex-shrink-0"
-              aria-label="Open prompt library"
+              aria-label="프롬프트 라이브러리 열기"
             >
               <BookOpen className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -335,7 +364,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                   ? "text-green-400 bg-green-950/30"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
               }`}
-              aria-label="Inject clipboard content as context"
+              aria-label="클립보드 내용을 컨텍스트로 삽입"
             >
               {clipboardAdded ? (
                 <CheckCheck className="w-4 h-4" aria-hidden="true" />
@@ -353,7 +382,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                   ? "text-violet-400 bg-violet-950/30"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
               }`}
-              aria-label="Capture screenshot for Vision AI"
+              aria-label="Vision AI용 스크린샷 촬영"
             >
               {screenshotLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -406,7 +435,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
               <button
                 onClick={onCancel}
                 className="p-2.5 rounded-xl bg-red-900/50 text-red-400 hover:bg-red-900/80 transition-colors flex-shrink-0"
-                aria-label="Stop generation"
+                aria-label="생성 중지"
               >
                 <Square className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -415,7 +444,7 @@ export default function ChatInput({ isStreaming, onSubmit, onCancel }: Props) {
                 onClick={handleSubmit}
                 disabled={!canSend}
                 className="p-2.5 rounded-xl bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0 shadow-sm shadow-violet-900/40"
-                aria-label="Send message"
+                aria-label="메시지 전송"
               >
                 <Send className="w-4 h-4" aria-hidden="true" />
               </button>

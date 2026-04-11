@@ -7,6 +7,7 @@ import {
   deletePersona as deletePersonaIpc,
 } from "@/lib/ipc/invoke";
 import { useToastStore } from "./toastStore";
+import { toUserMessage } from "@/lib/errors";
 
 interface PersonaState {
   personas: Persona[];
@@ -33,8 +34,7 @@ export const usePersonaStore = create<PersonaState>((set, get) => ({
       set({ personas, isLoading: false });
     } catch (err) {
       set({ isLoading: false });
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 
@@ -55,8 +55,7 @@ export const usePersonaStore = create<PersonaState>((set, get) => ({
       useToastStore.getState().addToast("success", `Persona "${persona.name}" created`);
       return persona;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
       return null;
     }
   },
@@ -68,8 +67,7 @@ export const usePersonaStore = create<PersonaState>((set, get) => ({
         personas: s.personas.map((p) => (p.id === id ? updated : p)),
       }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 
@@ -82,8 +80,7 @@ export const usePersonaStore = create<PersonaState>((set, get) => ({
       }));
       useToastStore.getState().addToast("success", "Persona deleted");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 }));

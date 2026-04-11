@@ -153,18 +153,15 @@ pub fn cancel_agent_run(db: &Arc<Database>, run_id: i64) -> Result<(), String> {
 // ─── Queries ──────────────────────────────────────────────────────────────
 
 pub fn list_agent_runs(db: &Arc<Database>) -> Result<Vec<AgentRun>, String> {
-    let conn = db.get_conn().map_err(|e| e.to_string())?;
-    let mut stmt = conn
-        .prepare(
-            "SELECT id FROM agent_runs ORDER BY started_at DESC LIMIT 50",
-        )
-        .map_err(|e| e.to_string())?;
-
-    let ids: Vec<i64> = stmt
-        .query_map([], |r| r.get(0))
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+    let ids: Vec<i64> = db.read(|conn| {
+        let mut stmt = conn
+            .prepare("SELECT id FROM agent_runs ORDER BY started_at DESC LIMIT 50")?;
+        let ids = stmt
+            .query_map([], |r| r.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(ids)
+    })?;
 
     ids.iter().map(|&id| get_agent_run(db, id)).collect()
 }

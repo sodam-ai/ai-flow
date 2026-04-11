@@ -12,8 +12,10 @@ import {
   AlertTriangle,
   XCircle,
 } from "lucide-react";
-import { getGlobalPrivacyStats, getAuditLog } from "@/lib/ipc/invoke";
+import { getGlobalPrivacyStats, getAuditLog, isTauri } from "@/lib/ipc/invoke";
 import type { GlobalPrivacyStats, AuditEntry } from "@/lib/ipc/invoke";
+import { toUserMessage } from "@/lib/errors";
+import DesktopOnly from "@/components/shared/DesktopOnly";
 
 type Tab = "privacy" | "audit";
 
@@ -111,7 +113,7 @@ function PrivacyTab() {
     try {
       setStats(await getGlobalPrivacyStats());
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setLoading(false);
     }
@@ -322,7 +324,7 @@ function AuditTab() {
       setEntries(data);
       setHasMore(data.length === PAGE_SIZE);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setLoading(false);
     }
@@ -463,6 +465,8 @@ function AuditTab() {
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 export default function PrivacyAuditView() {
+  if (!isTauri) return <DesktopOnly label="개인정보 & 감사는 데스크톱 앱에서만 사용할 수 있습니다" />;
+
   const [tab, setTab] = useState<Tab>("privacy");
 
   return (

@@ -35,12 +35,46 @@ export const renameConversationSchema = z.object({
 });
 
 // ─── AI Streaming ───
+// ASVS 5.1.3: base64 PNG 최대 ~10 MB → base64 인코딩 후 ~13.3 MB = 14_000_000자
+const base64Image = z.string().max(14_000_000).nullable().optional();
+
 export const streamAiMessageSchema = z.object({
   conversationId: uuid,
   content: z.string().min(1).max(100_000),
   providerId: nonEmptyString,
   modelId: nonEmptyString,
   streamId: uuid,
+  imageData: base64Image, // C-1: 크기 상한 적용
+});
+
+// C-2: 검증 누락 해소 — regenerate / multi 공통 스키마
+export const regenerateAiMessageSchema = z.object({
+  messageId: nonEmptyString,
+  conversationId: uuid,
+  providerId: nonEmptyString,
+  modelId: nonEmptyString,
+  streamId: uuid,
+});
+
+export const streamMultiAiSchema = z.object({
+  conversationId: uuid,
+  content: z.string().min(1).max(100_000),
+  // targets: 2~3개로 제한 (multi_stream.rs 와 동일)
+  targets: z.array(z.object({
+    providerId: nonEmptyString,
+    modelId: nonEmptyString,
+  })).min(2).max(3),
+});
+
+export const editAndStreamMessageSchema = z.object({
+  messageId: nonEmptyString,
+  conversationId: uuid,
+  newContent: z.string().min(1).max(100_000),
+  providerId: nonEmptyString,
+  modelId: nonEmptyString,
+  streamId: uuid,
+  personaId: z.string().optional(),
+  temperature: z.number().min(0).max(2).optional(),
 });
 
 export const cancelStreamSchema = z.object({

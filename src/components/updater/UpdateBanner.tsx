@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { X, Download, RefreshCw, ArrowUpCircle, Loader2 } from "lucide-react";
 import { checkForUpdates, installUpdate } from "@/lib/ipc/invoke";
 import type { UpdateInfo } from "@/lib/ipc/invoke";
+import { toUserMessage } from "@/lib/errors";
 
 type BannerState = "hidden" | "available" | "downloading" | "done";
 
@@ -61,7 +62,7 @@ export default function UpdateBanner({ checkDelayMs = 5_000 }: Props) {
       await installUpdate();
       setBannerState("done");
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toUserMessage(e));
       setBannerState("available");
     }
   }, []);

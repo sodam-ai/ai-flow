@@ -61,16 +61,18 @@ pub fn create_workflow(db: &Arc<Database>, req: CreateWorkflowRequest) -> Result
 }
 
 pub fn list_workflows(db: &Arc<Database>) -> Result<Vec<Workflow>, String> {
-    let conn = db.get_conn().map_err(|e| e.to_string())?;
-    let mut stmt = conn
-        .prepare("SELECT id FROM workflows WHERE is_active=1 ORDER BY updated_at DESC")
-        .map_err(|e| e.to_string())?;
-
-    let ids: Vec<i64> = stmt
-        .query_map([], |r| r.get(0))
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+    // db.read() closure releases the MutexGuard before get_workflow() is called,
+    // preventing a deadlock (Rust Mutex is non-reentrant on the same thread).
+    let ids: Vec<i64> = db.read(|conn| {
+        let mut stmt = conn.prepare(
+            "SELECT id FROM workflows WHERE is_active=1 ORDER BY updated_at DESC",
+        )?;
+        let ids = stmt
+            .query_map([], |r| r.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(ids)
+    })?;
 
     ids.iter()
         .map(|&id| get_workflow(db, id))
@@ -317,15 +319,16 @@ pub fn get_workflow_run(db: &Arc<Database>, run_id: i64) -> Result<WorkflowRun, 
 }
 
 pub fn list_workflow_runs(db: &Arc<Database>, workflow_id: i64) -> Result<Vec<WorkflowRun>, String> {
-    let conn = db.get_conn().map_err(|e| e.to_string())?;
-    let ids: Vec<i64> = conn
-        .prepare("SELECT id FROM workflow_runs WHERE workflow_id=?1 ORDER BY created_at DESC LIMIT 50")
-        .map_err(|e| e.to_string())?
-        .query_map(params![workflow_id], |r| r.get(0))
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
-
+    let ids: Vec<i64> = db.read(|conn| {
+        let mut stmt = conn.prepare(
+            "SELECT id FROM workflow_runs WHERE workflow_id=?1 ORDER BY created_at DESC LIMIT 50",
+        )?;
+        let ids = stmt
+            .query_map(params![workflow_id], |r| r.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(ids)
+    })?;
     ids.iter().map(|&id| get_workflow_run(db, id)).collect()
 }
 
@@ -695,7 +698,12 @@ fn md5_simple(input: &str) -> u64 {
 fn sanitize_template_input(input: &str) -> String {
     // Truncate to 32KB
     let truncated = if input.len() > 32_768 {
-        &input[..32_768]
+        // Find valid UTF-8 char boundary at or before byte 32_768
+        let mut idx = 32_768;
+        while !input.is_char_boundary(idx) {
+            idx -= 1;
+        }
+        &input[..idx]
     } else {
         input
     };

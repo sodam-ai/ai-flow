@@ -32,7 +32,7 @@ const PATTERNS: PiiPattern[] = [
   {
     type: "ssn_kr",
     label: "주민등록번호",
-    regex: /\b(\d{6})-?(\d{7})\b/g,
+    regex: /\b(\d{6})-?([1-4]\d{6})\b/g,
     mask: (m) => m.replace(/(\d{6})-?(\d{7})/, "$1-*******"),
   },
   {
@@ -78,7 +78,7 @@ const PATTERNS: PiiPattern[] = [
   {
     type: "ip_address",
     label: "IP 주소",
-    regex: /\b(\d{1,3}\.){3}\d{1,3}\b/g,
+    regex: /\b(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\b/g,
     mask: (m) => m.replace(/(\d{1,3}\.\d{1,3})\.\d{1,3}\.\d{1,3}/, "$1.***.***"),
   },
 ];

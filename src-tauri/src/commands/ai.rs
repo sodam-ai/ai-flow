@@ -11,8 +11,10 @@ pub async fn stream_ai_message(
     model_id: String,
     stream_id: String,
     persona_id: Option<String>,
-    kb_ids: Option<Vec<i64>>, // Smart Context Injection: KB IDs to auto-search
-    image_data: Option<String>, // Phase 6: base64 PNG for Vision AI (screenshot)
+    kb_ids: Option<Vec<i64>>,      // Smart Context Injection: KB IDs to auto-search
+    image_data: Option<String>,    // Phase 6: base64 PNG for Vision AI (screenshot)
+    temperature: Option<f64>,      // Generation control: 0.0=precise, 1.0=balanced, 2.0=creative
+    max_tokens: Option<u32>,       // Response length cap; None = provider default
     channel: tauri::ipc::Channel<serde_json::Value>,
 ) -> Result<(), String> {
     // Register stream for cancellation
@@ -75,6 +77,8 @@ pub async fn stream_ai_message(
         &messages,
         injected_system.as_deref(),
         image_data.as_deref(),
+        temperature,
+        max_tokens,
         &channel,
         cancel_rx,
     )
@@ -207,8 +211,8 @@ fn generate_title(message: &str) -> String {
         return cleaned.to_string();
     }
 
-    // Trim at word boundary
-    let truncated = &cleaned[..40];
+    // Trim at word boundary (char-safe: collect to String first)
+    let truncated: String = cleaned.chars().take(40).collect();
     match truncated.rfind(' ') {
         Some(pos) if pos > 20 => format!("{}...", &truncated[..pos]),
         _ => format!("{}...", truncated),
@@ -250,7 +254,7 @@ pub async fn regenerate_ai_message(
             .map(|p| p.system_prompt)
     });
 
-    // Stream new AI response (regeneration — no image data)
+    // Stream new AI response (regeneration — no image data, preserve original temperature)
     let result = crate::services::ai_client::stream_chat(
         &provider_id,
         &model_id,
@@ -258,6 +262,8 @@ pub async fn regenerate_ai_message(
         &context_messages,
         system_prompt.as_deref(),
         None,
+        None,  // temperature: use provider default on regeneration
+        None,  // max_tokens: use provider default
         &channel,
         cancel_rx,
     )
@@ -300,6 +306,117 @@ pub async fn regenerate_ai_message(
                 "costKrw": cost.krw,
                 "exchangeRate": cost.exchange_rate,
                 "newVersion": new_version,
+            }));
+        }
+        Err(e) => {
+            let _ = channel.send(serde_json::json!({
+                "type": "error",
+                "error": e,
+            }));
+        }
+    }
+
+    state.streams.remove(&stream_id);
+    Ok(())
+}
+
+/// Edit a user message then stream a fresh AI response (no new user message saved)
+#[tauri::command]
+pub async fn edit_and_stream_message(
+    state: State<'_, AppState>,
+    message_id: String,
+    conversation_id: String,
+    new_content: String,
+    provider_id: String,
+    model_id: String,
+    stream_id: String,
+    persona_id: Option<String>,
+    temperature: Option<f64>,
+    channel: tauri::ipc::Channel<serde_json::Value>,
+) -> Result<(), String> {
+    // 1. Update user message content (role='user' guard in service)
+    crate::services::chat::update_user_message_content(&state.db, &message_id, &new_content)?;
+
+    // 2. Remove AI response(s) that followed the edited message
+    crate::services::chat::truncate_messages_after(&state.db, &conversation_id, &message_id)?;
+
+    // 3. Register stream for cancellation
+    let cancel_rx = state.streams.register(&stream_id)?;
+
+    // 4. Get API key (never sent to frontend)
+    let api_key = crate::services::keychain::get_key_internal(&provider_id)?;
+
+    // 5. Load updated conversation context
+    let messages = crate::services::chat::get_messages(&state.db, &conversation_id, 50)?;
+
+    // 6. Resolve persona system prompt
+    let system_prompt = persona_id.as_ref().and_then(|pid| {
+        crate::services::persona::get_persona(&state.db, pid)
+            .ok()
+            .map(|p| p.system_prompt)
+    });
+
+    crate::services::audit::log_event(
+        &state.db,
+        "ai_edit_stream_started",
+        "INFO",
+        Some(&format!("{}:{}", provider_id, model_id)),
+    );
+
+    // 7. Stream AI response
+    let result = crate::services::ai_client::stream_chat(
+        &provider_id,
+        &model_id,
+        &api_key,
+        &messages,
+        system_prompt.as_deref(),
+        None,
+        temperature,
+        None,
+        &channel,
+        cancel_rx,
+    )
+    .await;
+
+    drop(api_key);
+
+    match result {
+        Ok((full_content, usage)) => {
+            let cost = crate::services::cost::calc_cost_full(
+                &provider_id,
+                &model_id,
+                usage.input_tokens,
+                usage.output_tokens,
+                None,
+            );
+
+            crate::services::chat::save_message(
+                &state.db,
+                &conversation_id,
+                "assistant",
+                &full_content,
+                Some(usage.input_tokens),
+                Some(usage.output_tokens),
+                Some(cost.usd),
+            )?;
+
+            crate::services::audit::log_event(
+                &state.db,
+                "ai_edit_stream_completed",
+                "INFO",
+                Some(&format!(
+                    "{}:{} in={} out={} cost=${:.6}",
+                    provider_id, model_id, usage.input_tokens, usage.output_tokens, cost.usd
+                )),
+            );
+
+            let _ = channel.send(serde_json::json!({
+                "type": "done",
+                "inputTokens": usage.input_tokens,
+                "outputTokens": usage.output_tokens,
+                "costUsd": cost.usd,
+                "costKrw": cost.krw,
+                "exchangeRate": cost.exchange_rate,
             }));
         }
         Err(e) => {

@@ -6,6 +6,8 @@ import { streamMultiAi } from "@/lib/ipc/invoke";
 import { useChatStore } from "@/stores/chatStore";
 import { usePersonaStore } from "@/stores/personaStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { toUserMessage } from "@/lib/errors";
 
 interface MultiStreamViewProps {
   targets: StreamTarget[];
@@ -46,6 +48,7 @@ function providerLabel(providerId: string, modelId: string): string {
 export default function MultiStreamView({ targets, onClose }: MultiStreamViewProps) {
   const { activeConversationId, loadMessages, loadConversations } = useChatStore();
   const activePersonaId = usePersonaStore((s) => s.activePersonaId);
+  const temperature = useSettingsStore((s) => s.temperature);
 
   const [columns, setColumns] = useState<StreamColumn[]>(
     targets.map((t) => ({ providerId: t.providerId, modelId: t.modelId, content: "", isDone: false })),
@@ -104,13 +107,14 @@ export default function MultiStreamView({ targets, onClose }: MultiStreamViewPro
           loadConversations();
         }
       },
+      temperature,
     );
 
     try {
       await promise;
     } catch (err) {
       setIsStreaming(false);
-      useToastStore.getState().addToast("error", String(err));
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   }, [activeConversationId, inputText, isStreaming, targets, activePersonaId, loadMessages, loadConversations]);
 

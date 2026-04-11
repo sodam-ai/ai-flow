@@ -4,7 +4,9 @@ import { useFocusReturn } from "@/hooks/useFocusReturn";
 import { ListTodo, Play, X, Plus, CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import type { BatchJob, BatchItem, BatchProgressEvent } from "@/types";
-import { listBatchJobs, createBatchJob, getBatchItems, runBatchJob, cancelBatchJob } from "@/lib/ipc/invoke";
+import { listBatchJobs, createBatchJob, getBatchItems, runBatchJob, cancelBatchJob, isTauri } from "@/lib/ipc/invoke";
+import { toUserMessage } from "@/lib/errors";
+import DesktopOnly from "@/components/shared/DesktopOnly";
 
 const STATUS_COLOR: Record<string, string> = {
   pending:   "text-zinc-400",
@@ -19,6 +21,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function BatchQueueView() {
+  if (!isTauri) return <DesktopOnly label="배치 작업은 데스크톱 앱에서만 사용할 수 있습니다" />;
   const [jobs, setJobs] = useState<BatchJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<BatchJob | null>(null);
   const [items, setItems] = useState<BatchItem[]>([]);
@@ -42,7 +45,7 @@ export default function BatchQueueView() {
     try {
       setJobs(await listBatchJobs());
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setLoading(false);
     }
@@ -106,7 +109,7 @@ export default function BatchQueueView() {
       setNewSystemPrompt(""); setInputLines(""); setOutputDir("");
       handleSelectJob(job);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setCreating(false);
     }
@@ -117,7 +120,7 @@ export default function BatchQueueView() {
       await runBatchJob(jobId);
       setJobs((prev) => prev.map((j) => j.id === jobId ? { ...j, status: "running" } : j));
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 
@@ -126,7 +129,7 @@ export default function BatchQueueView() {
       await cancelBatchJob(jobId);
       setJobs((prev) => prev.map((j) => j.id === jobId ? { ...j, status: "cancelled" } : j));
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 

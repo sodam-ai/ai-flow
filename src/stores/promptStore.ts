@@ -8,6 +8,7 @@ import {
   usePrompt as usePromptIpc,
 } from "@/lib/ipc/invoke";
 import { useToastStore } from "./toastStore";
+import { toUserMessage } from "@/lib/errors";
 
 interface PromptState {
   prompts: PromptTemplate[];
@@ -38,8 +39,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       set({ prompts, isLoading: false });
     } catch (err) {
       set({ isLoading: false });
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 
@@ -50,8 +50,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       useToastStore.getState().addToast("success", `Prompt "${prompt.title}" created`);
       return prompt;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
       return null;
     }
   },
@@ -63,8 +62,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
         prompts: s.prompts.map((p) => (p.id === id ? updated : p)),
       }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 
@@ -76,8 +74,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       }));
       useToastStore.getState().addToast("success", "Prompt deleted");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 
@@ -92,8 +89,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       }));
       return result;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", msg);
+      useToastStore.getState().addToast("error", toUserMessage(err));
       return null;
     }
   },

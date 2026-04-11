@@ -391,40 +391,6 @@ export interface BatchProgressEvent {
   error_message?: string;
 }
 
-// ─── Payment / License ───────────────────────────────────────────────────
-export interface LicenseInfo {
-  id: number;
-  tier: "free" | "pro";
-  payment_provider?: string;
-  order_id?: string;
-  activated_at?: string;
-  expires_at?: string;
-  last_verified_at?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ProFeatures {
-  mcp_plugins: boolean;
-  workflow_builder: boolean;
-  batch_processing: boolean;
-  browser_extension: boolean;
-  smart_routing: boolean;
-  unlimited_history: boolean;
-}
-
-export interface CheckoutUrlResponse {
-  url: string;
-  provider: string;
-}
-
-// ─── Browser Extension ───────────────────────────────────────────────────
-export interface BrowserExtStatus {
-  registered: boolean;
-  manifest_path?: string;
-  registry_key?: string;
-  native_host_path?: string;
-}
 
 // ─── Phase 3: Knowledge Base (RAG) ──────────────────────────────────────
 export interface KnowledgeBase {

@@ -20,12 +20,16 @@ pub trait AiProvider: Send + Sync {
     /// Chat completions endpoint URL
     fn chat_endpoint(&self, model_id: &str) -> String;
 
-    /// Build provider-specific request body from messages
+    /// Build provider-specific request body from messages.
+    /// `temperature` (0.0–2.0): controls randomness; None uses provider default.
+    /// `max_tokens`: caps response length; None uses provider default.
     fn build_request_body(
         &self,
         messages: &[Message],
         model_id: &str,
         system_prompt: Option<&str>,
+        temperature: Option<f64>,
+        max_tokens: Option<u32>,
     ) -> serde_json::Value;
 
     /// Parse a single SSE line into a StreamToken (or None if not a content chunk)

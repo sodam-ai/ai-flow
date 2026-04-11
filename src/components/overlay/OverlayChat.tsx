@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { toUserMessage } from "@/lib/errors";
 import { closeOverlay } from "@/lib/ipc/invoke";
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { usePersonaStore } from "@/stores/personaStore";
@@ -88,8 +89,7 @@ export default function OverlayChat() {
     } catch (err) {
       setIsStreaming(false);
       setStreamId(null);
-      const msg = err instanceof Error ? err.message : String(err);
-      setResponse(`Error: ${msg}`);
+      setResponse(`오류: ${toUserMessage(err)}`);
     }
   };
 

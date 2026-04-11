@@ -105,9 +105,14 @@ pub fn run() {
                 &[&new_chat_item, &toggle_item, &settings_item, &quit_item],
             )?;
 
-            TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
-                .menu(&tray_menu)
+            let mut tray_builder = TrayIconBuilder::new()
+                .menu(&tray_menu);
+
+            if let Some(icon) = app.default_window_icon() {
+                tray_builder = tray_builder.icon(icon.clone());
+            }
+
+            tray_builder
                 .tooltip("AIFlow")
                 .on_menu_event(|app, event| {
                     let main_window = app.get_webview_window("main");
@@ -179,6 +184,7 @@ pub fn run() {
             // AI streaming
             commands::ai::stream_ai_message,
             commands::ai::regenerate_ai_message,
+            commands::ai::edit_and_stream_message,
             commands::ai::cancel_stream,
             commands::ai::get_model_catalog,
             // Personas (Phase 1b)
@@ -245,21 +251,6 @@ pub fn run() {
             commands::workflow::get_batch_items,
             commands::workflow::run_batch_job,
             commands::workflow::cancel_batch_job,
-            // Payment / License (Phase 2)
-            commands::payment::get_license_status,
-            commands::payment::get_pro_features,
-            commands::payment::create_lemonsqueezy_checkout,
-            commands::payment::create_toss_checkout,
-            commands::payment::create_naverpay_checkout,
-            commands::payment::activate_license,
-            commands::payment::handle_payment_callback,
-            commands::payment::reset_license,
-            // Browser Extension (Phase 2)
-            commands::browser_ext::get_browser_ext_status,
-            commands::browser_ext::register_native_host,
-            commands::browser_ext::unregister_native_host,
-            commands::browser_ext::receive_browser_context,
-            commands::browser_ext::list_browser_contexts,
             // Knowledge Base / RAG (Phase 3)
             commands::knowledge_base::list_knowledge_bases,
             commands::knowledge_base::create_knowledge_base,

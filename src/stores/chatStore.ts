@@ -9,6 +9,7 @@ import {
   deleteConversation,
   streamAiMessage,
   regenerateAiMessage,
+  editAndStreamMessage,
   cancelStream,
   streamRoutedMessage,
 } from "@/lib/ipc/invoke";
@@ -16,6 +17,7 @@ import { isPermissionGranted, requestPermission, sendNotification } from "@tauri
 import { useSettingsStore } from "./settingsStore";
 import { usePersonaStore } from "./personaStore";
 import { useToastStore } from "./toastStore";
+import { toUserMessage } from "@/lib/errors";
 
 /** Send OS notification when stream finishes (only if window not focused) */
 async function notifyCompletion(provider: string, tokens: number, costUsd: number) {
@@ -58,6 +60,7 @@ interface ChatState {
   currentStreamId: string | null;
   sendMessage: (content: string, options?: SendOptions) => Promise<void>;
   regenerateMessage: (messageId: string) => Promise<void>;
+  editAndResend: (messageId: string, newContent: string) => Promise<void>;
   cancelCurrentStream: () => Promise<void>;
 
   // Routing info (Phase 2)
@@ -180,7 +183,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }));
 
     const targetConvId = activeConversationId;
-    const { activeProviderId, activeModelId, routingMode } = useSettingsStore.getState();
+    const { activeProviderId, activeModelId, routingMode, temperature } = useSettingsStore.getState();
     const activePersonaId = usePersonaStore.getState().activePersonaId;
 
     const handleChunk = (chunk: StreamChunk) => {
@@ -233,6 +236,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           hasFile, hasCode, activePersonaId,
           handleChunk,
           options?.kbIds,
+          temperature,
         );
         await promise;
       } else {
@@ -244,13 +248,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
           handleChunk,
           options?.kbIds,
           options?.imageData,
+          temperature,
         );
         await promise;
       }
     } catch (err) {
       set({ isStreaming: false, streamingContent: "", currentStreamId: null });
-      const message = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", message);
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 
@@ -293,8 +297,62 @@ export const useChatStore = create<ChatState>((set, get) => ({
       await promise;
     } catch (err) {
       set({ isStreaming: false, streamingContent: "", currentStreamId: null });
-      const message = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast("error", message);
+      useToastStore.getState().addToast("error", toUserMessage(err));
+    }
+  },
+
+  editAndResend: async (messageId, newContent) => {
+    const { activeConversationId } = get();
+    if (!activeConversationId) return;
+
+    const streamId = crypto.randomUUID();
+    let accumulated = "";
+
+    set({ isStreaming: true, streamingContent: "", currentStreamId: streamId });
+
+    const targetConvId = activeConversationId;
+    const { activeProviderId, activeModelId, temperature } = useSettingsStore.getState();
+    const activePersonaId = usePersonaStore.getState().activePersonaId;
+
+    // Optimistic: update message content in local state immediately
+    set((s) => ({
+      messages: {
+        ...s.messages,
+        [targetConvId]: (s.messages[targetConvId] ?? []).map((m) =>
+          m.id === messageId ? { ...m, content: newContent } : m,
+        ),
+      },
+    }));
+
+    const { promise } = editAndStreamMessage(
+      messageId,
+      targetConvId,
+      newContent,
+      activeProviderId,
+      activeModelId,
+      streamId,
+      activePersonaId,
+      temperature ?? null,
+      (chunk: StreamChunk) => {
+        if (chunk.type === "token" && chunk.token) {
+          accumulated += chunk.token;
+          set({ streamingContent: accumulated });
+        } else if (chunk.type === "done") {
+          set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+          get().loadMessages(targetConvId);
+          notifyCompletion("AI", chunk.outputTokens ?? 0, chunk.costUsd ?? 0);
+        } else if (chunk.type === "error") {
+          set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+          useToastStore.getState().addToast("error", chunk.error ?? "메시지 편집 중 오류가 발생했습니다");
+        }
+      },
+    );
+
+    try {
+      await promise;
+    } catch (err) {
+      set({ isStreaming: false, streamingContent: "", currentStreamId: null });
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   },
 

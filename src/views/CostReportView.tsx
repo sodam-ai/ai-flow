@@ -8,8 +8,21 @@ import {
   type BudgetStatus,
 } from "@/lib/ipc/invoke";
 import { useToastStore } from "@/stores/toastStore";
+import { toUserMessage } from "@/lib/errors";
+import { isTauri } from "@/lib/ipc/invoke";
+import DesktopOnly from "@/components/shared/DesktopOnly";
 
 type Period = "week" | "month" | "all";
+
+// Per-provider accent colors for cost breakdown bars
+const PROVIDER_COLORS: Record<string, string> = {
+  openai:    "bg-emerald-500",
+  anthropic: "bg-orange-500",
+  google:    "bg-blue-500",
+  ollama:    "bg-purple-500",
+  mistral:   "bg-sky-500",
+  groq:      "bg-yellow-500",
+};
 
 const PERIOD_LABELS: Record<Period, string> = {
   week:  "7일",
@@ -21,6 +34,8 @@ const PERIOD_LABELS: Record<Period, string> = {
 const FALLBACK_KRW = 1380;
 
 export default function CostReportView() {
+  if (!isTauri) return <DesktopOnly label="비용 리포트는 데스크톱 앱에서만 사용할 수 있습니다" />;
+
   const [period, setPeriod]             = useState<Period>("month");
   const [report, setReport]             = useState<CostReport | null>(null);
   const [budget, setBudgetState]        = useState<BudgetStatus | null>(null);
@@ -34,10 +49,25 @@ export default function CostReportView() {
     setLoading(true);
     setError(null);
     Promise.all([
-      getCostReport(period).then(setReport),
-      getBudgetStatus().then(setBudgetState),
+      getCostReport(period).then((r) => setReport({
+        ...r,
+        totalCostUsd: r.totalCostUsd ?? 0,
+        totalMessages: r.totalMessages ?? 0,
+        totalInputTokens: r.totalInputTokens ?? 0,
+        totalOutputTokens: r.totalOutputTokens ?? 0,
+        avgCostPerMessage: r.avgCostPerMessage ?? 0,
+        byModel: (r.byModel ?? []).map((m) => ({ ...m, totalCostUsd: m.totalCostUsd ?? 0, totalInputTokens: m.totalInputTokens ?? 0, totalOutputTokens: m.totalOutputTokens ?? 0 })),
+        byDay: (r.byDay ?? []).map((d) => ({ ...d, totalCostUsd: d.totalCostUsd ?? 0 })),
+      })),
+      getBudgetStatus().then((b) => setBudgetState({
+        ...b,
+        monthlyBudgetUsd: b.monthlyBudgetUsd ?? 0,
+        spentThisMonthUsd: b.spentThisMonthUsd ?? 0,
+        usagePct: b.usagePct ?? 0,
+        alertThresholdPct: b.alertThresholdPct ?? 80,
+      })),
     ])
-      .catch((e) => setError(String(e)))
+      .catch((e) => setError(toUserMessage(e)))
       .finally(() => setLoading(false));
   }, [period]);
 
@@ -51,7 +81,7 @@ export default function CostReportView() {
       setEditBudget(false);
       useToastStore.getState().addToast("success", "예산이 업데이트되었습니다");
     } catch (err) {
-      useToastStore.getState().addToast("error", String(err));
+      useToastStore.getState().addToast("error", toUserMessage(err));
     }
   };
 
@@ -283,7 +313,7 @@ export default function CostReportView() {
                       className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden"
                     >
                       <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                        className={`h-full rounded-full transition-all duration-300 ${PROVIDER_COLORS[m.providerId] ?? "bg-zinc-500"}`}
                         style={{ width: `${pct}%` }}
                         aria-hidden="true"
                       />

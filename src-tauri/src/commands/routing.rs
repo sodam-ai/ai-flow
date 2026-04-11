@@ -31,7 +31,8 @@ pub async fn stream_routed_message(
     has_file: bool,
     has_code: bool,
     persona_id: Option<String>,
-    kb_ids: Option<Vec<i64>>, // Smart Context Injection: KB IDs to auto-search
+    kb_ids: Option<Vec<i64>>,   // Smart Context Injection: KB IDs to auto-search
+    temperature: Option<f64>,   // Generation control (passed through to provider)
     channel: tauri::ipc::Channel<serde_json::Value>,
 ) -> Result<serde_json::Value, String> {
     // Get routing suggestion
@@ -104,6 +105,8 @@ pub async fn stream_routed_message(
         &messages,
         system_prompt.as_deref(),
         None,
+        temperature,
+        None,  // max_tokens: use provider default in routing mode
         &channel,
         cancel_rx,
     ).await;
@@ -185,7 +188,7 @@ pub async fn stream_routed_message(
                 let (_, cancel_rx_fb) = tokio::sync::oneshot::channel::<()>();
                 let fb_result = crate::services::ai_client::stream_chat(
                     fb_provider, fb_model, &api_key, &messages,
-                    system_prompt.as_deref(), None, &channel, cancel_rx_fb,
+                    system_prompt.as_deref(), None, temperature, None, &channel, cancel_rx_fb,
                 ).await;
 
                 if let Ok((content, usage)) = fb_result {

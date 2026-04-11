@@ -104,14 +104,16 @@ pub async fn stream_chat(
     messages: &[Message],
     system_prompt: Option<&str>,
     image_data: Option<&str>,
+    temperature: Option<f64>,
+    max_tokens: Option<u32>,
     channel: &tauri::ipc::Channel<serde_json::Value>,
     cancel_rx: oneshot::Receiver<()>,
 ) -> Result<(String, UsageStats), String> {
     let provider = providers::get_provider(provider_id)?;
 
     // Build request
-    let mut endpoint = provider.chat_endpoint(model_id);
-    let mut body = provider.build_request_body(messages, model_id, system_prompt);
+    let endpoint = provider.chat_endpoint(model_id);
+    let mut body = provider.build_request_body(messages, model_id, system_prompt, temperature, max_tokens);
 
     // Vision: inject screenshot into last user message
     if let Some(img_b64) = image_data {
@@ -119,12 +121,6 @@ pub async fn stream_chat(
     }
 
     let auth_headers = provider.auth_headers(api_key);
-
-    // Google: append API key as query param
-    if provider_id == "google" {
-        let separator = if endpoint.contains('?') { "&" } else { "?" };
-        endpoint = format!("{}{}key={}", endpoint, separator, api_key);
-    }
 
     // Build HTTP request
     let client = get_http_client();
@@ -134,6 +130,11 @@ pub async fn stream_chat(
 
     for (name, value) in &auth_headers {
         req = req.header(name, value);
+    }
+
+    // Google: use header instead of query param (key in URL appears in server logs)
+    if provider_id == "google" {
+        req = req.header("x-goog-api-key", api_key);
     }
 
     let response = req
@@ -274,23 +275,23 @@ pub async fn call_ai_non_stream(
         })
         .collect();
 
-    let mut endpoint = provider.chat_endpoint(model_id);
-    let mut body = provider.build_request_body(&msgs, model_id, system_prompt);
+    let endpoint = provider.chat_endpoint(model_id);
+    let mut body = provider.build_request_body(&msgs, model_id, system_prompt, None, None);
     // Disable streaming for non-stream call
     if let Some(obj) = body.as_object_mut() {
         obj.insert("stream".to_string(), serde_json::json!(false));
     }
     let auth_headers = provider.auth_headers(&api_key);
 
-    if provider_id == "google" {
-        let separator = if endpoint.contains('?') { "&" } else { "?" };
-        endpoint = format!("{}{}key={}", endpoint, separator, api_key);
-    }
-
     let client = get_http_client();
     let mut req = client.post(&endpoint).header("Content-Type", "application/json");
     for (name, value) in &auth_headers {
         req = req.header(name, value);
+    }
+
+    // Google: use header instead of query param
+    if provider_id == "google" {
+        req = req.header("x-goog-api-key", &api_key as &str);
     }
 
     let response = req
@@ -322,6 +323,8 @@ fn truncate_error(s: &str, max_len: usize) -> String {
     if s.len() <= max_len {
         s.to_string()
     } else {
-        format!("{}...", &s[..max_len])
+        // Use char boundary to avoid panic on multibyte chars (e.g. Korean)
+        let idx = s.char_indices().nth(max_len).map(|(i, _)| i).unwrap_or(s.len());
+        format!("{}...", &s[..idx])
     }
 }

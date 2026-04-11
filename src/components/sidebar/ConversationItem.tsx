@@ -177,7 +177,7 @@ export default function ConversationItem({
                   ? "text-violet-400 hover:bg-zinc-700"
                   : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
               } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50`}
-              aria-label={conversation.isPinned ? "Unpin conversation" : "Pin conversation to top"}
+              aria-label={conversation.isPinned ? "상단 고정 해제" : "상단에 고정"}
             >
               <Pin className="w-3 h-3" aria-hidden="true" />
             </button>
@@ -188,7 +188,7 @@ export default function ConversationItem({
                          hover:bg-zinc-700 hover:text-red-400
                          focus-visible:outline-none focus-visible:ring-1
                          focus-visible:ring-red-500/50"
-              aria-label="Delete conversation"
+              aria-label="대화 삭제"
             >
               <Trash2 className="w-3 h-3" aria-hidden="true" />
             </button>
@@ -220,18 +220,26 @@ export default function ConversationItem({
 
       {/* ── Bottom row: message count + time + cost ─────────────── */}
       {!isEditing && !confirmDelete && (
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 min-w-0">
+          {/* Model badge — compact provider·model label */}
+          <span
+            className="text-[10px] text-zinc-600 font-mono truncate max-w-[90px]"
+            title={`${conversation.providerId} · ${conversation.modelId}`}
+          >
+            {conversation.modelId?.split("-").slice(0, 2).join("-") ?? ""}
+          </span>
+
           {conversation.messageCount > 0 && (
-            <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
+            <span className="flex items-center gap-0.5 text-[10px] text-zinc-600 shrink-0">
               <MessageSquare className="w-2.5 h-2.5" aria-hidden="true" />
               {conversation.messageCount}
             </span>
           )}
-          <span className="text-[10px] text-zinc-600">
+          <span className="text-[10px] text-zinc-600 shrink-0">
             {relativeTime(conversation.updatedAt)}
           </span>
           {conversation.totalCostUsd > 0 && (
-            <span className="text-[10px] text-zinc-600 ml-auto">
+            <span className="text-[10px] text-zinc-600 ml-auto shrink-0">
               ${conversation.totalCostUsd.toFixed(3)}
             </span>
           )}

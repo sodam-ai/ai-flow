@@ -32,6 +32,8 @@ impl AiProvider for AnthropicProvider {
         messages: &[Message],
         model_id: &str,
         system_prompt: Option<&str>,
+        temperature: Option<f64>,
+        max_tokens: Option<u32>,
     ) -> serde_json::Value {
         let msgs: Vec<serde_json::Value> = messages
             .iter()
@@ -47,13 +49,16 @@ impl AiProvider for AnthropicProvider {
         let mut body = serde_json::json!({
             "model": model_id,
             "messages": msgs,
-            "max_tokens": 4096,
+            "max_tokens": max_tokens.unwrap_or(4096),
             "stream": true,
         });
 
         // Anthropic uses top-level "system" field, not a message
         if let Some(sys) = system_prompt {
             body["system"] = serde_json::json!(sys);
+        }
+        if let Some(t) = temperature {
+            body["temperature"] = serde_json::json!(t.clamp(0.0, 1.0));
         }
 
         body

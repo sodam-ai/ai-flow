@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
+import { toUserMessage } from "@/lib/errors";
 import { validateAndReadFile } from "@/lib/ipc/invoke";
 import { useToastStore } from "@/stores/toastStore";
 import type { FileContent } from "@/types";
@@ -36,8 +37,7 @@ export default function FileDropZone({
             const file = await validateAndReadFile(path);
             newFiles.push(file);
           } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            useToastStore.getState().addToast("error", msg);
+            useToastStore.getState().addToast("error", toUserMessage(err));
           }
         }
 

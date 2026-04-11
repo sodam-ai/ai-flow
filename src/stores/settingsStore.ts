@@ -31,6 +31,11 @@ interface SettingsState {
   ttsRate: number;
   setTtsRate: (rate: number) => void;
 
+  // Phase 8: Generation temperature (0.0=precise, 0.7=balanced, 1.5=creative)
+  // Rust providers clamp to their own ranges (Anthropic: 0–1, OpenAI/Ollama: 0–2)
+  temperature: number;
+  setTemperature: (t: number) => void;
+
   // Persistent store initialization
   loadPersistedSettings: () => Promise<void>;
 
@@ -49,6 +54,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   routingMode: false,
   voiceLang: "ko", // Default to Korean — primary user base
   ttsRate: 1.0,
+  temperature: 0.7, // Balanced default
   keyStatuses: {},
 
   setActiveProvider: async (id, modelId) => {
@@ -58,7 +64,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await store.set("activeProviderId", id);
       await store.set("activeModelId", modelId);
     } catch (e) {
-      console.warn("Failed to persist settings:", e);
+      if (import.meta.env.DEV) console.warn("Failed to persist settings:", e);
     }
   },
 
@@ -68,7 +74,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
       await store.set("privacyMode", on);
     } catch (e) {
-      console.warn("Failed to persist privacy mode:", e);
+      if (import.meta.env.DEV) console.warn("Failed to persist privacy mode:", e);
     }
   },
 
@@ -78,7 +84,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
       await store.set("routingMode", on);
     } catch (e) {
-      console.warn("Failed to persist routing mode:", e);
+      if (import.meta.env.DEV) console.warn("Failed to persist routing mode:", e);
     }
   },
 
@@ -88,7 +94,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
       await store.set("voiceLang", lang);
     } catch (e) {
-      console.warn("Failed to persist voice language:", e);
+      if (import.meta.env.DEV) console.warn("Failed to persist voice language:", e);
     }
   },
 
@@ -99,7 +105,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
       await store.set("ttsRate", clamped);
     } catch (e) {
-      console.warn("Failed to persist TTS rate:", e);
+      if (import.meta.env.DEV) console.warn("Failed to persist TTS rate:", e);
+    }
+  },
+
+  setTemperature: async (t) => {
+    const clamped = Math.max(0.0, Math.min(2.0, t));
+    set({ temperature: clamped });
+    try {
+      const store = await Store.load(STORE_NAME, { defaults: STORE_DEFAULTS, autoSave: true });
+      await store.set("temperature", clamped);
+    } catch (e) {
+      if (import.meta.env.DEV) console.warn("Failed to persist temperature:", e);
     }
   },
 
@@ -111,7 +128,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const privacyMode = (await store.get<boolean>("privacyMode")) ?? false;
       const routingMode = (await store.get<boolean>("routingMode")) ?? false;
       const voiceLang = (await store.get<string>("voiceLang")) ?? "ko";
-      const ttsRate   = (await store.get<number>("ttsRate"))   ?? 1.0;
+      const ttsRate       = (await store.get<number>("ttsRate"))       ?? 1.0;
+      const temperature   = (await store.get<number>("temperature"))   ?? 0.7;
       set({
         activeProviderId: providerId as ProviderId,
         activeModelId: modelId,
@@ -119,9 +137,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         routingMode,
         voiceLang,
         ttsRate,
+        temperature,
       });
     } catch (e) {
-      console.warn("Failed to load persisted settings:", e);
+      if (import.meta.env.DEV) console.warn("Failed to load persisted settings:", e);
     }
   },
 

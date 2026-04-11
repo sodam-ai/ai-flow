@@ -233,6 +233,42 @@ pub fn get_message_versions(db: &Database, message_id: &str) -> Result<Vec<Messa
     })
 }
 
+/// Update content of a user message (inline edit — role guard prevents AI msg edits)
+pub fn update_user_message_content(
+    db: &Database,
+    message_id: &str,
+    new_content: &str,
+) -> Result<(), String> {
+    db.write(|conn| {
+        conn.execute(
+            "UPDATE messages SET content = ?2 WHERE id = ?1 AND role = 'user'",
+            rusqlite::params![message_id, new_content],
+        )?;
+        Ok(())
+    })
+}
+
+/// Delete all messages in a conversation that were created after the given message.
+/// Used to clear the AI response before re-streaming after user edits their message.
+pub fn truncate_messages_after(
+    db: &Database,
+    conversation_id: &str,
+    message_id: &str,
+) -> Result<(), String> {
+    db.write(|conn| {
+        let created_at: String = conn.query_row(
+            "SELECT created_at FROM messages WHERE id = ?1",
+            rusqlite::params![message_id],
+            |row| row.get(0),
+        )?;
+        conn.execute(
+            "DELETE FROM messages WHERE conversation_id = ?1 AND created_at > ?2",
+            rusqlite::params![conversation_id, created_at],
+        )?;
+        Ok(())
+    })
+}
+
 /// Search messages across all conversations
 pub fn search_messages(db: &Database, query: &str, limit: i64) -> Result<Vec<Message>, String> {
     let search_pattern = format!("%{}%", query);

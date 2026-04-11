@@ -1,0 +1,86 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background: deep indigo → violet -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#1e0a3c"/>
+      <stop offset="100%" stop-color="#6d28d9"/>
+    </linearGradient>
+    <!-- Node glow -->
+    <radialGradient id="glow-center" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </radialGradient>
+    <radialGradient id="glow-sat" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </radialGradient>
+    <!-- Soft blur for glow ring -->
+    <filter id="blur-sm" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="blur-xs" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- ── Background ── -->
+  <rect width="1024" height="1024" rx="200" fill="url(#bg)"/>
+
+  <!-- Subtle inner vignette ring -->
+  <rect width="1024" height="1024" rx="200" fill="none" stroke="#7c3aed" stroke-width="3" opacity="0.25"/>
+
+  <!-- ── Satellite nodes (3 AI sources) ── -->
+  <!-- Top-left: glow ring + circle -->
+  <circle cx="260" cy="310" r="68" fill="#7c3aed" opacity="0.35" filter="url(#blur-sm)"/>
+  <circle cx="260" cy="310" r="54" fill="url(#glow-sat)"/>
+  <!-- Top-right -->
+  <circle cx="764" cy="310" r="68" fill="#7c3aed" opacity="0.35" filter="url(#blur-sm)"/>
+  <circle cx="764" cy="310" r="54" fill="url(#glow-sat)"/>
+  <!-- Bottom-center -->
+  <circle cx="512" cy="760" r="68" fill="#7c3aed" opacity="0.35" filter="url(#blur-sm)"/>
+  <circle cx="512" cy="760" r="54" fill="url(#glow-sat)"/>
+
+  <!-- ── Flow lines: satellite → center hub ── -->
+  <!-- Each line has a glow copy + sharp line -->
+  <!-- Top-left → center -->
+  <path d="M 302 348 C 370 420 420 460 460 490" stroke="#c4b5fd" stroke-width="20" fill="none" opacity="0.25" stroke-linecap="round" filter="url(#blur-xs)"/>
+  <path d="M 302 348 C 370 420 420 460 460 490" stroke="#e2d9fc" stroke-width="9" fill="none" opacity="0.85" stroke-linecap="round"/>
+
+  <!-- Top-right → center -->
+  <path d="M 722 348 C 654 420 604 460 564 490" stroke="#c4b5fd" stroke-width="20" fill="none" opacity="0.25" stroke-linecap="round" filter="url(#blur-xs)"/>
+  <path d="M 722 348 C 654 420 604 460 564 490" stroke="#e2d9fc" stroke-width="9" fill="none" opacity="0.85" stroke-linecap="round"/>
+
+  <!-- Bottom → center -->
+  <path d="M 512 706 C 512 660 512 600 512 570" stroke="#c4b5fd" stroke-width="20" fill="none" opacity="0.25" stroke-linecap="round" filter="url(#blur-xs)"/>
+  <path d="M 512 706 C 512 660 512 600 512 570" stroke="#e2d9fc" stroke-width="9" fill="none" opacity="0.85" stroke-linecap="round"/>
+
+  <!-- ── Arrow tips pointing toward center ── -->
+  <!-- Top-left arrow -->
+  <polygon points="460,490 438,460 478,456" fill="#e2d9fc" opacity="0.9"/>
+  <!-- Top-right arrow -->
+  <polygon points="564,490 546,456 586,460" fill="#e2d9fc" opacity="0.9"/>
+  <!-- Bottom arrow -->
+  <polygon points="512,570 490,600 534,600" fill="#e2d9fc" opacity="0.9"/>
+
+  <!-- ── Center hub (AI orchestrator) ── -->
+  <!-- Outer glow -->
+  <circle cx="512" cy="512" r="130" fill="#8b5cf6" opacity="0.4" filter="url(#blur-sm)"/>
+  <!-- Main hub circle -->
+  <circle cx="512" cy="512" r="100" fill="url(#glow-center)"/>
+  <!-- Inner white core -->
+  <circle cx="512" cy="512" r="58" fill="white" opacity="0.96"/>
+
+  <!-- "AF" monogram inside hub -->
+  <text x="512" y="538"
+        text-anchor="middle"
+        font-family="'Arial', 'Helvetica', sans-serif"
+        font-size="58"
+        font-weight="900"
+        letter-spacing="-2"
+        fill="#4c1d95">AF</text>
+
+  <!-- Small dot accents on satellite nodes -->
+  <circle cx="260" cy="310" r="14" fill="white" opacity="0.7"/>
+  <circle cx="764" cy="310" r="14" fill="white" opacity="0.7"/>
+  <circle cx="512" cy="760" r="14" fill="white" opacity="0.7"/>
+</svg>

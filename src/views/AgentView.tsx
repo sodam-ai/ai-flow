@@ -8,7 +8,9 @@ import {
   approveAgentStep,
   cancelAgentRun,
   getAgentRunDetail,
+  isTauri,
 } from "@/lib/ipc/invoke";
+import DesktopOnly from "@/components/shared/DesktopOnly";
 import {
   Brain,
   Globe,
@@ -279,6 +281,7 @@ const AVAILABLE_TOOLS = [
 // ─── Main AgentView ─────────────────────────────────────────────────────────
 
 export default function AgentView() {
+  if (!isTauri) return <DesktopOnly label="에이전트는 데스크톱 앱에서만 사용할 수 있습니다" />;
   const [runs, setRuns] = useState<AgentRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<AgentRun | null>(null);
   const [goal, setGoal] = useState("");

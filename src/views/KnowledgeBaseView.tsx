@@ -17,7 +17,10 @@ import {
   deleteKbDocument,
   searchKnowledgeBase,
   indexFolder,
+  isTauri,
 } from "@/lib/ipc/invoke";
+import { toUserMessage } from "@/lib/errors";
+import DesktopOnly from "@/components/shared/DesktopOnly";
 
 // ─── Safe snippet renderer ────────────────────────────────────────────────────
 // ASVS 5.3.3: Parses ONLY <mark>…</mark> from SQLite FTS5 snippet().
@@ -71,6 +74,7 @@ function fileTypeStyle(ext: string) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function KnowledgeBaseView() {
+  if (!isTauri) return <DesktopOnly label="지식 베이스는 데스크톱 앱에서만 사용할 수 있습니다" />;
   const [kbs, setKbs] = useState<KnowledgeBase[]>([]);
   const [selectedKb, setSelectedKb] = useState<KnowledgeBase | null>(null);
   const [documents, setDocuments] = useState<KbDocument[]>([]);
@@ -121,7 +125,7 @@ export default function KnowledgeBaseView() {
       setKbs(data);
       if (data.length > 0 && !selectedKb) setSelectedKb(data[0]);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setLoading(false);
     }
@@ -149,7 +153,7 @@ export default function KnowledgeBaseView() {
       await loadDocuments(selectedKb.id);
       await loadKbs();
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setIsIndexing(false);
     }
@@ -168,7 +172,7 @@ export default function KnowledgeBaseView() {
       await loadDocuments(selectedKb.id);
       await loadKbs();
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setIsIndexing(false);
     }
@@ -180,7 +184,7 @@ export default function KnowledgeBaseView() {
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
       setPendingDeleteDocId(null);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 
@@ -198,7 +202,7 @@ export default function KnowledgeBaseView() {
       setSearchResults(results);
       setHasSearched(true);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setIsSearching(false);
     }
@@ -214,7 +218,7 @@ export default function KnowledgeBaseView() {
       setNewKbName("");
       setNewKbDesc("");
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 
@@ -225,7 +229,7 @@ export default function KnowledgeBaseView() {
       if (selectedKb?.id === id) { setSelectedKb(null); setDocuments([]); }
       setPendingDeleteKbId(null);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 

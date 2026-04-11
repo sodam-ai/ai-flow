@@ -31,6 +31,7 @@ pub async fn stream_multi(
     targets: &[StreamTarget],
     messages: &[Message],
     system_prompt: Option<&str>,
+    temperature: Option<f64>,
     channel: &tauri::ipc::Channel<serde_json::Value>,
     cancel_rxs: Vec<oneshot::Receiver<()>>,
 ) -> Vec<StreamResult> {
@@ -69,7 +70,7 @@ pub async fn stream_multi(
         let ch = channel.clone();
 
         handles.push(tokio::spawn(async move {
-            stream_single_indexed(idx, &provider_id, &model_id, &msgs, sp.as_deref(), &ch, cancel_rx).await
+            stream_single_indexed(idx, &provider_id, &model_id, &msgs, sp.as_deref(), temperature, &ch, cancel_rx).await
         }));
     }
 
@@ -104,6 +105,7 @@ async fn stream_single_indexed(
     model_id: &str,
     messages: &[Message],
     system_prompt: Option<&str>,
+    temperature: Option<f64>,
     channel: &tauri::ipc::Channel<serde_json::Value>,
     cancel_rx: oneshot::Receiver<()>,
 ) -> StreamResult {
@@ -131,19 +133,19 @@ async fn stream_single_indexed(
     };
 
     // Build request
-    let mut endpoint = provider.chat_endpoint(model_id);
-    let body = provider.build_request_body(messages, model_id, system_prompt);
+    let endpoint = provider.chat_endpoint(model_id);
+    let body = provider.build_request_body(messages, model_id, system_prompt, temperature, None);
     let auth_headers = provider.auth_headers(&api_key);
-
-    if provider_id == "google" {
-        let sep = if endpoint.contains('?') { "&" } else { "?" };
-        endpoint = format!("{}{}key={}", endpoint, sep, api_key);
-    }
 
     let client = crate::services::ai_client::get_http_client();
     let mut req = client.post(&endpoint).header("Content-Type", "application/json");
     for (name, value) in &auth_headers {
         req = req.header(name, value);
+    }
+
+    // Google: use header instead of query param (key in URL appears in server logs)
+    if provider_id == "google" {
+        req = req.header("x-goog-api-key", &api_key as &str);
     }
 
     let response = match req.json(&body).send().await {

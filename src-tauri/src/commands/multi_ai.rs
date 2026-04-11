@@ -10,6 +10,7 @@ pub async fn stream_multi_ai(
     content: String,
     targets: Vec<StreamTarget>,
     persona_id: Option<String>,
+    temperature: Option<f64>,
     channel: tauri::ipc::Channel<serde_json::Value>,
 ) -> Result<serde_json::Value, String> {
     // Validate target count
@@ -59,6 +60,7 @@ pub async fn stream_multi_ai(
         &targets,
         &messages,
         system_prompt.as_deref(),
+        temperature,
         &channel,
         cancel_rxs,
     )
@@ -83,7 +85,7 @@ pub async fn stream_multi_ai(
         &state.db,
         "multi_stream_completed",
         "INFO",
-        Some(&format!("group={} streams={} cost=${:.6}", &group_id[..8], results.len(), total_cost)),
+        Some(&format!("group={} streams={} cost=${:.6}", group_id.get(..8).unwrap_or(&group_id), results.len(), total_cost)),
     );
 
     Ok(serde_json::json!({

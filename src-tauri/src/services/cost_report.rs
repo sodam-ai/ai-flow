@@ -1,4 +1,5 @@
 use crate::db::pool::Database;
+use rusqlite::params;
 use serde::{Deserialize, Serialize};
 
 /// Cost summary per model
@@ -47,15 +48,24 @@ pub struct BudgetStatus {
 
 /// Get cost report for a time period
 pub fn get_report(db: &Database, period: &str) -> Result<CostReport, String> {
-    let date_filter = match period {
-        "week" => "AND m.created_at >= datetime('now', '-7 days')",
-        "month" => "AND m.created_at >= datetime('now', '-30 days')",
-        _ => "",  // "all"
+    // Compute cutoff as a Rust value and pass as param — avoids format! SQL assembly
+    let cutoff: Option<String> = match period {
+        "week" => Some(
+            (chrono::Utc::now() - chrono::Duration::days(7))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
+        ),
+        "month" => Some(
+            (chrono::Utc::now() - chrono::Duration::days(30))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
+        ),
+        _ => None, // "all" — no filter
     };
 
     // By model
     let by_model = db.read(|conn| {
-        let sql = format!(
+        let mut stmt = conn.prepare(
             "SELECT
                 c.provider_id, c.model_id,
                 COUNT(*) as msg_count,
@@ -64,13 +74,12 @@ pub fn get_report(db: &Database, period: &str) -> Result<CostReport, String> {
                 COALESCE(SUM(m.cost_usd), 0.0) as total_cost
              FROM messages m
              JOIN conversations c ON m.conversation_id = c.id
-             WHERE m.role = 'assistant' AND m.cost_usd IS NOT NULL {}
+             WHERE m.role = 'assistant' AND m.cost_usd IS NOT NULL
+               AND (?1 IS NULL OR m.created_at >= ?1)
              GROUP BY c.provider_id, c.model_id
              ORDER BY total_cost DESC",
-            date_filter
-        );
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map([], |row| {
+        )?;
+        let rows = stmt.query_map(params![cutoff], |row| {
             Ok(ModelCostSummary {
                 provider_id: row.get(0)?,
                 model_id: row.get(1)?,
@@ -85,20 +94,19 @@ pub fn get_report(db: &Database, period: &str) -> Result<CostReport, String> {
 
     // By day
     let by_day = db.read(|conn| {
-        let sql = format!(
+        let mut stmt = conn.prepare(
             "SELECT
                 DATE(m.created_at) as day,
                 COUNT(*) as msg_count,
                 COALESCE(SUM(m.cost_usd), 0.0) as total_cost
              FROM messages m
-             WHERE m.role = 'assistant' AND m.cost_usd IS NOT NULL {}
+             WHERE m.role = 'assistant' AND m.cost_usd IS NOT NULL
+               AND (?1 IS NULL OR m.created_at >= ?1)
              GROUP BY DATE(m.created_at)
              ORDER BY day DESC
              LIMIT 30",
-            date_filter
-        );
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map([], |row| {
+        )?;
+        let rows = stmt.query_map(params![cutoff], |row| {
             Ok(DailyCost {
                 date: row.get(0)?,
                 message_count: row.get(1)?,

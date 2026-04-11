@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { usePersonaStore } from "@/stores/personaStore";
@@ -6,13 +6,15 @@ import { useToastStore } from "@/stores/toastStore";
 import { PROVIDERS } from "@/lib/providers";
 import PersonaEditor from "@/components/chat/PersonaEditor";
 import type { Persona, LocalLlmDetectionResult } from "@/types";
-import { detectLocalLlms, getRoutingRules } from "@/lib/ipc/invoke";
+import { detectLocalLlms, getRoutingRules, isTauri } from "@/lib/ipc/invoke";
 import type { RoutingRule } from "@/types";
-import { Eye, EyeOff, Trash2, Check, X, AlertTriangle, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic, Volume2, Info, Globe, ExternalLink } from "lucide-react";
+import DesktopOnly from "@/components/shared/DesktopOnly";
+import { Eye, EyeOff, Trash2, Check, X, AlertTriangle, Loader2, Plus, Pencil, Keyboard, Cpu, Zap, Shield, Mic, Volume2, Info, Globe, ExternalLink, Thermometer } from "lucide-react";
 
 export default function SettingsView() {
+  if (!isTauri) return <DesktopOnly label="설정은 데스크톱 앱에서만 사용할 수 있습니다" />;
   const { t, i18n } = useTranslation();
-  const { keyStatuses, loadAllKeyStatuses, saveKey, removeKey, setActiveProvider, voiceLang, setVoiceLang, ttsRate, setTtsRate } =
+  const { keyStatuses, loadAllKeyStatuses, saveKey, removeKey, setActiveProvider, voiceLang, setVoiceLang, ttsRate, setTtsRate, temperature, setTemperature } =
     useSettingsStore();
   const { personas, fetchPersonas, deletePersona } = usePersonaStore();
   const [editorPersona, setEditorPersona] = useState<Persona | null | "new">(null);
@@ -36,7 +38,7 @@ export default function SettingsView() {
           {(["ko", "en"] as const).map((lang) => (
             <button
               key={lang}
-              onClick={() => i18n.changeLanguage(lang)}
+              onClick={() => startTransition(() => { i18n.changeLanguage(lang); })}
               aria-pressed={i18n.language === lang}
               aria-label={lang === "ko" ? "한국어로 변경" : "Switch to English"}
               className={`px-3 py-1.5 rounded text-sm transition-colors ${
@@ -130,6 +132,58 @@ export default function SettingsView() {
               {v}×
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Generation Temperature (Phase 8) */}
+      <section className="mb-8">
+        <h2 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-2">
+          <Thermometer className="w-3.5 h-3.5" aria-hidden="true" />
+          Response Style
+        </h2>
+        <p className="text-[11px] text-zinc-600 mb-3">
+          Controls how creative or precise AI responses are
+        </p>
+        {/* Preset buttons */}
+        <div className="flex gap-2 mb-3">
+          {([
+            { label: "Precise", value: 0.3, desc: "Focused, deterministic" },
+            { label: "Balanced", value: 0.7, desc: "Natural, reliable" },
+            { label: "Creative", value: 1.2, desc: "Varied, imaginative" },
+          ] as const).map(({ label, value, desc }) => (
+            <button
+              key={label}
+              onClick={() => setTemperature(value)}
+              aria-pressed={Math.abs(temperature - value) < 0.05}
+              aria-label={`${label}: ${desc}`}
+              className={`flex-1 flex flex-col items-center py-2.5 px-2 rounded-lg border text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 ${
+                Math.abs(temperature - value) < 0.05
+                  ? "bg-violet-950/50 border-violet-700/60 text-violet-300"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300"
+              }`}
+            >
+              <span className="font-medium">{label}</span>
+              <span className="text-[9px] mt-0.5 opacity-70">{desc}</span>
+            </button>
+          ))}
+        </div>
+        {/* Fine-tune slider */}
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-zinc-500 w-6">0</span>
+          <input
+            type="range"
+            min={0.0}
+            max={2.0}
+            step={0.05}
+            value={temperature}
+            onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            className="flex-1 accent-violet-500 h-1.5 rounded-full cursor-pointer"
+            aria-label="Temperature fine-tune"
+          />
+          <span className="text-[11px] text-zinc-500 w-6 text-right">2</span>
+          <span className="text-xs font-mono text-violet-400 w-8 text-right">
+            {temperature.toFixed(2)}
+          </span>
         </div>
       </section>
 

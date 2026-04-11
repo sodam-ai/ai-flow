@@ -6,7 +6,9 @@ import {
   AlertCircle, Check, X, Loader2,
 } from "lucide-react";
 import type { MCPServer } from "@/types";
-import { listMcpServers, toggleMcpServer, deleteMcpServer, setMcpAllowedPaths } from "@/lib/ipc/invoke";
+import { listMcpServers, toggleMcpServer, deleteMcpServer, setMcpAllowedPaths, isTauri } from "@/lib/ipc/invoke";
+import { toUserMessage } from "@/lib/errors";
+import DesktopOnly from "@/components/shared/DesktopOnly";
 
 const SERVER_TYPE_LABELS: Record<string, { icon: string; color: string }> = {
   filesystem: { icon: "📁", color: "text-blue-400" },
@@ -16,6 +18,7 @@ const SERVER_TYPE_LABELS: Record<string, { icon: string; color: string }> = {
 };
 
 export default function MCPMarketView() {
+  if (!isTauri) return <DesktopOnly label="MCP 마켓은 데스크톱 앱에서만 사용할 수 있습니다" />;
   const [servers, setServers] = useState<MCPServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [pathModalId, setPathModalId] = useState<number | null>(null);
@@ -31,7 +34,7 @@ export default function MCPMarketView() {
     try {
       setServers(await listMcpServers());
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     } finally {
       setLoading(false);
     }
@@ -44,7 +47,7 @@ export default function MCPMarketView() {
       const updated = await toggleMcpServer(server.id, !server.is_enabled);
       setServers((prev) => prev.map((s) => s.id === updated.id ? updated : s));
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 
@@ -54,7 +57,7 @@ export default function MCPMarketView() {
       setServers((prev) => prev.filter((s) => s.id !== id));
       setConfirmDeleteId(null);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 
@@ -65,7 +68,7 @@ export default function MCPMarketView() {
       setServers((prev) => prev.map((s) => s.id === updated.id ? updated : s));
       setPathModalId(null);
     } catch (e) {
-      setError(String(e));
+      setError(toUserMessage(e));
     }
   }
 

@@ -71,9 +71,11 @@ export default function MarkdownContent({ content }: Props) {
           );
         },
         a({ href, children }) {
+          // M-2: ASVS 5.3.6 — block javascript:/data: URL injection from AI responses
+          const safeHref = href && /^https?:\/\//i.test(href) ? href : "#";
           return (
             <a
-              href={href}
+              href={safeHref}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-400 hover:text-blue-300 underline"
@@ -113,10 +115,15 @@ export default function MarkdownContent({ content }: Props) {
 function CodeBlock({ children, language }: { children: string; language: string }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(children);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  // L-2: await clipboard write — silent fail otherwise (no user feedback)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(children);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard blocked (e.g. permissions) — button stays in default state
+    }
   };
 
   return (
@@ -129,7 +136,7 @@ function CodeBlock({ children, language }: { children: string; language: string 
           className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/50 rounded"
         >
           {copied ? <Check className="w-3 h-3" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
-          {copied ? "Copied" : "Copy"}
+          {copied ? "복사됨" : "복사"}
         </button>
       </div>
       <pre className="p-3 overflow-x-auto">

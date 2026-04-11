@@ -1,4 +1,16 @@
-import { invoke, Channel } from "@tauri-apps/api/core";
+import { invoke as _invoke, Channel } from "@tauri-apps/api/core";
+
+/** true when running inside the Tauri desktop shell */
+export const isTauri: boolean =
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+// Guard: reject immediately with a friendly message when running outside Tauri (e.g. plain browser)
+function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  if (!isTauri) {
+    return Promise.reject(new Error("데스크톱 앱에서만 사용할 수 있는 기능입니다"));
+  }
+  return _invoke<T>(cmd, args);
+}
 import type {
   Conversation,
   Message,
@@ -37,6 +49,9 @@ import {
   usePromptSchema,
   listPromptsSchema,
   filePathSchema,
+  regenerateAiMessageSchema,
+  editAndStreamMessageSchema,
+  streamMultiAiSchema,
 } from "./schemas";
 
 /** Validate params with Zod before invoking Tauri IPC */
@@ -142,9 +157,10 @@ export function streamAiMessage(
   onChunk: (chunk: StreamChunk) => void,
   kbIds?: number[], // Smart Context Injection
   imageData?: string | null, // Phase 6: base64 PNG for Vision AI
+  temperature?: number, // Phase 8: generation control (0.0=precise, 1.0=balanced, 2.0=creative)
 ): { promise: Promise<void>; channel: Channel<StreamChunk> } {
-  // Validate before creating channel
-  validate(streamAiMessageSchema, { conversationId, content, providerId, modelId, streamId });
+  // C-1: ASVS 5.1.3 — validate includes imageData size limit (max ~10 MB base64)
+  validate(streamAiMessageSchema, { conversationId, content, providerId, modelId, streamId, imageData });
 
   const channel = new Channel<StreamChunk>();
   channel.onmessage = onChunk;
@@ -158,6 +174,7 @@ export function streamAiMessage(
     personaId,
     kbIds: kbIds && kbIds.length > 0 ? kbIds : null,
     imageData: imageData ?? null,
+    temperature: temperature ?? null,
     channel,
   });
 
@@ -186,6 +203,9 @@ export function regenerateAiMessage(
   personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
 ): { promise: Promise<void>; channel: Channel<StreamChunk> } {
+  // C-2: ASVS 5.1.3 — validate before IPC
+  validate(regenerateAiMessageSchema, { messageId, conversationId, providerId, modelId, streamId });
+
   const channel = new Channel<StreamChunk>();
   channel.onmessage = onChunk;
 
@@ -196,6 +216,48 @@ export function regenerateAiMessage(
     modelId,
     streamId,
     personaId,
+    channel,
+  });
+
+  return { promise, channel };
+}
+
+// ─── Edit User Message + Re-stream ───
+
+export function editAndStreamMessage(
+  messageId: string,
+  conversationId: string,
+  newContent: string,
+  providerId: string,
+  modelId: string,
+  streamId: string,
+  personaId: string | null,
+  temperature: number | null,
+  onChunk: (chunk: StreamChunk) => void,
+): { promise: Promise<void>; channel: Channel<StreamChunk> } {
+  validate(editAndStreamMessageSchema, {
+    messageId,
+    conversationId,
+    newContent,
+    providerId,
+    modelId,
+    streamId,
+    personaId: personaId ?? undefined,
+    temperature: temperature ?? undefined,
+  });
+
+  const channel = new Channel<StreamChunk>();
+  channel.onmessage = onChunk;
+
+  const promise = invoke<void>("edit_and_stream_message", {
+    messageId,
+    conversationId,
+    newContent,
+    providerId,
+    modelId,
+    streamId,
+    personaId,
+    temperature,
     channel,
   });
 
@@ -350,7 +412,11 @@ export function streamMultiAi(
   targets: StreamTarget[],
   personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
+  temperature?: number,
 ): { promise: Promise<unknown>; channel: Channel<StreamChunk> } {
+  // C-2: ASVS 5.1.3 — validate targets count + content size before IPC
+  validate(streamMultiAiSchema, { conversationId, content, targets });
+
   const channel = new Channel<StreamChunk>();
   channel.onmessage = onChunk;
 
@@ -359,6 +425,7 @@ export function streamMultiAi(
     content,
     targets,
     personaId,
+    temperature: temperature ?? null,
     channel,
   });
 
@@ -395,6 +462,7 @@ export function streamRoutedMessage(
   personaId: string | null,
   onChunk: (chunk: StreamChunk) => void,
   kbIds?: number[], // Smart Context Injection
+  temperature?: number, // Phase 8: generation control
 ): { promise: Promise<unknown>; channel: Channel<StreamChunk> } {
   const channel = new Channel<StreamChunk>();
   channel.onmessage = onChunk;
@@ -407,6 +475,7 @@ export function streamRoutedMessage(
     hasCode,
     personaId,
     kbIds: kbIds && kbIds.length > 0 ? kbIds : null,
+    temperature: temperature ?? null,
     channel,
   });
 
@@ -527,7 +596,7 @@ export async function restorePromptVersion(promptId: string, versionId: string):
 }
 
 // ─── MCP Plugin Market (Phase 2) ─────────────────────────────────────────
-import type { MCPServer, WorkflowTemplate, Workflow, WorkflowRun, BatchJob, BatchItem, LicenseInfo, ProFeatures, CheckoutUrlResponse, BrowserExtStatus } from "@/types";
+import type { MCPServer, WorkflowTemplate, Workflow, WorkflowRun, BatchJob, BatchItem } from "@/types";
 
 export async function listMcpServers(): Promise<MCPServer[]> {
   return invoke("list_mcp_servers");
@@ -608,39 +677,6 @@ export async function cancelBatchJob(jobId: number): Promise<void> {
   return invoke("cancel_batch_job", { jobId });
 }
 
-// ─── Payment / License (Phase 2) ─────────────────────────────────────────
-export async function getLicenseStatus(): Promise<LicenseInfo> {
-  return invoke("get_license_status");
-}
-
-export async function getProFeatures(): Promise<ProFeatures> {
-  return invoke("get_pro_features");
-}
-
-export async function createLemonsqueezyCheckout(): Promise<CheckoutUrlResponse> {
-  return invoke("create_lemonsqueezy_checkout");
-}
-
-export async function createTossCheckout(): Promise<CheckoutUrlResponse> {
-  return invoke("create_toss_checkout");
-}
-
-export async function createNaverpayCheckout(): Promise<CheckoutUrlResponse> {
-  return invoke("create_naverpay_checkout");
-}
-
-export async function activateLicense(licenseKey: string, provider: string): Promise<LicenseInfo> {
-  return invoke("activate_license", { req: { license_key: licenseKey, provider } });
-}
-
-// ─── Browser Extension (Phase 2) ─────────────────────────────────────────
-export async function getBrowserExtStatus(): Promise<BrowserExtStatus> {
-  return invoke("get_browser_ext_status");
-}
-
-export async function registerNativeHost(): Promise<string> {
-  return invoke("register_native_host");
-}
 
 // ─── Knowledge Base / RAG (Phase 3) ──────────────────────────────────────
 import type { KnowledgeBase, KbDocument, KbSearchResult, AgentRun, AgentStep, ConversationBranch } from "@/types";

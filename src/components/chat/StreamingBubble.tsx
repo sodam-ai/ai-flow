@@ -57,7 +57,7 @@ export default function StreamingBubble({ content, modelLabel }: Props) {
                 className="inline-block w-0.5 h-3.5 bg-violet-400/80 animate-pulse rounded-sm"
                 aria-hidden="true"
               />
-              {/* Elapsed time — helps compare TTFT across models */}
+              {/* Elapsed time + generation speed */}
               <span
                 className="text-[10px] text-zinc-600 font-mono tabular-nums"
                 aria-live="off"
@@ -65,6 +65,14 @@ export default function StreamingBubble({ content, modelLabel }: Props) {
               >
                 {elapsedSec}s
               </span>
+              {elapsed > 500 && content.length > 0 && (
+                <>
+                  <span className="text-[10px] text-zinc-700" aria-hidden="true">·</span>
+                  <span className="text-[10px] text-zinc-600 font-mono tabular-nums">
+                    {Math.round(content.length / (elapsed / 1000))}자/s
+                  </span>
+                </>
+              )}
             </div>
           </>
         ) : (

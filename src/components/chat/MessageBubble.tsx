@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import type { Message, MessageVersion } from "@/types";
-import { useTranslation } from "react-i18next";
 import { useChatStore } from "@/stores/chatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { getMessageVersions } from "@/lib/ipc/invoke";
 import { useTts } from "@/hooks/useTts";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { Copy, Check, RefreshCw, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { Copy, Check, RefreshCw, ChevronLeft, ChevronRight, Volume2, VolumeX, Pencil, X } from "lucide-react";
 import MarkdownContent from "@/components/shared/MarkdownContent";
 
 interface Props {
@@ -87,8 +86,7 @@ export default function MessageBubble({
   isCurrentMatch = false,
   searchQuery = "",
 }: Props) {
-  const { t } = useTranslation();
-  const { regenerateMessage, isStreaming } = useChatStore();
+  const { regenerateMessage, editAndResend, isStreaming } = useChatStore();
   const ttsRate = useSettingsStore((s) => s.ttsRate);
   const { speak, stop, isSpeaking, isSupported: ttsSupported } = useTts({ rate: ttsRate });
   const isUser = message.role === "user";
@@ -97,6 +95,11 @@ export default function MessageBubble({
   const [viewingVersion, setViewingVersion] = useState<MessageVersion | null>(null);
   const [versions, setVersions] = useState<MessageVersion[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
+
+  // Inline edit state (user messages only)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const editRef = useRef<HTMLTextAreaElement>(null);
 
   // Copy feedback state — shows a Check icon for 1.5s after clicking Copy.
   // Timer ref prevents memory leaks if the component unmounts mid-feedback.
@@ -141,6 +144,34 @@ export default function MessageBubble({
   const handleRegenerate = () => {
     if (isStreaming) return;
     regenerateMessage(message.id);
+  };
+
+  // Auto-focus + move cursor to end when edit mode opens
+  useEffect(() => {
+    if (isEditing && editRef.current) {
+      const el = editRef.current;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }, [isEditing]);
+
+  const startEdit = () => {
+    setEditContent(displayContent);
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => setIsEditing(false);
+
+  const handleEditSubmit = () => {
+    const trimmed = editContent.trim();
+    if (!trimmed || isStreaming) return;
+    setIsEditing(false);
+    editAndResend(message.id, trimmed);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleEditSubmit(); }
   };
 
   const handleTts = () => {
@@ -232,7 +263,40 @@ export default function MessageBubble({
           </p>
         )}
         {isUser ? (
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{displayContent}</p>
+          isEditing ? (
+            <div className="flex flex-col gap-2">
+              <textarea
+                ref={editRef}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                rows={Math.min(10, editContent.split("\n").length + 1)}
+                aria-label="메시지 편집"
+                className="w-full resize-none bg-zinc-200/60 border border-zinc-400/50 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-violet-500/60 focus-visible:ring-1 focus-visible:ring-violet-500/40"
+              />
+              <div className="flex items-center justify-end gap-1.5">
+                <span className="text-[10px] text-zinc-400 mr-auto">Ctrl+Enter 전송 · Esc 취소</span>
+                <button
+                  onClick={cancelEdit}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:bg-zinc-200 transition-colors"
+                  aria-label="편집 취소"
+                >
+                  <X className="w-3 h-3" aria-hidden="true" />
+                  취소
+                </button>
+                <button
+                  onClick={handleEditSubmit}
+                  disabled={!editContent.trim() || isStreaming}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs bg-zinc-800 text-zinc-100 hover:bg-zinc-700 disabled:opacity-40 transition-colors"
+                  aria-label="편집 후 전송"
+                >
+                  전송
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">{displayContent}</p>
+          )
         ) : (
           <MarkdownContent content={displayContent} />
         )}
@@ -252,9 +316,12 @@ export default function MessageBubble({
             {/* Cost info */}
             {message.costUsd != null && message.costUsd > 0 && (
               <>
-                <span className="text-[10px] text-zinc-500 font-mono tabular-nums">
-                  {((message.inputTokens ?? 0) + (message.outputTokens ?? 0)).toLocaleString()}{" "}
-                  {t("chat.tokens")}
+                <span
+                  className="text-[10px] text-zinc-500 font-mono tabular-nums"
+                  title={`입력 ${(message.inputTokens ?? 0).toLocaleString()} + 출력 ${(message.outputTokens ?? 0).toLocaleString()} 토큰`}
+                >
+                  <span className="text-zinc-600">↑</span>{(message.inputTokens ?? 0).toLocaleString()}
+                  {" "}<span className="text-zinc-600">↓</span>{(message.outputTokens ?? 0).toLocaleString()}
                 </span>
                 <span className="text-[10px] text-zinc-700 select-none" aria-hidden="true">·</span>
                 <span className="text-[10px] text-zinc-500 font-mono tabular-nums">
@@ -344,8 +411,18 @@ export default function MessageBubble({
         )}
 
         {/* ── User message footer ────────────────────────────────────── */}
-        {isUser && (
+        {isUser && !isEditing && (
           <div className="flex items-center justify-end gap-0.5 mt-1">
+            {/* Edit button */}
+            <button
+              onClick={startEdit}
+              disabled={isStreaming}
+              className="p-1 rounded-md hover:bg-zinc-200 opacity-0 group-hover/msg:opacity-100 disabled:opacity-0 transition-opacity"
+              aria-label="메시지 편집"
+              title="메시지 편집 (Ctrl+Enter 전송)"
+            >
+              <Pencil className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
+            </button>
             {onBranch && (
               <button
                 onClick={() => onBranch(message.id, messageIndex)}

@@ -32,12 +32,14 @@ impl Database {
         conn.pragma_update(None, "key", &master_key)?;
         conn.execute_batch(
             "PRAGMA cipher_page_size = 4096;
-             PRAGMA kdf_iter = 256000;
+             PRAGMA kdf_iter = 64000;
              PRAGMA cipher_hmac_algorithm = HMAC_SHA512;
-             PRAGMA cipher_memory_security = ON;
+             PRAGMA cipher_memory_security = OFF;
              PRAGMA journal_mode = WAL;
              PRAGMA foreign_keys = ON;
-             PRAGMA secure_delete = ON;",
+             PRAGMA secure_delete = ON;
+             PRAGMA cache_size = -4000;
+             PRAGMA temp_store = MEMORY;",
         )?;
 
         // Immediately drop master key from memory
